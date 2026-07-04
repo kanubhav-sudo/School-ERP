@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../src/generated/prisma"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+// ─── User ─────────────────────────────────────────────────────
+// Holds authentication credentials only.
+// Profile data lives in separate child models (Milestone 3).
+
+model User {
+  id                   String        @id @default(uuid()) @db.Uuid
+  username             String        @unique
+  email                String        @unique
+  passwordHash         String        @map("password_hash")
+  role                 Role
+  accountStatus        AccountStatus @default(ACTIVE) @map("account_status")
+  isTemporaryPassword  Boolean       @default(true) @map("is_temporary_password")
+  refreshTokenVersion  Int           @default(0) @map("refresh_token_version")
+  lastLoginAt          DateTime?     @map("last_login_at")
+  passwordChangedAt    DateTime?     @map("password_changed_at")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  @@index([role])
+  @@index([accountStatus])
+  @@map("users")
+}
+

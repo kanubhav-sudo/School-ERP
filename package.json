@@ -1,0 +1,33 @@
+{
+  "name": "school-erp",
+  "version": "1.0.0",
+  "description": "A production-grade School ERP (Enterprise Resource Planning) web application built with modern technologies.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "frontend/**/*.{ts,tsx}": [
+      "npm --prefix frontend run lint",
+      "npm --prefix frontend run format",
+      "bash -c 'cd frontend && tsc --noEmit'"
+    ],
+    "backend/**/*.ts": [
+      "npm --prefix backend run lint",
+      "npm --prefix backend run format",
+      "bash -c 'cd backend && tsc --noEmit'"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8"
+  }
+}
