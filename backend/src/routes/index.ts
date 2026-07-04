@@ -9,6 +9,10 @@
 import { Router } from 'express'
 import healthRoutes from './health.routes'
 import authRoutes from './auth.routes'
+import academicSessionRoutes from './academic-session.routes'
+import classRoutes from './class.routes'
+import sectionRoutes from './section.routes'
+import subjectRoutes from './subject.routes'
 import { generalApiLimiter } from '../middlewares/rateLimiter.middleware'
 
 const router = Router()
@@ -22,13 +26,10 @@ router.use('/health', healthRoutes)
 // Auth Routes
 router.use('/auth', authRoutes)
 
-// Admin Routes (Milestone 2 Placeholder)
-// router.use('/admin', adminRoutes);
-
-// Teacher Routes (Milestone 2 Placeholder)
-// router.use('/teacher', teacherRoutes);
-
-// Student Routes (Milestone 2 Placeholder)
-// router.use('/student', studentRoutes);
+// Academic Structure Routes (Milestone 3.1)
+router.use('/academic-sessions', academicSessionRoutes)
+router.use('/classes', classRoutes)
+router.use('/sections', sectionRoutes)
+router.use('/subjects', subjectRoutes)
 
 export default router

@@ -49,3 +49,91 @@ model User {
   @@map("users")
 }
 
+// ─── Academic Session ─────────────────────────────────────────
+// Represents an academic year (e.g. "2024-2025").
+// Only one session can be active at a time.
+
+model AcademicSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+  isActive  Boolean  @default(false) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("academic_sessions")
+}
+
+// ─── Class ────────────────────────────────────────────────────
+// Represents a grade or class level (e.g. "Grade 10", "Class X").
+
+model Class {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @unique
+  displayOrder Int       @default(0) @map("display_order")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  sections     Section[]
+  classSubjects ClassSubject[]
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@map("classes")
+}
+
+// ─── Section ──────────────────────────────────────────────────
+// Represents a division within a class (e.g. "A", "B", "C").
+
+model Section {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  capacity  Int      @default(40)
+  isActive  Boolean  @default(true) @map("is_active")
+  classId   String   @map("class_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  class     Class    @relation(fields: [classId], references: [id])
+
+  @@unique([classId, name])
+  @@index([classId])
+  @@index([isActive])
+  @@map("sections")
+}
+
+// ─── Subject ──────────────────────────────────────────────────
+// Represents a subject taught at the school (e.g. "Mathematics", "MATH101").
+
+model Subject {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  code        String       @unique
+  description String?
+  isActive    Boolean      @default(true) @map("is_active")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  classSubjects ClassSubject[]
+
+  @@index([isActive])
+  @@map("subjects")
+}
+
+// ─── Class–Subject Assignment ─────────────────────────────────
+// Many-to-many: which subjects are taught in which class.
+
+model ClassSubject {
+  classId   String  @map("class_id") @db.Uuid
+  subjectId String  @map("subject_id") @db.Uuid
+
+  class   Class   @relation(fields: [classId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@id([classId, subjectId])
+  @@map("class_subjects")
+}
+
