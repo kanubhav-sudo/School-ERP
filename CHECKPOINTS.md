@@ -135,7 +135,7 @@ This file documents the granular checkpoints for each milestone, allowing easy v
 - **Files Involved**: `backend/src/controllers/section.*`, `frontend/src/features/admin/sections/*`.
 - **Dependencies**: Checkpoint 3.1.2.
 - **Verification Requirements**: Test CRUD API and Admin frontend page.
-- **Status**: Pending (Backend Done)
+- **Status**: Done
 
 ### Checkpoint 3.1.4: Subjects
 - **Objective**: Create CRUD for Subjects.

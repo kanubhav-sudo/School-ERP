@@ -16,6 +16,7 @@ import { TeacherDashboard } from './features/teacher/dashboard/TeacherDashboard'
 import { StudentDashboard } from './features/student/dashboard/StudentDashboard'
 import { AcademicSessionsPage } from './features/admin/academic-sessions/AcademicSessionsPage'
 import { ClassesPage } from './features/admin/classes/ClassesPage'
+import { SectionsPage } from './features/admin/sections/SectionsPage'
 
 // Route Guards
 import { GuestRoute, ProtectedRoute, RoleRoute, getDashboardPath } from './routes/guards'
@@ -65,6 +66,7 @@ function App() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="academic-sessions" element={<AcademicSessionsPage />} />
               <Route path="classes" element={<ClassesPage />} />
+              <Route path="sections" element={<SectionsPage />} />
             </Route>
 
             {/* Protected Teacher Routes */}
