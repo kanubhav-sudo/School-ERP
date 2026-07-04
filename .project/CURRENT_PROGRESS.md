@@ -68,11 +68,17 @@
   - Verification: Backend and frontend build successfully, all linters passing. Commits pushed to main.
 
 ## Milestone 4: Operations & Portals
-- **Status**: 20% Complete (In Progress)
+- **Status**: 40% Complete (In Progress)
 - **Completed Components**:
   - **Checkpoint 4.1: Timetable Management**
     - Prisma Schema updated with `Timetable` model and `DayOfWeek` enum.
     - Timetable CRUD APIs with business logic to prevent double-booking (time overlaps) and compound unique constraints.
     - Frontend `TimetablePage`, `TimetableGrid`, and `TimetableForm`.
     - Added Operations section to Admin sidebar.
+    - Verification: Backend and frontend build successfully, all linters passing. Commits pushed to main.
+  - **Checkpoint 4.2: Attendance Management**
+    - Prisma Schema updated with `Attendance` and `AttendanceRecord` models.
+    - Attendance CRUD APIs with upsert logic ensuring atomic daily records per section.
+    - Frontend `AttendancePage` and `AttendanceGrid` added for streamlined daily tracking.
+    - Added Attendance to Operations section in Admin sidebar.
     - Verification: Backend and frontend build successfully, all linters passing. Commits pushed to main.

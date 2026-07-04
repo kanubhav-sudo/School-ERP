@@ -21,6 +21,7 @@ import { SubjectsPage } from './features/admin/subjects/SubjectsPage'
 import { TeachersPage } from './features/admin/teachers/TeachersPage'
 import { StudentsPage } from './features/admin/students/StudentsPage'
 import { TimetablePage } from './features/admin/timetable/TimetablePage'
+import { AttendancePage } from './features/admin/attendance/AttendancePage'
 // Route Guards
 import { GuestRoute, ProtectedRoute, RoleRoute, getDashboardPath } from './routes/guards'
 
@@ -74,6 +75,7 @@ function App() {
               <Route path="teachers" element={<TeachersPage />} />
               <Route path="students" element={<StudentsPage />} />
               <Route path="timetable" element={<TimetablePage />} />
+              <Route path="attendance" element={<AttendancePage />} />
             </Route>
 
             {/* Protected Teacher Routes */}

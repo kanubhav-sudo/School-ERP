@@ -72,11 +72,11 @@ This document tracks all system milestones, progress, completed tasks, and depen
 ## Milestone 4: Operations & Portals
 - **Objective**: Integrate noticeboards, announcement systems, homework publication dashboards, and daily attendance register files for teachers.
 - **Status**: In Progress
-- **Progress**: 20%
+- **Progress**: 40%
 - **Completed Work**:
   - Checkpoint 4.1: Timetable Management (Schema, CRUD APIs, UI Grid, Validation).
+  - Checkpoint 4.2: Attendance Management (Schema, Upsert APIs, UI Grid).
 - **Remaining Work**:
-  - Build attendance logger API endpoints and visual registry grid.
   - Implement notices board CRUD and announcement banners.
   - Scaffold homework file upload endpoints and task submissions logs.
 - **Dependencies**: Completed Milestone 3.

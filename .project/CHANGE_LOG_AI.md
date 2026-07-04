@@ -40,3 +40,9 @@
 - Integrated `AuthContext`, Protected Routes, and Auth controllers seamlessly.
 - Fixed ESLint errors across backend and frontend, achieving zero-warning lint builds.
 - Demonstrated end-to-end JWT token generation and authentication flow.
+
+## 2026-07-04 (Session 4)
+- Implemented Milestone 3 (Academic & People Management) and Checkpoint 4.1 (Timetable).
+- Fixed TS errors relating to shadcn components location by correctly moving them to `frontend/src/components/ui`.
+- Implemented Checkpoint 4.2 (Attendance Management) with robust schema, backend upsert APIs, and frontend grid batching.
+- Ensured 100% build and linting passes across both backend and frontend.

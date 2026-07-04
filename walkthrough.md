@@ -105,3 +105,8 @@ This milestone focuses on operational aspects like timetables, attendance, notic
 - **Database Schema**: Added `Timetable` model with `DayOfWeek` enum, and compound unique constraints to enforce no double-booking for sections and teachers.
 - **Backend API**: Created full CRUD endpoints. Implemented robust time overlap validation in `timetable.service.ts` to throw `ConflictError` on double-bookings.
 - **Frontend Architecture**: Built a unified `TimetablePage` containing `TimetableGrid` to visualize the schedule and `TimetableForm` to manage entries. Wired it to the Admin sidebar under Operations.
+
+### Checkpoint 4.2: Attendance Management ✅
+- **Database Schema**: Added `Attendance` and `AttendanceRecord` models with `AttendanceStatus` enum. Implemented a parent-child relationship ensuring daily uniqueness per section via a compound index `@@unique([sectionId, date])`.
+- **Backend API**: Created full CRUD endpoints. Implemented transactional upsert logic in `attendance.service.ts` to ensure idempotent, atomic saves.
+- **Frontend Architecture**: Built an `AttendancePage` to select class, section, and date. Developed an `AttendanceGrid` containing per-student statuses and bulk action buttons. Integrated seamlessly into the Admin layout under Operations.

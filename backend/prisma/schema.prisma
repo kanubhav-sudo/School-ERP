@@ -152,6 +152,7 @@ model Section {
   teacherAssignments TeacherAssignment[]
   students           Student[]
   timetables         Timetable[]
+  attendance         Attendance[]
 
   @@unique([classId, name])
   @@index([classId])
@@ -302,6 +303,8 @@ model Student {
   class   Class?           @relation(fields: [classId], references: [id])
   section Section?         @relation(fields: [sectionId], references: [id])
 
+  attendanceRecords AttendanceRecord[]
+
   @@index([isActive])
   @@index([status])
   @@index([deletedAt])
@@ -355,4 +358,67 @@ model Timetable {
   @@index([teacherId])
   @@index([isDeleted])
   @@map("timetables")
+}
+
+// ─── Attendance ───────────────────────────────────────────────
+// Parent: one attendance sheet per section per day.
+// Soft-delete on parent cascades logically (records are also preserved).
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+}
+
+model Attendance {
+  id           String    @id @default(uuid()) @db.Uuid
+  date         DateTime  @db.Date
+  sectionId    String    @map("section_id") @db.Uuid
+  recordedById String    @map("recorded_by_id") @db.Uuid
+
+  // Audit
+  createdById  String?   @map("created_by_id") @db.Uuid
+  updatedById  String?   @map("updated_by_id") @db.Uuid
+
+  // Soft delete
+  isDeleted    Boolean   @default(false) @map("is_deleted")
+  deletedAt    DateTime? @map("deleted_at")
+  deletedById  String?   @map("deleted_by_id") @db.Uuid
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  section  Section            @relation(fields: [sectionId], references: [id])
+  records  AttendanceRecord[]
+
+  // One attendance sheet per section per day
+  @@unique([sectionId, date])
+  @@index([date])
+  @@index([sectionId])
+  @@index([isDeleted])
+  @@map("attendance")
+}
+
+// ─── Attendance Record ────────────────────────────────────────
+// Child: one row per student in the attendance sheet.
+
+model AttendanceRecord {
+  id           String           @id @default(uuid()) @db.Uuid
+  attendanceId String           @map("attendance_id") @db.Uuid
+  studentId    String           @map("student_id") @db.Uuid
+  status       AttendanceStatus
+  remarks      String?
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  attendance Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  student    Student    @relation(fields: [studentId], references: [id])
+
+  // One record per student per attendance sheet
+  @@unique([attendanceId, studentId])
+  @@index([attendanceId])
+  @@index([studentId])
+  @@map("attendance_records")
 }

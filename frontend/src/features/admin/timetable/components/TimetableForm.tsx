@@ -173,10 +173,10 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Day of Week</label>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <Select
                   value={dayOfWeek || ''}
-                  onValueChange={(val: any) => setValue('dayOfWeek', val)}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onValueChange={(val: string) => setValue('dayOfWeek', val as any)}
                 >
                   <SelectTrigger className={errors.dayOfWeek ? 'border-destructive' : ''}>
                     <SelectValue placeholder="Select Day" />

@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frontend UI components `TeachersPage`, `TeacherForm`, `StudentsPage`, `StudentForm`.
 - Sidebar navigation for People management in the Admin portal.
 
+## [1.5.0-milestone4.2] - 2026-07-04
+
+### Added
+- Prisma schema for `Attendance` and `AttendanceRecord` models with `AttendanceStatus` enum.
+- Backend CRUD APIs for Attendance tracking with atomic upsert logic per section and date.
+- Frontend UI components `AttendancePage` and `AttendanceGrid`.
+- Sidebar navigation for Attendance in the Admin portal Operations section.
+
 ## [1.4.0-milestone4.1] - 2026-07-04
 
 ### Added

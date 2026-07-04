@@ -186,3 +186,10 @@ This file documents the granular checkpoints for each milestone, allowing easy v
 - **Dependencies**: Milestone 3.
 - **Verification Requirements**: Verify successful Prisma migration, test time conflict prevention, and verify UI rendering.
 - **Status**: Done
+
+### Checkpoint 4.2: Attendance Management
+- **Objective**: Implement daily section-based attendance tracking (parent-child relational records).
+- **Files Involved**: `schema.prisma`, `attendance.service.ts`, `attendance.controller.ts`, `attendance.routes.ts`, `AttendancePage.tsx`, `AttendanceGrid.tsx`.
+- **Dependencies**: Checkpoint 3.2.
+- **Verification Requirements**: Verify successful Prisma migration, test idempotent UPSERT operations on the backend, and verify frontend datatable allows batch marking with immediate visual feedback.
+- **Status**: Done

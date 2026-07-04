@@ -1,11 +1,3 @@
-/**
- * API Router Assembly
- *
- * Mounts all API namespaces under /api/v1.
- *
- * @module routes/index
- */
-
 import { Router } from 'express'
 import healthRoutes from './health.routes'
 import authRoutes from './auth.routes'
@@ -16,6 +8,7 @@ import subjectRoutes from './subject.routes'
 import teacherRoutes from './teacher.routes'
 import studentRoutes from './student.routes'
 import timetableRoutes from './timetable.routes'
+import attendanceRoutes from './attendance.routes'
 import { generalApiLimiter } from '../middlewares/rateLimiter.middleware'
 
 const router = Router()
@@ -41,5 +34,6 @@ router.use('/students', studentRoutes)
 
 // Operations Routes (Milestone 4)
 router.use('/timetable', timetableRoutes)
+router.use('/attendance', attendanceRoutes)
 
 export default router

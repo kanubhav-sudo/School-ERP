@@ -194,3 +194,12 @@
 - [x] Create frontend `TimetableForm` with conflict validation handling
 - [x] Add sidebar navigation
 - [x] Verify backend and frontend builds and linting
+
+### Checkpoint 4.2: Attendance Management ✅
+- [x] Create Attendance Prisma model and enum
+- [x] Implement backend CRUD APIs for Attendance
+- [x] Implement frontend Attendance API
+- [x] Create frontend `AttendancePage` with class/section selectors
+- [x] Create frontend `AttendanceGrid` for tracking daily student attendance
+- [x] Add sidebar navigation
+- [x] Verify backend and frontend builds and linting
