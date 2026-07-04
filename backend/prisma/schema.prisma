@@ -26,6 +26,39 @@ enum AccountStatus {
   ARCHIVED
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum EmploymentStatus {
+  PERMANENT
+  CONTRACT
+  PROBATION
+  RESIGNED
+  TERMINATED
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+  GRADUATED
+  EXPELLED
+}
+
 // ─── User ─────────────────────────────────────────────────────
 // Holds authentication credentials only.
 // Profile data lives in separate child models (Milestone 3).
@@ -43,6 +76,9 @@ model User {
   passwordChangedAt    DateTime?     @map("password_changed_at")
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  teacher Teacher?
+  student Student?
 
   @@index([role])
   @@index([accountStatus])
@@ -62,6 +98,8 @@ model AcademicSession {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  students Student[]
+
   @@index([isActive])
   @@map("academic_sessions")
 }
@@ -77,8 +115,10 @@ model Class {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  sections     Section[]
-  classSubjects ClassSubject[]
+  sections           Section[]
+  classSubjects      ClassSubject[]
+  teacherAssignments TeacherAssignment[]
+  students           Student[]
 
   @@index([isActive])
   @@index([displayOrder])
@@ -97,7 +137,9 @@ model Section {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  class     Class    @relation(fields: [classId], references: [id])
+  class              Class             @relation(fields: [classId], references: [id])
+  teacherAssignments TeacherAssignment[]
+  students           Student[]
 
   @@unique([classId, name])
   @@index([classId])
@@ -117,7 +159,8 @@ model Subject {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
-  classSubjects ClassSubject[]
+  classSubjects      ClassSubject[]
+  teacherAssignments TeacherAssignment[]
 
   @@index([isActive])
   @@map("subjects")
@@ -137,3 +180,119 @@ model ClassSubject {
   @@map("class_subjects")
 }
 
+// ─── Teacher ──────────────────────────────────────────────────
+// Teacher profile. Linked optionally to a User account for login.
+
+model Teacher {
+  id               String           @id @default(uuid()) @db.Uuid
+  userId           String?          @unique @map("user_id") @db.Uuid
+  employeeId       String           @unique @map("employee_id")
+  firstName        String           @map("first_name")
+  lastName         String           @map("last_name")
+  gender           Gender
+  dateOfBirth      DateTime?        @map("date_of_birth") @db.Date
+  phone            String?
+  email            String           @unique
+  qualification    String?
+  experienceYears  Int              @default(0) @map("experience_years")
+  department       String?
+  joiningDate      DateTime         @map("joining_date") @db.Date
+  employmentStatus EmploymentStatus @default(PERMANENT) @map("employment_status")
+  address          String?
+  notes            String?
+  isActive         Boolean          @default(true) @map("is_active")
+  deletedAt        DateTime?        @map("deleted_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  user        User?               @relation(fields: [userId], references: [id])
+  assignments TeacherAssignment[]
+
+  @@index([isActive])
+  @@index([employmentStatus])
+  @@index([deletedAt])
+  @@map("teachers")
+}
+
+// ─── Teacher Assignment ───────────────────────────────────────
+// Maps a teacher to a class + section + subject combination.
+
+model TeacherAssignment {
+  id        String @id @default(uuid()) @db.Uuid
+  teacherId String @map("teacher_id") @db.Uuid
+  classId   String @map("class_id") @db.Uuid
+  sectionId String @map("section_id") @db.Uuid
+  subjectId String @map("subject_id") @db.Uuid
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id])
+  section Section @relation(fields: [sectionId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([teacherId, classId, sectionId, subjectId])
+  @@index([teacherId])
+  @@index([classId])
+  @@map("teacher_assignments")
+}
+
+// ─── Student ──────────────────────────────────────────────────
+// Student profile. Linked optionally to a User account for login.
+
+model Student {
+  id               String        @id @default(uuid()) @db.Uuid
+  userId           String?       @unique @map("user_id") @db.Uuid
+  admissionNumber  String        @unique @map("admission_number")
+  rollNumber       String?       @map("roll_number")
+  firstName        String        @map("first_name")
+  lastName         String        @map("last_name")
+  gender           Gender
+  dateOfBirth      DateTime?     @map("date_of_birth") @db.Date
+  bloodGroup       BloodGroup?   @map("blood_group")
+  phone            String?
+  email            String?
+  photoUrl         String?       @map("photo_url")
+
+  // Parent Information
+  fatherName       String?       @map("father_name")
+  fatherPhone      String?       @map("father_phone")
+  motherName       String?       @map("mother_name")
+  motherPhone      String?       @map("mother_phone")
+
+  // Guardian Information
+  guardianName     String?       @map("guardian_name")
+  guardianPhone    String?       @map("guardian_phone")
+  guardianRelation String?       @map("guardian_relation")
+
+  // Emergency Contact
+  emergencyContact String?       @map("emergency_contact")
+  emergencyPhone   String?       @map("emergency_phone")
+
+  address          String?
+
+  // Academic Assignment
+  sessionId        String?       @map("session_id") @db.Uuid
+  classId          String?       @map("class_id") @db.Uuid
+  sectionId        String?       @map("section_id") @db.Uuid
+
+  admissionDate    DateTime      @map("admission_date") @db.Date
+  status           StudentStatus @default(ACTIVE)
+  notes            String?
+
+  isActive         Boolean       @default(true) @map("is_active")
+  deletedAt        DateTime?     @map("deleted_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  user    User?            @relation(fields: [userId], references: [id])
+  session AcademicSession? @relation(fields: [sessionId], references: [id])
+  class   Class?           @relation(fields: [classId], references: [id])
+  section Section?         @relation(fields: [sectionId], references: [id])
+
+  @@index([isActive])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([sessionId])
+  @@index([classId])
+  @@index([sectionId])
+  @@map("students")
+}
