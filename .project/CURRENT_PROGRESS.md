@@ -45,3 +45,13 @@
   - Frontend login page (`LoginForm.tsx`) with Zod validation.
   - Frontend Protected, Guest, and Role Route guards (`guards.tsx`).
   - Verification: Backend and frontend build successfully, lint errors fixed (including `path-to-regexp` v8 wildcard route fix), and E2E login flow tested successfully via curl.
+
+## Milestone 3.1: Academic Structure
+- **Status**: 100% Complete
+- **Completed Components**:
+  - Prisma Schema updated with `AcademicSession`, `Term`, `Class`, `Section`, `Subject`, and `ClassSubject`.
+  - Academic Session CRUD APIs and React Frontend (Admin).
+  - Class CRUD APIs and React Frontend (Admin).
+  - Section CRUD APIs and React Frontend (Admin).
+  - Subject CRUD APIs and React Frontend (Admin).
+  - Verification: Backend and frontend build successfully, all linters passing. Commits pushed to main.

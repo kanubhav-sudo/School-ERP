@@ -45,17 +45,29 @@ This document tracks all system milestones, progress, completed tasks, and depen
 - **Dependencies**: Completed Milestone 1.5.
 - **Estimated Next Milestone**: Milestone 3.
 
-## Milestone 3: Academic & User Management
-- **Objective**: Setup structures for academic sessions (years, terms), Class/Section configs, and administrator-facing screens to register student & teacher profiles, assign subjects, and schedule classes.
+## Milestone 3.1: Academic Structure
+- **Objective**: Setup foundational structures for academic sessions (years, terms), Classes, Sections, and Subjects.
+- **Status**: Completed
+- **Progress**: 100%
+- **Completed Work**:
+  - Defined schema mappings for Sessions, Classes, Sections, and Subjects.
+  - Programmed CRUD controllers & validation endpoints for academic parameters.
+  - Implemented data management tables and forms on the React Admin dashboard.
+- **Remaining Work**: None.
+- **Dependencies**: Completed Milestone 2.
+- **Estimated Next Milestone**: Milestone 3.2.
+
+## Milestone 3.2: User Management & Profiles
+- **Objective**: Administrator-facing screens to register student & teacher profiles, map them to classes/sections, and assign subjects.
 - **Status**: Pending
 - **Progress**: 0%
 - **Completed Work**: None.
 - **Remaining Work**:
-  - Define schema mappings for Sessions, Classes, Sections, Subjects, and User Profiles (Students, Teachers, Admins).
-  - Program CRUD controllers & validation endpoints for academic parameters.
+  - Define schema mappings for User Profiles (Students, Teachers, Admins).
+  - Program CRUD controllers for user profiles.
   - Implement profiles management interface on frontend.
   - Implement subject schedule mapper dashboard.
-- **Dependencies**: Completed Milestone 2.
+- **Dependencies**: Completed Milestone 3.1.
 - **Estimated Next Milestone**: Milestone 4.
 
 ## Milestone 4: Operations & Portals

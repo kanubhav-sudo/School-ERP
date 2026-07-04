@@ -59,3 +59,22 @@ This milestone successfully implemented a robust and scalable authentication mec
 - **Axios Interceptors**: Axios client customized to automatically intercept 401 Unauthorized responses and refresh tokens behind the scenes.
 - **Guards**: `ProtectedRoute` (requires login), `GuestRoute` (blocks logged-in users from accessing login page), and `RoleRoute` (restricts access by user role) implemented.
 - **UI**: A responsive Login Form with Zod schema validation designed using shadcn/ui.
+
+## Milestone 3.1: Academic Structure ✅
+This milestone built the foundational entity structures for academics: Sessions, Classes, Sections, and Subjects.
+
+### 1. Database Schema
+- Built new Prisma models: `AcademicSession`, `Term`, `Class`, `Section`, `Subject`, `ClassSubject`.
+- Created robust relational links with validation limits and constraints.
+- Generated and applied migrations cleanly.
+
+### 2. Backend API
+- Built scalable CRUD controllers for all 4 entities, inheriting standardized `ApiResponse` outputs.
+- Included validation rules and secured all routes under the `ADMIN` role.
+- Structured code efficiently following the `Validator -> Service -> Controller -> Router` pattern.
+
+### 3. Frontend Architecture
+- Built functional CRUD user interfaces for the Admin Dashboard.
+- Utilized `@tanstack/react-query` to ensure optimized data fetching and state invalidation.
+- Built interactive and responsive dialog forms utilizing `react-hook-form` and `zod` for type-safe forms.
+- Reused shadcn components globally to ensure rapid interface construction without technical debt.
