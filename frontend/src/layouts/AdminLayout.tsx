@@ -79,6 +79,33 @@ export function AdminLayout() {
           >
             Subjects
           </NavLink>
+          <div className="pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            People
+          </div>
+          <NavLink
+            to="/admin/teachers"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Teachers
+          </NavLink>
+          <NavLink
+            to="/admin/students"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Students
+          </NavLink>
         </nav>
       </aside>
 
