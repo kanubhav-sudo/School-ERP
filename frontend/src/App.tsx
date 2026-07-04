@@ -10,10 +10,11 @@ import { StudentLayout } from './layouts/StudentLayout'
 import { Unauthorized } from './pages/Unauthorized'
 import { NotFound } from './pages/NotFound'
 
-// Dashboards
+// Dashboards & Features
 import { AdminDashboard } from './features/admin/dashboard/AdminDashboard'
 import { TeacherDashboard } from './features/teacher/dashboard/TeacherDashboard'
 import { StudentDashboard } from './features/student/dashboard/StudentDashboard'
+import { AcademicSessionsPage } from './features/admin/academic-sessions/AcademicSessionsPage'
 
 // Route Guards
 import { GuestRoute, ProtectedRoute, RoleRoute, getDashboardPath } from './routes/guards'
@@ -61,6 +62,7 @@ function App() {
             >
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="academic-sessions" element={<AcademicSessionsPage />} />
             </Route>
 
             {/* Protected Teacher Routes */}

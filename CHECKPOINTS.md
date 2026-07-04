@@ -114,18 +114,32 @@ This file documents the granular checkpoints for each milestone, allowing easy v
 
 ---
 
-## Milestone 3: Academic & User Management (Pending)
+## Milestone 3.1: Academic Structure (In Progress)
 
-### Checkpoint 3.1: Academic Sessions Schema & Migration
-- **Objective**: Create Prisma models and migrations for Academic Sessions (Years) and Terms.
-- **Files Involved**: `backend/prisma/schema.prisma`.
-- **Dependencies**: Checkpoint 2.1.
-- **Verification Requirements**: Run migrations and verify schema constraints.
-- **Status**: Pending
+### Checkpoint 3.1.1: Academic Sessions
+- **Objective**: Create CRUD for Academic Sessions (Years) and Terms.
+- **Files Involved**: `backend/prisma/schema.prisma`, `backend/src/controllers/academic-session.*`, `frontend/src/features/admin/academic-sessions/*`.
+- **Dependencies**: Checkpoint 2.5.
+- **Verification Requirements**: Run migrations and verify schema constraints. Test CRUD API and Admin frontend page.
+- **Status**: Done
 
-### Checkpoint 3.2: Class & Section Schema & Migration
-- **Objective**: Create Prisma models and migrations for Classes and Sections, establishing necessary relationships.
-- **Files Involved**: `backend/prisma/schema.prisma`.
-- **Dependencies**: Checkpoint 3.1.
-- **Verification Requirements**: Validate schema relationships via Prisma Studio.
-- **Status**: Pending
+### Checkpoint 3.1.2: Classes
+- **Objective**: Create CRUD for Classes.
+- **Files Involved**: `backend/src/controllers/class.*`, `frontend/src/features/admin/classes/*`.
+- **Dependencies**: Checkpoint 3.1.1.
+- **Verification Requirements**: Test CRUD API and Admin frontend page.
+- **Status**: Pending (Backend Done)
+
+### Checkpoint 3.1.3: Sections
+- **Objective**: Create CRUD for Sections.
+- **Files Involved**: `backend/src/controllers/section.*`, `frontend/src/features/admin/sections/*`.
+- **Dependencies**: Checkpoint 3.1.2.
+- **Verification Requirements**: Test CRUD API and Admin frontend page.
+- **Status**: Pending (Backend Done)
+
+### Checkpoint 3.1.4: Subjects
+- **Objective**: Create CRUD for Subjects.
+- **Files Involved**: `backend/src/controllers/subject.*`, `frontend/src/features/admin/subjects/*`.
+- **Dependencies**: Checkpoint 3.1.3.
+- **Verification Requirements**: Test CRUD API and Admin frontend page.
+- **Status**: Pending (Backend Done)
