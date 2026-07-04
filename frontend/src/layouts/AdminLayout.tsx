@@ -106,6 +106,21 @@ export function AdminLayout() {
           >
             Students
           </NavLink>
+          <div className="pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Operations
+          </div>
+          <NavLink
+            to="/admin/timetable"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Timetable
+          </NavLink>
         </nav>
       </aside>
 

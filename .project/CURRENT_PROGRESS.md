@@ -55,3 +55,24 @@
   - Section CRUD APIs and React Frontend (Admin).
   - Subject CRUD APIs and React Frontend (Admin).
   - Verification: Backend and frontend build successfully, all linters passing. Commits pushed to main.
+
+## Milestone 3.2: People Management
+- **Status**: 100% Complete
+- **Completed Components**:
+  - Prisma Schema updated with `Teacher`, `TeacherAssignment`, and `Student` models along with related enums (`Gender`, `EmploymentStatus`, `BloodGroup`, `StudentStatus`).
+  - Teacher CRUD APIs, controllers, services, and route guards.
+  - Student CRUD APIs, controllers, services, and route guards.
+  - Teacher React Frontend (Admin): `TeachersPage`, `TeacherForm`, Data table, Filters.
+  - Student React Frontend (Admin): `StudentsPage`, `StudentForm`, Data table, Filters.
+  - Added frontend navigation links to the Admin sidebar layout.
+  - Verification: Backend and frontend build successfully, all linters passing. Commits pushed to main.
+
+## Milestone 4: Operations & Portals
+- **Status**: 20% Complete (In Progress)
+- **Completed Components**:
+  - **Checkpoint 4.1: Timetable Management**
+    - Prisma Schema updated with `Timetable` model and `DayOfWeek` enum.
+    - Timetable CRUD APIs with business logic to prevent double-booking (time overlaps) and compound unique constraints.
+    - Frontend `TimetablePage`, `TimetableGrid`, and `TimetableForm`.
+    - Added Operations section to Admin sidebar.
+    - Verification: Backend and frontend build successfully, all linters passing. Commits pushed to main.

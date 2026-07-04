@@ -140,3 +140,57 @@
 - [x] Resolve Express 5 wildcard path compilation issue
 - [x] Verify successful linting & build on both backend and frontend
 - [x] Verify login and refresh cycle end-to-end via curl and client proxy target (port 8000)
+
+---
+
+## Milestone 3.1: Academic Structure ✅
+
+### Backend
+- [x] Create Session, Class, Section, and Subject models in Prisma schema
+- [x] Implement backend services and controllers
+- [x] Implement API routes
+
+### Frontend
+- [x] Create API services
+- [x] Implement AcademicSessionsPage, ClassesPage, SectionsPage, SubjectsPage
+- [x] Implement forms for all academic entities
+- [x] Add navigation to Admin sidebar
+
+---
+
+## Milestone 3.2: People Management ✅
+
+### Checkpoint 3.2.1: Teacher Backend
+- [x] Define Teacher & TeacherAssignment schema mapping
+- [x] Implement backend Teacher API (Zod, Service, Controller, Routes)
+- [x] Wire Teacher API in router
+
+### Checkpoint 3.2.2: Teacher Frontend
+- [x] Create Teacher API service
+- [x] Implement TeachersPage with datatable and filters
+- [x] Implement TeacherForm with Zod schema validation
+
+### Checkpoint 3.2.3: Student Backend
+- [x] Define Student schema mapping
+- [x] Implement backend Student API (Zod, Service, Controller, Routes)
+- [x] Wire Student API in router
+
+### Checkpoint 3.2.4: Student Frontend
+- [x] Create Student API service
+- [x] Implement StudentsPage with datatable and filters
+- [x] Implement StudentForm with Zod schema validation
+- [x] Map UI components in AdminLayout sidebar navigation
+- [x] Verify frontend builds, linting, and routing
+
+---
+
+## Milestone 4: Operations & Portals (In Progress)
+
+### Checkpoint 4.1: Timetable Management ✅
+- [x] Create Timetable Prisma model and handle double-booking constraints
+- [x] Implement backend CRUD APIs for Timetable
+- [x] Implement frontend Timetable API
+- [x] Create frontend `TimetablePage` with grid visualization
+- [x] Create frontend `TimetableForm` with conflict validation handling
+- [x] Add sidebar navigation
+- [x] Verify backend and frontend builds and linting

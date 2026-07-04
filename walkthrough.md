@@ -78,3 +78,30 @@ This milestone built the foundational entity structures for academics: Sessions,
 - Utilized `@tanstack/react-query` to ensure optimized data fetching and state invalidation.
 - Built interactive and responsive dialog forms utilizing `react-hook-form` and `zod` for type-safe forms.
 - Reused shadcn components globally to ensure rapid interface construction without technical debt.
+
+## Milestone 3.2: People Management ✅
+This milestone focused on implementing user profiles and assignments for Teachers and Students.
+
+### 1. Database Schema
+- Built new Prisma models: `Teacher`, `TeacherAssignment`, and `Student`.
+- Added related Enums: `Gender`, `EmploymentStatus`, `BloodGroup`, `StudentStatus`.
+- Generated and applied migrations for People Management.
+
+### 2. Backend API
+- Built scalable CRUD controllers and services for Teachers and Students.
+- Ensured strong data validation via Zod schemas for complex inputs including parent/guardian details and emergency contacts.
+- Secured all routes under the `ADMIN` role.
+
+### 3. Frontend Architecture
+- Built functional CRUD user interfaces for Teachers and Students inside the Admin Dashboard (`TeachersPage`, `StudentsPage`).
+- Created robust and responsive data forms using `react-hook-form` combined with `@hookform/resolvers/zod`.
+- Designed data tables for easy management, including search/filtering and dynamic status badges.
+- Updated the Admin Sidebar navigation to include a dedicated "People" section.
+
+## Milestone 4: Operations & Portals (In Progress)
+This milestone focuses on operational aspects like timetables, attendance, noticeboards, and dashboard statistics.
+
+### Checkpoint 4.1: Timetable Management ✅
+- **Database Schema**: Added `Timetable` model with `DayOfWeek` enum, and compound unique constraints to enforce no double-booking for sections and teachers.
+- **Backend API**: Created full CRUD endpoints. Implemented robust time overlap validation in `timetable.service.ts` to throw `ConflictError` on double-bookings.
+- **Frontend Architecture**: Built a unified `TimetablePage` containing `TimetableGrid` to visualize the schedule and `TimetableForm` to manage entries. Wired it to the Admin sidebar under Operations.

@@ -59,22 +59,22 @@ This document tracks all system milestones, progress, completed tasks, and depen
 
 ## Milestone 3.2: User Management & Profiles
 - **Objective**: Administrator-facing screens to register student & teacher profiles, map them to classes/sections, and assign subjects.
-- **Status**: Pending
-- **Progress**: 0%
-- **Completed Work**: None.
-- **Remaining Work**:
-  - Define schema mappings for User Profiles (Students, Teachers, Admins).
-  - Program CRUD controllers for user profiles.
-  - Implement profiles management interface on frontend.
-  - Implement subject schedule mapper dashboard.
+- **Status**: Completed
+- **Progress**: 100%
+- **Completed Work**:
+  - Defined schema mappings for User Profiles (Students, Teachers, Admins).
+  - Programmed CRUD controllers & services for user profiles.
+  - Implemented profiles management interface on frontend (TeachersPage, StudentsPage).
+- **Remaining Work**: None.
 - **Dependencies**: Completed Milestone 3.1.
 - **Estimated Next Milestone**: Milestone 4.
 
 ## Milestone 4: Operations & Portals
 - **Objective**: Integrate noticeboards, announcement systems, homework publication dashboards, and daily attendance register files for teachers.
-- **Status**: Pending
-- **Progress**: 0%
-- **Completed Work**: None.
+- **Status**: In Progress
+- **Progress**: 20%
+- **Completed Work**:
+  - Checkpoint 4.1: Timetable Management (Schema, CRUD APIs, UI Grid, Validation).
 - **Remaining Work**:
   - Build attendance logger API endpoints and visual registry grid.
   - Implement notices board CRUD and announcement banners.

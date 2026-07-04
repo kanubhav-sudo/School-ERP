@@ -59,6 +59,15 @@ enum StudentStatus {
   EXPELLED
 }
 
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
 // ─── User ─────────────────────────────────────────────────────
 // Holds authentication credentials only.
 // Profile data lives in separate child models (Milestone 3).
@@ -98,7 +107,8 @@ model AcademicSession {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  students Student[]
+  students   Student[]
+  timetables Timetable[]
 
   @@index([isActive])
   @@map("academic_sessions")
@@ -119,6 +129,7 @@ model Class {
   classSubjects      ClassSubject[]
   teacherAssignments TeacherAssignment[]
   students           Student[]
+  timetables         Timetable[]
 
   @@index([isActive])
   @@index([displayOrder])
@@ -137,9 +148,10 @@ model Section {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  class              Class             @relation(fields: [classId], references: [id])
+  class              Class              @relation(fields: [classId], references: [id])
   teacherAssignments TeacherAssignment[]
   students           Student[]
+  timetables         Timetable[]
 
   @@unique([classId, name])
   @@index([classId])
@@ -161,6 +173,7 @@ model Subject {
 
   classSubjects      ClassSubject[]
   teacherAssignments TeacherAssignment[]
+  timetables         Timetable[]
 
   @@index([isActive])
   @@map("subjects")
@@ -207,6 +220,7 @@ model Teacher {
 
   user        User?               @relation(fields: [userId], references: [id])
   assignments TeacherAssignment[]
+  timetables  Timetable[]
 
   @@index([isActive])
   @@index([employmentStatus])
@@ -295,4 +309,50 @@ model Student {
   @@index([classId])
   @@index([sectionId])
   @@map("students")
+}
+
+// ─── Timetable ────────────────────────────────────────────────
+// Defines the weekly class schedule: which teacher teaches which
+// subject in which section at which period/time slot.
+
+model Timetable {
+  id           String    @id @default(uuid()) @db.Uuid
+  sessionId    String    @map("session_id") @db.Uuid
+  classId      String    @map("class_id") @db.Uuid
+  sectionId    String    @map("section_id") @db.Uuid
+  teacherId    String    @map("teacher_id") @db.Uuid
+  subjectId    String    @map("subject_id") @db.Uuid
+  dayOfWeek    DayOfWeek @map("day_of_week")
+  periodNumber Int       @map("period_number")
+  startTime    String    @map("start_time")  // "HH:MM" 24-hour format
+  endTime      String    @map("end_time")    // "HH:MM" 24-hour format
+  room         String?
+
+  // Audit fields — plain UUIDs, populated from req.user.sub
+  createdById  String?   @map("created_by_id") @db.Uuid
+  updatedById  String?   @map("updated_by_id") @db.Uuid
+
+  // Soft delete
+  isDeleted    Boolean   @default(false) @map("is_deleted")
+  deletedAt    DateTime? @map("deleted_at")
+  deletedById  String?   @map("deleted_by_id") @db.Uuid
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  session  AcademicSession @relation(fields: [sessionId], references: [id])
+  class    Class           @relation(fields: [classId], references: [id])
+  section  Section         @relation(fields: [sectionId], references: [id])
+  teacher  Teacher         @relation(fields: [teacherId], references: [id])
+  subject  Subject         @relation(fields: [subjectId], references: [id])
+
+  // DB-level double-booking prevention
+  @@unique([sectionId, dayOfWeek, periodNumber])  // one subject per section slot
+  @@unique([teacherId, dayOfWeek, periodNumber])  // teacher can't be in two places
+
+  @@index([sessionId])
+  @@index([sectionId])
+  @@index([teacherId])
+  @@index([isDeleted])
+  @@map("timetables")
 }

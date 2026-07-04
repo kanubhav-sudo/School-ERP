@@ -15,6 +15,7 @@ import sectionRoutes from './section.routes'
 import subjectRoutes from './subject.routes'
 import teacherRoutes from './teacher.routes'
 import studentRoutes from './student.routes'
+import timetableRoutes from './timetable.routes'
 import { generalApiLimiter } from '../middlewares/rateLimiter.middleware'
 
 const router = Router()
@@ -37,5 +38,8 @@ router.use('/subjects', subjectRoutes)
 // People Management Routes (Milestone 3.2)
 router.use('/teachers', teacherRoutes)
 router.use('/students', studentRoutes)
+
+// Operations Routes (Milestone 4)
+router.use('/timetable', timetableRoutes)
 
 export default router

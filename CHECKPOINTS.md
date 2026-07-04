@@ -143,3 +143,46 @@ This file documents the granular checkpoints for each milestone, allowing easy v
 - **Dependencies**: Checkpoint 3.1.3.
 - **Verification Requirements**: Test CRUD API and Admin frontend page.
 - **Status**: Done
+
+---
+
+## Milestone 3.2: People Management (100% Complete)
+
+### Checkpoint 3.2.1: Teacher Backend
+- **Objective**: Define Teacher & TeacherAssignment schema mapping and implement backend API.
+- **Files Involved**: `schema.prisma`, `teacher.service.ts`, `teacher.controller.ts`, `teacher.routes.ts`.
+- **Dependencies**: Milestone 3.1.
+- **Verification Requirements**: Verify successful Prisma migration and test API endpoints.
+- **Status**: Done
+
+### Checkpoint 3.2.2: Teacher Frontend
+- **Objective**: Create Teacher API service and implement Teachers UI.
+- **Files Involved**: `TeachersPage.tsx`, `TeacherForm.tsx`, `features/admin/teachers/api.ts`.
+- **Dependencies**: Checkpoint 3.2.1.
+- **Verification Requirements**: Test datatable, filters, and form dialog in Admin portal.
+- **Status**: Done
+
+### Checkpoint 3.2.3: Student Backend
+- **Objective**: Define Student schema mapping and implement backend API.
+- **Files Involved**: `schema.prisma`, `student.service.ts`, `student.controller.ts`, `student.routes.ts`.
+- **Dependencies**: Checkpoint 3.2.1.
+- **Verification Requirements**: Verify successful Prisma migration and test API endpoints.
+- **Status**: Done
+
+### Checkpoint 3.2.4: Student Frontend
+- **Objective**: Create Student API service and implement Students UI.
+- **Files Involved**: `StudentsPage.tsx`, `StudentForm.tsx`, `features/admin/students/api.ts`.
+- **Dependencies**: Checkpoint 3.2.3.
+- **Verification Requirements**: Test datatable, filters, and form dialog in Admin portal. Verify all routes wire up correctly in App.tsx.
+- **Status**: Done
+
+---
+
+## Milestone 4: Operations & Portals (In Progress)
+
+### Checkpoint 4.1: Timetable Management
+- **Objective**: Create timetable schemas, backend APIs with overlap validation, and a frontend grid visualization.
+- **Files Involved**: `schema.prisma`, `timetable.service.ts`, `timetable.controller.ts`, `timetable.routes.ts`, `TimetablePage.tsx`, `TimetableForm.tsx`, `TimetableGrid.tsx`.
+- **Dependencies**: Milestone 3.
+- **Verification Requirements**: Verify successful Prisma migration, test time conflict prevention, and verify UI rendering.
+- **Status**: Done
