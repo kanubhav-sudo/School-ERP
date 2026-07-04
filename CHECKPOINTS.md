@@ -142,4 +142,4 @@ This file documents the granular checkpoints for each milestone, allowing easy v
 - **Files Involved**: `backend/src/controllers/subject.*`, `frontend/src/features/admin/subjects/*`.
 - **Dependencies**: Checkpoint 3.1.3.
 - **Verification Requirements**: Test CRUD API and Admin frontend page.
-- **Status**: Pending (Backend Done)
+- **Status**: Done

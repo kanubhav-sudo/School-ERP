@@ -17,6 +17,7 @@ import { StudentDashboard } from './features/student/dashboard/StudentDashboard'
 import { AcademicSessionsPage } from './features/admin/academic-sessions/AcademicSessionsPage'
 import { ClassesPage } from './features/admin/classes/ClassesPage'
 import { SectionsPage } from './features/admin/sections/SectionsPage'
+import { SubjectsPage } from './features/admin/subjects/SubjectsPage'
 
 // Route Guards
 import { GuestRoute, ProtectedRoute, RoleRoute, getDashboardPath } from './routes/guards'
@@ -67,6 +68,7 @@ function App() {
               <Route path="academic-sessions" element={<AcademicSessionsPage />} />
               <Route path="classes" element={<ClassesPage />} />
               <Route path="sections" element={<SectionsPage />} />
+              <Route path="subjects" element={<SubjectsPage />} />
             </Route>
 
             {/* Protected Teacher Routes */}
