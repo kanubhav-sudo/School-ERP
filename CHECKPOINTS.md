@@ -128,7 +128,7 @@ This file documents the granular checkpoints for each milestone, allowing easy v
 - **Files Involved**: `backend/src/controllers/class.*`, `frontend/src/features/admin/classes/*`.
 - **Dependencies**: Checkpoint 3.1.1.
 - **Verification Requirements**: Test CRUD API and Admin frontend page.
-- **Status**: Pending (Backend Done)
+- **Status**: Done
 
 ### Checkpoint 3.1.3: Sections
 - **Objective**: Create CRUD for Sections.
