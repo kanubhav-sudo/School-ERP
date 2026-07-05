@@ -22,6 +22,7 @@ import { TeachersPage } from './features/admin/teachers/TeachersPage'
 import { StudentsPage } from './features/admin/students/StudentsPage'
 import { TimetablePage } from './features/admin/timetable/TimetablePage'
 import { AttendancePage } from './features/admin/attendance/AttendancePage'
+import { NoticesPage } from './features/admin/notices/NoticesPage'
 import { TeacherDetailPage } from './features/admin/teachers/TeacherDetailPage'
 import { StudentDetailPage } from './features/admin/students/StudentDetailPage'
 import { ChangePasswordPage } from './features/admin/accounts/ChangePasswordPage'
@@ -91,6 +92,7 @@ function App() {
               <Route path="students/:id" element={<StudentDetailPage />} />
               <Route path="timetable" element={<TimetablePage />} />
               <Route path="attendance" element={<AttendancePage />} />
+              <Route path="notices" element={<NoticesPage />} />
             </Route>
 
             {/* Protected Teacher Routes */}

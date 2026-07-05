@@ -133,6 +133,18 @@ export function AdminLayout() {
           >
             Attendance
           </NavLink>
+          <NavLink
+            to="/admin/notices"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Noticeboard
+          </NavLink>
         </nav>
       </aside>
 
