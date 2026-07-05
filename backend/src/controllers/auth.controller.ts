@@ -1,3 +1,5 @@
+import bcrypt from 'bcryptjs'
+
 /**
  * Auth Controller
  *
@@ -59,7 +61,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
           username: user.username,
           email: user.email,
           role: user.role,
-          isTemporaryPassword: user.isTemporaryPassword,
+          mustChangePassword: user.mustChangePassword,
         },
       },
       'Login successful'
@@ -100,7 +102,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
           username: updatedUser.username,
           email: updatedUser.email,
           role: updatedUser.role,
-          isTemporaryPassword: updatedUser.isTemporaryPassword,
+          mustChangePassword: updatedUser.mustChangePassword,
         },
       },
       'Token refreshed'
@@ -153,11 +155,45 @@ export async function me(req: Request, res: Response, next: NextFunction): Promi
         username: user.username,
         email: user.email,
         role: user.role,
-        isTemporaryPassword: user.isTemporaryPassword,
+        mustChangePassword: user.mustChangePassword,
         lastLoginAt: user.lastLoginAt,
       },
       'Current user fetched'
     )
+  } catch (err) {
+    next(err)
+  }
+}
+
+// POST /api/v1/auth/change-password
+import { changePasswordSchema } from '../validators/account.validator'
+import * as AccountService from '../services/account.service'
+import { ForbiddenError } from '../core/errors'
+
+export async function changePassword(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.sub
+    const parsed = changePasswordSchema.safeParse(req.body)
+    if (!parsed.success) {
+      ApiResponse.badRequest(res, 'Invalid input', parsed.error.issues)
+      return
+    }
+
+    const { currentPassword, newPassword } = parsed.data
+    const user = await getUserById(userId)
+    if (!user) throw new UnauthorizedError('User not found')
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash)
+    if (!isValid) throw new ForbiddenError('Incorrect current password')
+
+    const newPasswordHash = await bcrypt.hash(newPassword, 12)
+    await AccountService.changePassword(userId, currentPassword, newPasswordHash)
+
+    ApiResponse.success(res, null, 'Password changed successfully')
   } catch (err) {
     next(err)
   }

@@ -19,6 +19,7 @@ import type {
 
 const studentSelect = {
   id: true,
+  userId: true,
   admissionNumber: true,
   rollNumber: true,
   firstName: true,
@@ -112,7 +113,7 @@ export async function getStudentById(id: string) {
   return student
 }
 
-// ─── Create ───────────────────────────────────────────────────
+import { createUserForStudent } from './account.service'
 
 export async function createStudent(data: CreateStudentInput) {
   // Check for duplicate admission number
@@ -123,36 +124,47 @@ export async function createStudent(data: CreateStudentInput) {
     throw new ConflictError(`Admission number "${data.admissionNumber}" is already in use`)
   }
 
-  return prisma.student.create({
-    data: {
-      admissionNumber: data.admissionNumber,
-      rollNumber: data.rollNumber,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      gender: data.gender,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-      bloodGroup: data.bloodGroup,
-      phone: data.phone,
-      email: data.email,
-      fatherName: data.fatherName,
-      fatherPhone: data.fatherPhone,
-      motherName: data.motherName,
-      motherPhone: data.motherPhone,
-      guardianName: data.guardianName,
-      guardianPhone: data.guardianPhone,
-      guardianRelation: data.guardianRelation,
-      emergencyContact: data.emergencyContact,
-      emergencyPhone: data.emergencyPhone,
-      address: data.address,
-      sessionId: data.sessionId,
-      classId: data.classId,
-      sectionId: data.sectionId,
-      admissionDate: new Date(data.admissionDate),
-      status: data.status,
-      notes: data.notes,
-      isActive: data.isActive,
-    },
-    select: studentSelect,
+  return await prisma.$transaction(async (tx) => {
+    const student = await tx.student.create({
+      data: {
+        admissionNumber: data.admissionNumber,
+        rollNumber: data.rollNumber,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+        bloodGroup: data.bloodGroup,
+        phone: data.phone,
+        email: data.email,
+        fatherName: data.fatherName,
+        fatherPhone: data.fatherPhone,
+        motherName: data.motherName,
+        motherPhone: data.motherPhone,
+        guardianName: data.guardianName,
+        guardianPhone: data.guardianPhone,
+        guardianRelation: data.guardianRelation,
+        emergencyContact: data.emergencyContact,
+        emergencyPhone: data.emergencyPhone,
+        address: data.address,
+        sessionId: data.sessionId,
+        classId: data.classId,
+        sectionId: data.sectionId,
+        admissionDate: new Date(data.admissionDate),
+        status: data.status,
+        notes: data.notes,
+        isActive: data.isActive,
+      },
+      select: studentSelect,
+    })
+
+    const credentials = await createUserForStudent(student.id, tx)
+
+    const finalStudent = await tx.student.findUnique({
+      where: { id: student.id },
+      select: studentSelect,
+    })
+
+    return { student: finalStudent!, credentials }
   })
 }
 

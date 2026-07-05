@@ -25,7 +25,7 @@ async function main() {
       passwordHash,
       role: 'ADMIN',
       accountStatus: 'ACTIVE',
-      isTemporaryPassword: true,
+      mustChangePassword: true,
     },
   })
 

@@ -79,8 +79,46 @@ export async function validateCredentials(username: string, password: string): P
     )
   }
 
+  // Check lockout
+  if (user.lockedUntil && user.lockedUntil > new Date()) {
+    const minutesLeft = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000)
+    throw new ForbiddenError(
+      `Account locked due to too many failed attempts. Try again in ${minutesLeft} minutes.`
+    )
+  }
+
   const isValid = await bcrypt.compare(password, user.passwordHash)
-  if (!isValid) throw new UnauthorizedError('Invalid username or password')
+
+  if (!isValid) {
+    const newAttempts = user.failedLoginAttempts + 1
+    const shouldLock = newAttempts >= 5
+    const lockedUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : null // 15 mins lock
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: newAttempts,
+        lastFailedLoginAt: new Date(),
+        ...(shouldLock && { lockedUntil }),
+      },
+    })
+
+    if (shouldLock) {
+      throw new ForbiddenError(
+        'Account locked due to too many failed attempts. Try again in 15 minutes.'
+      )
+    }
+
+    throw new UnauthorizedError('Invalid username or password')
+  }
+
+  // Reset failed attempts on success if necessary
+  if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginAttempts: 0, lockedUntil: null },
+    })
+  }
 
   return user
 }

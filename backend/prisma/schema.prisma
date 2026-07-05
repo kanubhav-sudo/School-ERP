@@ -13,6 +13,20 @@ datasource db {
 
 // ─── Enums ───────────────────────────────────────────────────
 
+enum AccountAuditAction {
+  ACCOUNT_CREATED
+  CREDENTIALS_ISSUED
+  CREDENTIALS_REISSUED
+  PASSWORD_RESET
+  PASSWORD_CHANGED
+  FORCE_PASSWORD_CHANGE
+  ACCOUNT_ACTIVATED
+  ACCOUNT_SUSPENDED
+  ACCOUNT_DISABLED
+  ACCOUNT_UNLOCKED
+  ACCOUNT_DELETED
+}
+
 enum Role {
   ADMIN
   TEACHER
@@ -68,26 +82,38 @@ enum DayOfWeek {
   SATURDAY
 }
 
+enum NoticePriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 // ─── User ─────────────────────────────────────────────────────
 // Holds authentication credentials only.
 // Profile data lives in separate child models (Milestone 3).
 
 model User {
-  id                   String        @id @default(uuid()) @db.Uuid
-  username             String        @unique
-  email                String        @unique
-  passwordHash         String        @map("password_hash")
-  role                 Role
-  accountStatus        AccountStatus @default(ACTIVE) @map("account_status")
-  isTemporaryPassword  Boolean       @default(true) @map("is_temporary_password")
-  refreshTokenVersion  Int           @default(0) @map("refresh_token_version")
-  lastLoginAt          DateTime?     @map("last_login_at")
-  passwordChangedAt    DateTime?     @map("password_changed_at")
-  createdAt            DateTime      @default(now()) @map("created_at")
-  updatedAt            DateTime      @updatedAt @map("updated_at")
+  id                  String        @id @default(uuid()) @db.Uuid
+  username            String        @unique
+  email               String        @unique
+  passwordHash        String        @map("password_hash")
+  role                Role
+  accountStatus       AccountStatus @default(ACTIVE) @map("account_status")
+  mustChangePassword  Boolean       @default(true) @map("must_change_password")
+  refreshTokenVersion Int           @default(0) @map("refresh_token_version")
+  failedLoginAttempts Int           @default(0) @map("failed_login_attempts")
+  lastFailedLoginAt   DateTime?     @map("last_failed_login_at")
+  lockedUntil         DateTime?     @map("locked_until")
+  lastLoginAt         DateTime?     @map("last_login_at")
+  passwordChangedAt   DateTime?     @map("password_changed_at")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
 
-  teacher Teacher?
-  student Student?
+  teacher           Teacher?
+  student           Student?
+  notices           Notice[]
+  accountAuditLogs  AccountAuditLog[] @relation("AuditSubject")
+  actionsPerformed  AccountAuditLog[] @relation("AuditActor")
 
   @@index([role])
   @@index([accountStatus])
@@ -118,12 +144,12 @@ model AcademicSession {
 // Represents a grade or class level (e.g. "Grade 10", "Class X").
 
 model Class {
-  id           String    @id @default(uuid()) @db.Uuid
-  name         String    @unique
-  displayOrder Int       @default(0) @map("display_order")
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @unique
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   sections           Section[]
   classSubjects      ClassSubject[]
@@ -148,7 +174,7 @@ model Section {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  class              Class              @relation(fields: [classId], references: [id])
+  class              Class               @relation(fields: [classId], references: [id])
   teacherAssignments TeacherAssignment[]
   students           Student[]
   timetables         Timetable[]
@@ -164,13 +190,13 @@ model Section {
 // Represents a subject taught at the school (e.g. "Mathematics", "MATH101").
 
 model Subject {
-  id          String       @id @default(uuid()) @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
   name        String
-  code        String       @unique
+  code        String   @unique
   description String?
-  isActive    Boolean      @default(true) @map("is_active")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   classSubjects      ClassSubject[]
   teacherAssignments TeacherAssignment[]
@@ -184,8 +210,8 @@ model Subject {
 // Many-to-many: which subjects are taught in which class.
 
 model ClassSubject {
-  classId   String  @map("class_id") @db.Uuid
-  subjectId String  @map("subject_id") @db.Uuid
+  classId   String @map("class_id") @db.Uuid
+  subjectId String @map("subject_id") @db.Uuid
 
   class   Class   @relation(fields: [classId], references: [id])
   subject Subject @relation(fields: [subjectId], references: [id])
@@ -254,49 +280,49 @@ model TeacherAssignment {
 // Student profile. Linked optionally to a User account for login.
 
 model Student {
-  id               String        @id @default(uuid()) @db.Uuid
-  userId           String?       @unique @map("user_id") @db.Uuid
-  admissionNumber  String        @unique @map("admission_number")
-  rollNumber       String?       @map("roll_number")
-  firstName        String        @map("first_name")
-  lastName         String        @map("last_name")
-  gender           Gender
-  dateOfBirth      DateTime?     @map("date_of_birth") @db.Date
-  bloodGroup       BloodGroup?   @map("blood_group")
-  phone            String?
-  email            String?
-  photoUrl         String?       @map("photo_url")
+  id              String      @id @default(uuid()) @db.Uuid
+  userId          String?     @unique @map("user_id") @db.Uuid
+  admissionNumber String      @unique @map("admission_number")
+  rollNumber      String?     @map("roll_number")
+  firstName       String      @map("first_name")
+  lastName        String      @map("last_name")
+  gender          Gender
+  dateOfBirth     DateTime?   @map("date_of_birth") @db.Date
+  bloodGroup      BloodGroup? @map("blood_group")
+  phone           String?
+  email           String?
+  photoUrl        String?     @map("photo_url")
 
   // Parent Information
-  fatherName       String?       @map("father_name")
-  fatherPhone      String?       @map("father_phone")
-  motherName       String?       @map("mother_name")
-  motherPhone      String?       @map("mother_phone")
+  fatherName  String? @map("father_name")
+  fatherPhone String? @map("father_phone")
+  motherName  String? @map("mother_name")
+  motherPhone String? @map("mother_phone")
 
   // Guardian Information
-  guardianName     String?       @map("guardian_name")
-  guardianPhone    String?       @map("guardian_phone")
-  guardianRelation String?       @map("guardian_relation")
+  guardianName     String? @map("guardian_name")
+  guardianPhone    String? @map("guardian_phone")
+  guardianRelation String? @map("guardian_relation")
 
   // Emergency Contact
-  emergencyContact String?       @map("emergency_contact")
-  emergencyPhone   String?       @map("emergency_phone")
+  emergencyContact String? @map("emergency_contact")
+  emergencyPhone   String? @map("emergency_phone")
 
-  address          String?
+  address String?
 
   // Academic Assignment
-  sessionId        String?       @map("session_id") @db.Uuid
-  classId          String?       @map("class_id") @db.Uuid
-  sectionId        String?       @map("section_id") @db.Uuid
+  sessionId String? @map("session_id") @db.Uuid
+  classId   String? @map("class_id") @db.Uuid
+  sectionId String? @map("section_id") @db.Uuid
 
-  admissionDate    DateTime      @map("admission_date") @db.Date
-  status           StudentStatus @default(ACTIVE)
-  notes            String?
+  admissionDate DateTime      @map("admission_date") @db.Date
+  status        StudentStatus @default(ACTIVE)
+  notes         String?
 
-  isActive         Boolean       @default(true) @map("is_active")
-  deletedAt        DateTime?     @map("deleted_at")
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @updatedAt @map("updated_at")
+  isActive  Boolean   @default(true) @map("is_active")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   user    User?            @relation(fields: [userId], references: [id])
   session AcademicSession? @relation(fields: [sessionId], references: [id])
@@ -327,32 +353,31 @@ model Timetable {
   subjectId    String    @map("subject_id") @db.Uuid
   dayOfWeek    DayOfWeek @map("day_of_week")
   periodNumber Int       @map("period_number")
-  startTime    String    @map("start_time")  // "HH:MM" 24-hour format
-  endTime      String    @map("end_time")    // "HH:MM" 24-hour format
+  startTime    String    @map("start_time") // "HH:MM" 24-hour format
+  endTime      String    @map("end_time") // "HH:MM" 24-hour format
   room         String?
 
   // Audit fields — plain UUIDs, populated from req.user.sub
-  createdById  String?   @map("created_by_id") @db.Uuid
-  updatedById  String?   @map("updated_by_id") @db.Uuid
+  createdById String? @map("created_by_id") @db.Uuid
+  updatedById String? @map("updated_by_id") @db.Uuid
 
   // Soft delete
-  isDeleted    Boolean   @default(false) @map("is_deleted")
-  deletedAt    DateTime? @map("deleted_at")
-  deletedById  String?   @map("deleted_by_id") @db.Uuid
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
 
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  session  AcademicSession @relation(fields: [sessionId], references: [id])
-  class    Class           @relation(fields: [classId], references: [id])
-  section  Section         @relation(fields: [sectionId], references: [id])
-  teacher  Teacher         @relation(fields: [teacherId], references: [id])
-  subject  Subject         @relation(fields: [subjectId], references: [id])
+  session AcademicSession @relation(fields: [sessionId], references: [id])
+  class   Class           @relation(fields: [classId], references: [id])
+  section Section         @relation(fields: [sectionId], references: [id])
+  teacher Teacher         @relation(fields: [teacherId], references: [id])
+  subject Subject         @relation(fields: [subjectId], references: [id])
 
   // DB-level double-booking prevention
-  @@unique([sectionId, dayOfWeek, periodNumber])  // one subject per section slot
-  @@unique([teacherId, dayOfWeek, periodNumber])  // teacher can't be in two places
-
+  @@unique([sectionId, dayOfWeek, periodNumber]) // one subject per section slot
+  @@unique([teacherId, dayOfWeek, periodNumber]) // teacher can't be in two places
   @@index([sessionId])
   @@index([sectionId])
   @@index([teacherId])
@@ -372,25 +397,25 @@ enum AttendanceStatus {
 }
 
 model Attendance {
-  id           String    @id @default(uuid()) @db.Uuid
-  date         DateTime  @db.Date
-  sectionId    String    @map("section_id") @db.Uuid
-  recordedById String    @map("recorded_by_id") @db.Uuid
+  id           String   @id @default(uuid()) @db.Uuid
+  date         DateTime @db.Date
+  sectionId    String   @map("section_id") @db.Uuid
+  recordedById String   @map("recorded_by_id") @db.Uuid
 
   // Audit
-  createdById  String?   @map("created_by_id") @db.Uuid
-  updatedById  String?   @map("updated_by_id") @db.Uuid
+  createdById String? @map("created_by_id") @db.Uuid
+  updatedById String? @map("updated_by_id") @db.Uuid
 
   // Soft delete
-  isDeleted    Boolean   @default(false) @map("is_deleted")
-  deletedAt    DateTime? @map("deleted_at")
-  deletedById  String?   @map("deleted_by_id") @db.Uuid
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
 
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  section  Section            @relation(fields: [sectionId], references: [id])
-  records  AttendanceRecord[]
+  section Section            @relation(fields: [sectionId], references: [id])
+  records AttendanceRecord[]
 
   // One attendance sheet per section per day
   @@unique([sectionId, date])
@@ -410,8 +435,8 @@ model AttendanceRecord {
   status       AttendanceStatus
   remarks      String?
 
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   attendance Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
   student    Student    @relation(fields: [studentId], references: [id])
@@ -421,4 +446,70 @@ model AttendanceRecord {
   @@index([attendanceId])
   @@index([studentId])
   @@map("attendance_records")
+}
+
+// ─── Noticeboard ──────────────────────────────────────────────
+
+model Notice {
+  id             String         @id @default(uuid()) @db.Uuid
+  title          String
+  content        String         @db.Text
+  priority       NoticePriority @default(MEDIUM)
+  targetRoles    Role[] // Empty array means visible to all
+  targetClassIds String[]       @map("target_class_ids") @db.Uuid // Empty means all classes (if applicable)
+
+  publishedAt DateTime  @default(now()) @map("published_at")
+  expiresAt   DateTime? @map("expires_at")
+
+  authorId String @map("author_id") @db.Uuid
+  author   User   @relation(fields: [authorId], references: [id])
+
+  attachments String[] // URLs for attached files
+
+  // Audit
+  createdById String? @map("created_by_id") @db.Uuid
+  updatedById String? @map("updated_by_id") @db.Uuid
+
+  // Soft delete
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  deletedAt   DateTime? @map("deleted_at")
+  deletedById String?   @map("deleted_by_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([publishedAt])
+  @@index([expiresAt])
+  @@index([isDeleted])
+  @@map("notices")
+}
+
+// ─── Username Sequence ────────────────────────────────────────
+
+model UsernameSequence {
+  prefix  String @id
+  lastSeq Int    @default(0) @map("last_seq")
+
+  @@map("username_sequences")
+}
+
+// ─── Account Audit Log ────────────────────────────────────────
+
+model AccountAuditLog {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @map("user_id") @db.Uuid
+  performedBy String?            @map("performed_by") @db.Uuid
+  action      AccountAuditAction
+  remarks     String?
+  ipAddress   String?            @map("ip_address")
+  userAgent   String?            @map("user_agent")
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  user  User  @relation("AuditSubject", fields: [userId], references: [id])
+  actor User? @relation("AuditActor", fields: [performedBy], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("account_audit_logs")
 }

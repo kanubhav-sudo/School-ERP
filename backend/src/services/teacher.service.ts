@@ -20,6 +20,7 @@ import type {
 
 const teacherSelect = {
   id: true,
+  userId: true,
   employeeId: true,
   firstName: true,
   lastName: true,
@@ -104,7 +105,7 @@ export async function getTeacherById(id: string) {
   return teacher
 }
 
-// ─── Create ───────────────────────────────────────────────────
+import { createUserForTeacher } from './account.service'
 
 export async function createTeacher(data: CreateTeacherInput) {
   // Check for duplicate employeeId
@@ -121,28 +122,40 @@ export async function createTeacher(data: CreateTeacherInput) {
     throw new ConflictError(`Email "${data.email}" is already in use`)
   }
 
-  const teacher = await prisma.teacher.create({
-    data: {
-      employeeId: data.employeeId,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      gender: data.gender,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-      phone: data.phone,
-      email: data.email,
-      qualification: data.qualification,
-      experienceYears: data.experienceYears,
-      department: data.department,
-      joiningDate: new Date(data.joiningDate),
-      employmentStatus: data.employmentStatus,
-      address: data.address,
-      notes: data.notes,
-      isActive: data.isActive,
-    },
-    select: teacherSelect,
-  })
+  return await prisma.$transaction(async (tx) => {
+    const teacher = await tx.teacher.create({
+      data: {
+        employeeId: data.employeeId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+        phone: data.phone,
+        email: data.email,
+        qualification: data.qualification,
+        experienceYears: data.experienceYears,
+        department: data.department,
+        joiningDate: new Date(data.joiningDate),
+        employmentStatus: data.employmentStatus,
+        address: data.address,
+        notes: data.notes,
+        isActive: data.isActive,
+      },
+      select: teacherSelect,
+    })
 
-  return teacher
+    const credentials = await createUserForTeacher(teacher.id, tx)
+
+    // We update the teacher object to reflect the new userId so it's correct in the response.
+    // In our DB, createUserForTeacher updates the teacher row. We can just set it here to save a query.
+    // Actually, we can just fetch it again to be safe.
+    const finalTeacher = await tx.teacher.findUnique({
+      where: { id: teacher.id },
+      select: teacherSelect,
+    })
+
+    return { teacher: finalTeacher!, credentials }
+  })
 }
 
 // ─── Update ───────────────────────────────────────────────────
