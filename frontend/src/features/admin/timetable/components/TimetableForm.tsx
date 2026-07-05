@@ -176,7 +176,7 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
                 <Select
                   value={dayOfWeek || ''}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onValueChange={(val: string) => setValue('dayOfWeek', val as any)}
+                  onValueChange={(val) => setValue('dayOfWeek', val as any)}
                 >
                   <SelectTrigger className={errors.dayOfWeek ? 'border-destructive' : ''}>
                     <SelectValue placeholder="Select Day" />

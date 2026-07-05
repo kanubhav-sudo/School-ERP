@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -12,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { fetchTeachers, deleteTeacher, type Teacher, type TeacherFilters } from './api'
 import { TeacherForm } from './components/TeacherForm'
+import { CredentialDisplayDialog } from '@/features/admin/accounts/components/CredentialDisplayDialog'
 import { format } from 'date-fns'
 
 const EMPLOYMENT_STATUS_LABELS: Record<string, string> = {
@@ -32,8 +34,13 @@ const EMPLOYMENT_STATUS_COLORS: Record<string, string> = {
 
 export function TeachersPage() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null)
+  const [credentials, setCredentials] = useState<{
+    username: string
+    temporaryPassword?: string
+  } | null>(null)
   const [filters, setFilters] = useState<TeacherFilters>({ page: 1, limit: 20 })
   const [searchInput, setSearchInput] = useState('')
 
@@ -146,6 +153,13 @@ export function TeachersPage() {
                   </span>
                 </TableCell>
                 <TableCell className="text-right space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/admin/teachers/${teacher.id}`)}
+                  >
+                    View
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEdit(teacher)}>
                     Edit
                   </Button>
@@ -200,7 +214,22 @@ export function TeachersPage() {
       )}
 
       {/* Form Dialog */}
-      {isFormOpen && <TeacherForm teacher={editingTeacher} onClose={() => setIsFormOpen(false)} />}
+      {isFormOpen && (
+        <TeacherForm
+          teacher={editingTeacher}
+          onClose={() => setIsFormOpen(false)}
+          onSuccess={(creds) => {
+            if (creds) setCredentials(creds)
+          }}
+        />
+      )}
+
+      <CredentialDisplayDialog
+        open={!!credentials}
+        onOpenChange={(open) => !open && setCredentials(null)}
+        username={credentials?.username ?? ''}
+        temporaryPassword={credentials?.temporaryPassword}
+      />
     </div>
   )
 }

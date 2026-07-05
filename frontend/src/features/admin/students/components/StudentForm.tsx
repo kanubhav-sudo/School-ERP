@@ -55,9 +55,10 @@ type StudentFormValues = z.infer<typeof studentSchema>
 interface Props {
   student: Student | null
   onClose: () => void
+  onSuccess?: (credentials?: { username: string; temporaryPassword?: string }) => void
 }
 
-export function StudentForm({ student, onClose }: Props) {
+export function StudentForm({ student, onClose, onSuccess }: Props) {
   const queryClient = useQueryClient()
   const isEditing = !!student
 
@@ -128,8 +129,13 @@ export function StudentForm({ student, onClose }: Props) {
       }
       return createStudent(cleaned)
     },
-    onSuccess: () => {
+    onSuccess: (response: Student | import('../api').CreateStudentResponse) => {
       queryClient.invalidateQueries({ queryKey: ['students'] })
+      if (!isEditing && response && 'credentials' in response) {
+        onSuccess?.(response.credentials)
+      } else {
+        onSuccess?.()
+      }
       onClose()
     },
   })

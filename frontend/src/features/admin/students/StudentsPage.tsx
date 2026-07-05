@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -12,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { fetchStudents, deleteStudent, type Student, type StudentFilters } from './api'
 import { StudentForm } from './components/StudentForm'
+import { CredentialDisplayDialog } from '@/features/admin/accounts/components/CredentialDisplayDialog'
 
 const STUDENT_STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Active',
@@ -31,8 +33,13 @@ const STUDENT_STATUS_COLORS: Record<string, string> = {
 
 export function StudentsPage() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
+  const [credentials, setCredentials] = useState<{
+    username: string
+    temporaryPassword?: string
+  } | null>(null)
   const [filters, setFilters] = useState<StudentFilters>({ page: 1, limit: 20 })
   const [searchInput, setSearchInput] = useState('')
 
@@ -144,6 +151,13 @@ export function StudentsPage() {
                   </span>
                 </TableCell>
                 <TableCell className="text-right space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/admin/students/${student.id}`)}
+                  >
+                    View
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEdit(student)}>
                     Edit
                   </Button>
@@ -198,7 +212,22 @@ export function StudentsPage() {
       )}
 
       {/* Form Dialog */}
-      {isFormOpen && <StudentForm student={editingStudent} onClose={() => setIsFormOpen(false)} />}
+      {isFormOpen && (
+        <StudentForm
+          student={editingStudent}
+          onClose={() => setIsFormOpen(false)}
+          onSuccess={(creds) => {
+            if (creds) setCredentials(creds)
+          }}
+        />
+      )}
+
+      <CredentialDisplayDialog
+        open={!!credentials}
+        onOpenChange={(open) => !open && setCredentials(null)}
+        username={credentials?.username ?? ''}
+        temporaryPassword={credentials?.temporaryPassword}
+      />
     </div>
   )
 }

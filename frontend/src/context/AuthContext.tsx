@@ -20,6 +20,7 @@ interface AuthContextValue {
   isLoading: boolean
   login: (payload: LoginPayload) => Promise<void>
   logout: () => Promise<void>
+  refetchUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -61,6 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const refetchUser = useCallback(async () => {
+    try {
+      const { data } = await apiClient.get('/auth/me')
+      setUser(data.data)
+    } catch {
+      // Ignore
+    }
+  }, [])
+
   return (
     <AuthContext.Provider
       value={{
@@ -69,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
+        refetchUser,
       }}
     >
       {children}

@@ -14,6 +14,7 @@ export interface TeacherAssignment {
 
 export interface Teacher {
   id: string
+  userId?: string | null
   employeeId: string
   firstName: string
   lastName: string
@@ -91,7 +92,15 @@ export async function fetchTeacher(id: string): Promise<Teacher> {
   return data.data
 }
 
-export async function createTeacher(payload: CreateTeacherPayload): Promise<Teacher> {
+export interface CreateTeacherResponse {
+  teacher: Teacher
+  credentials: {
+    username: string
+    temporaryPassword: string
+  }
+}
+
+export async function createTeacher(payload: CreateTeacherPayload): Promise<CreateTeacherResponse> {
   const { data } = await apiClient.post('/teachers', payload)
   return data.data
 }

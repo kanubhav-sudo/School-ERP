@@ -32,9 +32,10 @@ type TeacherFormValues = z.infer<typeof teacherSchema>
 interface Props {
   teacher: Teacher | null
   onClose: () => void
+  onSuccess?: (credentials?: { username: string; temporaryPassword?: string }) => void
 }
 
-export function TeacherForm({ teacher, onClose }: Props) {
+export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
   const queryClient = useQueryClient()
   const isEditing = !!teacher
 
@@ -65,14 +66,19 @@ export function TeacherForm({ teacher, onClose }: Props) {
   })
 
   const mutation = useMutation({
-    mutationFn: (data: TeacherFormValues) => {
+    mutationFn: async (data: TeacherFormValues) => {
       if (isEditing) {
         return updateTeacher({ id: teacher.id, payload: data })
       }
       return createTeacher(data)
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['teachers'] })
+      if (!isEditing && 'credentials' in response) {
+        onSuccess?.(response.credentials)
+      } else {
+        onSuccess?.()
+      }
       onClose()
     },
   })

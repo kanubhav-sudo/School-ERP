@@ -16,6 +16,7 @@ export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'TRANSFERRED' | 'GRADUATED' 
 
 export interface Student {
   id: string
+  userId?: string | null
   admissionNumber: string
   rollNumber: string | null
   firstName: string
@@ -122,7 +123,15 @@ export async function fetchStudent(id: string): Promise<Student> {
   return data.data
 }
 
-export async function createStudent(payload: CreateStudentPayload): Promise<Student> {
+export interface CreateStudentResponse {
+  student: Student
+  credentials: {
+    username: string
+    temporaryPassword: string
+  }
+}
+
+export async function createStudent(payload: CreateStudentPayload): Promise<CreateStudentResponse> {
   const { data } = await apiClient.post('/students', payload)
   return data.data
 }

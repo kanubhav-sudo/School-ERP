@@ -13,7 +13,7 @@ export interface AuthUser {
   username: string
   email: string
   role: UserRole
-  isTemporaryPassword: boolean
+  mustChangePassword: boolean
   lastLoginAt?: string | null
 }
 

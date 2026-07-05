@@ -26,13 +26,18 @@ function AuthLoader() {
 
 /** Blocks unauthenticated users — redirects to /login */
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const location = useLocation()
 
   if (isLoading) return <AuthLoader />
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
+
+  if (user.mustChangePassword && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" state={{ from: location }} replace />
+  }
+
   return <>{children}</>
 }
 

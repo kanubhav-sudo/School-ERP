@@ -22,6 +22,9 @@ import { TeachersPage } from './features/admin/teachers/TeachersPage'
 import { StudentsPage } from './features/admin/students/StudentsPage'
 import { TimetablePage } from './features/admin/timetable/TimetablePage'
 import { AttendancePage } from './features/admin/attendance/AttendancePage'
+import { TeacherDetailPage } from './features/admin/teachers/TeacherDetailPage'
+import { StudentDetailPage } from './features/admin/students/StudentDetailPage'
+import { ChangePasswordPage } from './features/admin/accounts/ChangePasswordPage'
 // Route Guards
 import { GuestRoute, ProtectedRoute, RoleRoute, getDashboardPath } from './routes/guards'
 
@@ -55,6 +58,16 @@ function App() {
               }
             />
 
+            {/* Protected Change Password Route */}
+            <Route
+              path="/change-password"
+              element={
+                <ProtectedRoute>
+                  <ChangePasswordPage />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Protected Admin Routes */}
             <Route
               path="/admin"
@@ -73,7 +86,9 @@ function App() {
               <Route path="sections" element={<SectionsPage />} />
               <Route path="subjects" element={<SubjectsPage />} />
               <Route path="teachers" element={<TeachersPage />} />
+              <Route path="teachers/:id" element={<TeacherDetailPage />} />
               <Route path="students" element={<StudentsPage />} />
+              <Route path="students/:id" element={<StudentDetailPage />} />
               <Route path="timetable" element={<TimetablePage />} />
               <Route path="attendance" element={<AttendancePage />} />
             </Route>
