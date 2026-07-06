@@ -42,8 +42,8 @@ export function SessionForm({ session, onClose }: Props) {
     mutationFn: (data: SessionFormValues) => {
       const payload = {
         name: data.name,
-        startDate: new Date(data.startDate).toISOString(),
-        endDate: new Date(data.endDate).toISOString(),
+        startDate: data.startDate,
+        endDate: data.endDate,
       }
       if (isEditing) {
         return updateSession({ id: session.id, payload })
