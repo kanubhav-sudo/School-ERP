@@ -43,8 +43,10 @@ const studentSelect = {
   sessionId: true,
   classId: true,
   sectionId: true,
+  feeCategory: true,
   feePlanId: true,
   siblingStudentId: true,
+  siblingFeeAmount: true,
   admissionDate: true,
   status: true,
   notes: true,
@@ -54,7 +56,7 @@ const studentSelect = {
   session: { select: { id: true, name: true } },
   class: { select: { id: true, name: true } },
   section: { select: { id: true, name: true } },
-  feePlan: { select: { id: true, name: true, type: true, monthlyAmount: true } },
+  feePlan: { select: { id: true, name: true, monthlyAmount: true } },
 } as const
 
 // ─── List ─────────────────────────────────────────────────────
@@ -128,6 +130,15 @@ export async function createStudent(data: CreateStudentInput) {
   }
 
   return await prisma.$transaction(async (tx) => {
+    // Validate FeePlan
+    if (data.feePlanId) {
+      const feePlan = await tx.feePlan.findUnique({ where: { id: data.feePlanId } })
+      if (!feePlan) throw new NotFoundError('Fee plan not found')
+      if (feePlan.classId !== data.classId || feePlan.sessionId !== data.sessionId) {
+        throw new ConflictError('Selected fee plan is not valid for this class and session')
+      }
+    }
+
     const student = await tx.student.create({
       data: {
         admissionNumber: data.admissionNumber,
@@ -152,8 +163,10 @@ export async function createStudent(data: CreateStudentInput) {
         sessionId: data.sessionId,
         classId: data.classId,
         sectionId: data.sectionId,
+        feeCategory: data.feeCategory,
         feePlanId: data.feePlanId,
         siblingStudentId: data.siblingStudentId,
+        siblingFeeAmount: data.siblingFeeAmount,
         admissionDate: new Date(data.admissionDate),
         status: data.status,
         notes: data.notes,
@@ -191,6 +204,19 @@ export async function updateStudent(id: string, data: UpdateStudentInput) {
     throw new ConflictError(`A student cannot be their own sibling`)
   }
 
+  // Validate FeePlan matches class and session
+  const student = await getStudentById(id)
+  const finalClassId = data.classId !== undefined ? data.classId : student.classId
+  const finalSessionId = data.sessionId !== undefined ? data.sessionId : student.sessionId
+  const finalFeePlanId = data.feePlanId !== undefined ? data.feePlanId : student.feePlanId
+
+  if (finalFeePlanId) {
+    const feePlan = await prisma.feePlan.findUnique({ where: { id: finalFeePlanId } })
+    if (feePlan && (feePlan.classId !== finalClassId || feePlan.sessionId !== finalSessionId)) {
+      throw new ConflictError('Assigned fee plan is not valid for the new class or session')
+    }
+  }
+
   return prisma.student.update({
     where: { id },
     data: {
@@ -218,8 +244,10 @@ export async function updateStudent(id: string, data: UpdateStudentInput) {
       ...(data.sessionId !== undefined && { sessionId: data.sessionId }),
       ...(data.classId !== undefined && { classId: data.classId }),
       ...(data.sectionId !== undefined && { sectionId: data.sectionId }),
+      ...(data.feeCategory !== undefined && { feeCategory: data.feeCategory }),
       ...(data.feePlanId !== undefined && { feePlanId: data.feePlanId }),
       ...(data.siblingStudentId !== undefined && { siblingStudentId: data.siblingStudentId }),
+      ...(data.siblingFeeAmount !== undefined && { siblingFeeAmount: data.siblingFeeAmount }),
       ...(data.admissionDate !== undefined && { admissionDate: new Date(data.admissionDate) }),
       ...(data.status !== undefined && { status: data.status }),
       ...(data.notes !== undefined && { notes: data.notes }),
