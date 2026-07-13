@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useEffect } from 'react'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -95,6 +96,15 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
   const teacherId = watch('teacherId')
   const subjectId = watch('subjectId')
   const sessionId = watch('sessionId')
+
+  // Auto-populate active session when sessions data loads (create mode only).
+  // defaultValues are frozen at mount, so we use setValue once the async
+  // query resolves and we know the active session ID.
+  useEffect(() => {
+    if (!entry && activeSessionId && !sessionId) {
+      setValue('sessionId', activeSessionId)
+    }
+  }, [activeSessionId, entry, sessionId, setValue])
 
   const createMutation = useMutation({
     mutationFn: createTimetable,

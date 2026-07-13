@@ -115,7 +115,9 @@ export function AttendancePage() {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select Class" />
+              <SelectValue placeholder="Select Class">
+                {selectedClassId ? classes.find((c) => c.id === selectedClassId)?.name : undefined}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {classes.map((cls) => (
@@ -136,7 +138,11 @@ export function AttendancePage() {
             disabled={!selectedClassId}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select Section" />
+              <SelectValue placeholder="Select Section">
+                {selectedSectionId
+                  ? sections.find((s) => s.id === selectedSectionId)?.name
+                  : undefined}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {sections.map((sec) => (
