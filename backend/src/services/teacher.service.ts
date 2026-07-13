@@ -329,3 +329,66 @@ export async function removeTeacherAssignment(teacherId: string, assignmentId: s
 
   return prisma.teacherAssignment.delete({ where: { id: assignmentId } })
 }
+
+// ─── Stats ────────────────────────────────────────────────────
+
+export async function getTeacherStats(sessionId?: string) {
+  const [total, active, inactive, classTeachers] = await Promise.all([
+    prisma.teacher.count({ where: { deletedAt: null } }),
+    prisma.teacher.count({ where: { deletedAt: null, isActive: true } }),
+    prisma.teacher.count({ where: { deletedAt: null, isActive: false } }),
+    prisma.teacher.count({
+      where: {
+        deletedAt: null,
+        assignments: {
+          some: {
+            isClassTeacher: true,
+            ...(sessionId ? { sessionId } : {}),
+          },
+        },
+      },
+    }),
+  ])
+
+  return { total, active, inactive, classTeachers }
+}
+
+// ─── Timetable & Sections ─────────────────────────────────────
+
+export async function getTeacherTimetable(teacherId: string, sessionId?: string) {
+  await getTeacherById(teacherId)
+
+  return prisma.timetable.findMany({
+    where: {
+      teacherId,
+      ...(sessionId ? { sessionId } : {}),
+    },
+    include: {
+      subject: { select: { id: true, name: true, code: true } },
+      class: { select: { id: true, name: true } },
+      section: { select: { id: true, name: true } },
+    },
+    orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+  })
+}
+
+export async function getTeacherSections(teacherId: string, sessionId?: string) {
+  await getTeacherById(teacherId)
+
+  const assignments = await prisma.teacherAssignment.findMany({
+    where: {
+      teacherId,
+      ...(sessionId ? { sessionId } : {}),
+    },
+    include: {
+      class: { select: { id: true, name: true } },
+      section: { select: { id: true, name: true } },
+      subject: { select: { id: true, name: true, code: true } },
+    },
+  })
+
+  // We might want to just return assignments and group on frontend,
+  // or return unique sections. The frontend usually needs assignments for workload.
+  // We'll return assignments directly.
+  return assignments
+}

@@ -42,6 +42,22 @@ export async function listTeachers(req: Request, res: Response, next: NextFuncti
   }
 }
 
+// ─── Stats ────────────────────────────────────────────────────
+
+export async function getTeacherStats(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const sessionId = req.query.sessionId as string | undefined
+    const stats = await TeacherService.getTeacherStats(sessionId)
+    ApiResponse.success(res, stats, 'Teacher stats retrieved')
+  } catch (err) {
+    next(err)
+  }
+}
+
 // ─── Get One ──────────────────────────────────────────────────
 
 export async function getTeacher(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -146,6 +162,38 @@ export async function removeAssignment(
     const { id, asgId } = req.params as { id: string; asgId: string }
     await TeacherService.removeTeacherAssignment(id, asgId)
     ApiResponse.success(res, null, 'Assignment removed')
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ─── Timetable & Sections ─────────────────────────────────────
+
+export async function getTeacherTimetable(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = req.params.id as string
+    const sessionId = req.query.sessionId as string | undefined
+    const timetable = await TeacherService.getTeacherTimetable(id, sessionId)
+    ApiResponse.success(res, timetable, 'Teacher timetable retrieved')
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getTeacherSections(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = req.params.id as string
+    const sessionId = req.query.sessionId as string | undefined
+    const sections = await TeacherService.getTeacherSections(id, sessionId)
+    ApiResponse.success(res, sections, 'Teacher sections retrieved')
   } catch (err) {
     next(err)
   }

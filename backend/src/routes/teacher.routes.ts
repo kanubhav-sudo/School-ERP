@@ -19,6 +19,9 @@ router.use(authenticate, authorize('ADMIN'))
 // GET /api/v1/teachers
 router.get('/', TeacherController.listTeachers)
 
+// GET /api/v1/teachers/stats
+router.get('/stats', TeacherController.getTeacherStats)
+
 // GET /api/v1/teachers/:id
 router.get('/:id', TeacherController.getTeacher)
 
@@ -36,5 +39,11 @@ router.post('/:id/assignments', TeacherController.addAssignment)
 
 // DELETE /api/v1/teachers/:id/assignments/:asgId
 router.delete('/:id/assignments/:asgId', TeacherController.removeAssignment)
+
+// GET /api/v1/teachers/:id/timetable
+router.get('/:id/timetable', TeacherController.getTeacherTimetable)
+
+// GET /api/v1/teachers/:id/sections
+router.get('/:id/sections', TeacherController.getTeacherSections)
 
 export default router
