@@ -234,9 +234,9 @@
 - [x] Update Backend Validators and Service Logic
 - [x] Verify Backend and Frontend Build/Lint
 
-### Checkpoint 6.2: APIs & Frontend Shared Types (MC-3 & MC-4)
+### Checkpoint 6.2: APIs & Frontend Shared Types (MC-3 & MC-4) ✅
 - [x] Implement new endpoints (stats, timetable, sections)
-- [ ] Update frontend Types and API client
+- [x] Update frontend Types and API client
 
 ### Checkpoint 6.3: UI Enhancements (MC-5, MC-6, MC-7)
 - [ ] Update Teacher List UI (Summary cards, remove Blood Group filter)

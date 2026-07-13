@@ -11,7 +11,15 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
-import { fetchTeachers, deleteTeacher, type Teacher, type TeacherFilters } from './api'
+import { Users, CheckCircle, XCircle, GraduationCap } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  fetchTeachers,
+  fetchTeacherStats,
+  deleteTeacher,
+  type Teacher,
+  type TeacherFilters,
+} from './api'
 import { TeacherForm } from './components/TeacherForm'
 import { CredentialDisplayDialog } from '@/features/admin/accounts/components/CredentialDisplayDialog'
 import { format } from 'date-fns'
@@ -47,6 +55,11 @@ export function TeachersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['teachers', filters],
     queryFn: () => fetchTeachers(filters),
+  })
+
+  const { data: stats } = useQuery({
+    queryKey: ['teacherStats'],
+    queryFn: () => fetchTeacherStats(),
   })
 
   const deleteMutation = useMutation({
@@ -93,6 +106,46 @@ export function TeachersPage() {
         <Button onClick={handleCreate}>Add Teacher</Button>
       </div>
 
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.total ?? '-'}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Teachers</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.active ?? '-'}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Inactive Teachers</CardTitle>
+            <XCircle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.inactive ?? '-'}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Class Teachers</CardTitle>
+            <GraduationCap className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.classTeachers ?? '-'}</div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Search & Filters */}
       <div className="flex gap-3">
         <Input
@@ -129,6 +182,7 @@ export function TeachersPage() {
               <TableHead>Email</TableHead>
               <TableHead>Joining Date</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Assignments</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -151,6 +205,16 @@ export function TeachersPage() {
                   >
                     {EMPLOYMENT_STATUS_LABELS[teacher.employmentStatus] ?? teacher.employmentStatus}
                   </span>
+                </TableCell>
+                <TableCell>
+                  <div className="text-xs text-muted-foreground flex flex-col gap-1">
+                    <span>
+                      Subj: {new Set(teacher.assignments?.map((a) => a.subject.id)).size || 0}
+                    </span>
+                    <span>
+                      Classes: {new Set(teacher.assignments?.map((a) => a.class.id)).size || 0}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button
