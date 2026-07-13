@@ -127,6 +127,7 @@ export function StudentsPage() {
               <TableHead>Name</TableHead>
               <TableHead>Class</TableHead>
               <TableHead>Section</TableHead>
+              <TableHead>Fee Plan</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -141,6 +142,13 @@ export function StudentsPage() {
                 </TableCell>
                 <TableCell>{student.class?.name ?? '—'}</TableCell>
                 <TableCell>{student.section?.name ?? '—'}</TableCell>
+                <TableCell>
+                  {student.feePlan ? (
+                    <span className="text-sm">{student.feePlan.name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -174,7 +182,7 @@ export function StudentsPage() {
             ))}
             {students.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   No students found.
                 </TableCell>
               </TableRow>

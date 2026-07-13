@@ -82,3 +82,18 @@
     - Frontend `AttendancePage` and `AttendanceGrid` added for streamlined daily tracking.
     - Added Attendance to Operations section in Admin sidebar.
     - Verification: Backend and frontend build successfully, all linters passing. Commits pushed to main.
+
+## Milestone 5: Finance & Fee Management
+- **Status**: 30% Complete (In Progress)
+- **Completed Components**:
+  - **MC-1**: Prisma Schema & Migrations (FeePlan, FeeRecord, etc.)
+  - **MC-2**: Fee Plan Backend CRUD
+  - **MC-3**: Student Model Modifications & Finance Assignment UI (Backend & Frontend)
+- **Pending**:
+  - MC-4: Fee Record Backend
+  - MC-5: Dashboard Stats Backend
+  - MC-6: Fee Plans UI (Completed within MC-3)
+  - MC-7: Student Fee Assignment UI (Completed within MC-3)
+  - MC-8: Fee Records UI
+  - MC-9: Admin Dashboard Finance Widget
+  - MC-10: Routing & Navigation (Sidebar setup complete)

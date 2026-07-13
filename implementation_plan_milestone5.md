@@ -240,7 +240,12 @@ model FeeReminderRule {
 
 ## 4. Backend Implementation Order
 
-### MC-1: Prisma Schema & Migration
+### [x] **MC-1**: Prisma Schema & Migrations
+- [x] **MC-2**: Fee Plan Backend CRUD
+- [x] **MC-3**: Student Model & Fee Assignment Workflow (Backend + UI)
+- [ ] **MC-4**: Fee Record Backend Generation & Payments
+- [ ] **MC-5**: Dashboard Stats Backend
+
 1. Add enums: FeePlanType, FeeRecordStatus, PaymentMode
 2. Add FeePlan model
 3. Add FeeRecord model

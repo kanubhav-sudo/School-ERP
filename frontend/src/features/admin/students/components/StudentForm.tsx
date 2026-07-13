@@ -2,14 +2,16 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
-import { createStudent, updateStudent, type Student } from '../api'
+import { createStudent, updateStudent, fetchStudents, type Student } from '../api'
 import { fetchSessions } from '@/features/admin/academic-sessions/api'
 import { fetchClasses } from '@/features/admin/classes/api'
 import { fetchSections } from '@/features/admin/sections/api'
+import { fetchFeePlans, type FeePlan } from '@/features/admin/fee-plans/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useState, useMemo } from 'react'
 
 const studentSchema = z.object({
   admissionNumber: z.string().min(1, 'Admission number is required'),
@@ -46,6 +48,8 @@ const studentSchema = z.object({
   sessionId: z.string().optional(),
   classId: z.string().optional(),
   sectionId: z.string().optional(),
+  feePlanId: z.string().optional(),
+  siblingStudentId: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'TRANSFERRED', 'GRADUATED', 'EXPELLED']).optional(),
   notes: z.string().optional(),
 })
@@ -58,9 +62,20 @@ interface Props {
   onSuccess?: (credentials?: { username: string; temporaryPassword?: string }) => void
 }
 
+/** Format paise to ₹ */
+function formatINR(paise: number): string {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(paise / 100)
+}
+
 export function StudentForm({ student, onClose, onSuccess }: Props) {
   const queryClient = useQueryClient()
   const isEditing = !!student
+
+  const [siblingSearch, setSiblingSearch] = useState('')
 
   const { data: sessions = [] } = useQuery({
     queryKey: ['academic-sessions'],
@@ -70,15 +85,31 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
     queryKey: ['classes'],
     queryFn: fetchClasses,
   })
-
   const { data: sections = [] } = useQuery({
     queryKey: ['sections'],
     queryFn: fetchSections,
   })
 
+  // Fetch all fee plans (no pagination needed for dropdown)
+  const { data: feePlanData } = useQuery({
+    queryKey: ['fee-plans', { limit: 100 }],
+    queryFn: () => fetchFeePlans({ limit: 100 }),
+  })
+  const allFeePlans: FeePlan[] = useMemo(() => feePlanData?.feePlans ?? [], [feePlanData])
+
+  // Fetch students for sibling search (only when sibling search is active)
+  const { data: siblingData } = useQuery({
+    queryKey: ['students', { search: siblingSearch, limit: 20 }],
+    queryFn: () => fetchStudents({ search: siblingSearch, limit: 20 }),
+    enabled: siblingSearch.length >= 2,
+  })
+  const siblingOptions = useMemo(() => siblingData?.students ?? [], [siblingData])
+
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
@@ -108,10 +139,53 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
       sessionId: student?.sessionId ?? '',
       classId: student?.classId ?? '',
       sectionId: student?.sectionId ?? '',
+      feePlanId: student?.feePlanId ?? '',
+      siblingStudentId: student?.siblingStudentId ?? '',
       status: student?.status ?? 'ACTIVE',
       notes: student?.notes ?? '',
     },
   })
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const watchSessionId = watch('sessionId')
+  const watchClassId = watch('classId')
+  const watchFeePlanId = watch('feePlanId')
+  const watchSiblingId = watch('siblingStudentId')
+
+  // Filter fee plans by selected session and class
+  const filteredFeePlans = useMemo(() => {
+    return allFeePlans.filter((fp) => {
+      if (!fp.isActive) return false
+      if (watchSessionId && fp.sessionId !== watchSessionId) return false
+      if (watchClassId && fp.classId !== watchClassId) return false
+      return true
+    })
+  }, [allFeePlans, watchSessionId, watchClassId])
+
+  // Get selected fee plan details for preview
+  const selectedPlan = useMemo(() => {
+    if (!watchFeePlanId) return null
+    return allFeePlans.find((fp) => fp.id === watchFeePlanId) ?? null
+  }, [allFeePlans, watchFeePlanId])
+
+  // Calculate fee preview
+  const feePreview = useMemo(() => {
+    if (!selectedPlan) return null
+    const monthly = selectedPlan.monthlyAmount
+    const discountPaise =
+      selectedPlan.discountAmount + Math.round((monthly * selectedPlan.discountPercent) / 100)
+    const net = Math.max(0, monthly - discountPaise)
+    return { monthly, discount: discountPaise, net }
+  }, [selectedPlan])
+
+  // Get selected sibling display name
+  const selectedSiblingName = useMemo(() => {
+    if (!watchSiblingId) return null
+    const found = siblingOptions.find((s) => s.id === watchSiblingId)
+    if (found) return `${found.firstName} ${found.lastName} (${found.admissionNumber})`
+    // If editing and sibling was previously set but not in current search results
+    return watchSiblingId ? 'Previously assigned sibling' : null
+  }, [watchSiblingId, siblingOptions])
 
   const mutation = useMutation({
     mutationFn: (data: StudentFormValues) => {
@@ -121,6 +195,8 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
         sessionId: data.sessionId || undefined,
         classId: data.classId || undefined,
         sectionId: data.sectionId || undefined,
+        feePlanId: data.feePlanId || undefined,
+        siblingStudentId: data.siblingStudentId || undefined,
         email: data.email || undefined,
         bloodGroup: data.bloodGroup || undefined,
       }
@@ -361,6 +437,120 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
                 </select>
               </div>
             </div>
+          </div>
+
+          {/* ── Fee & Finance ── */}
+          <div>
+            <p className="text-xs font-semibold uppercase text-muted-foreground mb-3">
+              Fee &amp; Finance
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Fee Plan Dropdown — filtered by session + class */}
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="feePlanId">Fee Plan</Label>
+                <select
+                  id="feePlanId"
+                  {...register('feePlanId')}
+                  className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                >
+                  <option value="">— No Fee Plan —</option>
+                  {filteredFeePlans.map((fp) => (
+                    <option key={fp.id} value={fp.id}>
+                      {fp.name} ({fp.type === 'SIBLING_DISCOUNT' ? 'Sibling Discount' : 'Standard'})
+                      — {formatINR(fp.monthlyAmount)}
+                    </option>
+                  ))}
+                </select>
+                {filteredFeePlans.length === 0 && watchSessionId && watchClassId && (
+                  <p className="text-xs text-amber-600">
+                    No fee plans configured for the selected session and class. Create one in Fee
+                    Plans first.
+                  </p>
+                )}
+              </div>
+
+              {/* Sibling Student — shown when plan type is SIBLING_DISCOUNT */}
+              {selectedPlan?.type === 'SIBLING_DISCOUNT' && (
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="siblingSearch">Sibling Student</Label>
+                  <div className="space-y-2">
+                    <Input
+                      id="siblingSearch"
+                      placeholder="Search by name or admission number..."
+                      value={siblingSearch}
+                      onChange={(e) => setSiblingSearch(e.target.value)}
+                    />
+                    {/* Sibling search results */}
+                    {siblingSearch.length >= 2 && siblingOptions.length > 0 && (
+                      <div className="border rounded-md max-h-40 overflow-y-auto divide-y">
+                        {siblingOptions
+                          .filter((s) => s.id !== student?.id) // Prevent self-selection
+                          .map((s) => (
+                            <button
+                              key={s.id}
+                              type="button"
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${
+                                watchSiblingId === s.id
+                                  ? 'bg-primary/10 text-primary font-medium'
+                                  : ''
+                              }`}
+                              onClick={() => {
+                                setValue('siblingStudentId', s.id)
+                                setSiblingSearch('')
+                              }}
+                            >
+                              {s.firstName} {s.lastName}{' '}
+                              <span className="text-muted-foreground">({s.admissionNumber})</span>
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                    {siblingSearch.length >= 2 &&
+                      siblingOptions.filter((s) => s.id !== student?.id).length === 0 && (
+                        <p className="text-xs text-muted-foreground">No students found.</p>
+                      )}
+
+                    {/* Display selected sibling */}
+                    {watchSiblingId && (
+                      <div className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2 text-sm">
+                        <span>{selectedSiblingName}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setValue('siblingStudentId', '')}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Fee Preview ── */}
+            {feePreview && (
+              <div className="mt-4 rounded-lg border bg-muted/50 p-4 space-y-1">
+                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">
+                  Fee Preview
+                </p>
+                <div className="flex justify-between text-sm">
+                  <span>Monthly Fee</span>
+                  <span className="font-medium">{formatINR(feePreview.monthly)}</span>
+                </div>
+                {feePreview.discount > 0 && (
+                  <div className="flex justify-between text-sm text-orange-600">
+                    <span>Discount</span>
+                    <span>− {formatINR(feePreview.discount)}</span>
+                  </div>
+                )}
+                <div className="border-t pt-1 mt-1 flex justify-between text-sm font-semibold">
+                  <span>Final Payable Fee</span>
+                  <span className="text-primary">{formatINR(feePreview.net)}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Address + Notes ── */}

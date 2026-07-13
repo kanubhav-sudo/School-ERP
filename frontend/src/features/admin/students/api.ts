@@ -40,6 +40,8 @@ export interface Student {
   sessionId: string | null
   classId: string | null
   sectionId: string | null
+  feePlanId: string | null
+  siblingStudentId: string | null
   admissionDate: string
   status: StudentStatus
   notes: string | null
@@ -49,6 +51,12 @@ export interface Student {
   session: { id: string; name: string } | null
   class: { id: string; name: string } | null
   section: { id: string; name: string } | null
+  feePlan: {
+    id: string
+    name: string
+    type: string
+    monthlyAmount: number
+  } | null
 }
 
 export interface StudentListResponse {
@@ -96,6 +104,8 @@ export type CreateStudentPayload = {
   sessionId?: string
   classId?: string
   sectionId?: string
+  feePlanId?: string
+  siblingStudentId?: string
   status?: StudentStatus
   notes?: string
   isActive?: boolean
