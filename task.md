@@ -235,7 +235,7 @@
 - [x] Verify Backend and Frontend Build/Lint
 
 ### Checkpoint 6.2: APIs & Frontend Shared Types (MC-3 & MC-4)
-- [ ] Implement new endpoints (stats, timetable, sections)
+- [x] Implement new endpoints (stats, timetable, sections)
 - [ ] Update frontend Types and API client
 
 ### Checkpoint 6.3: UI Enhancements (MC-5, MC-6, MC-7)
