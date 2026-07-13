@@ -361,12 +361,15 @@ export async function getTeacherTimetable(teacherId: string, sessionId?: string)
   return prisma.timetable.findMany({
     where: {
       teacherId,
+      isDeleted: false,
       ...(sessionId ? { sessionId } : {}),
     },
     include: {
-      subject: { select: { id: true, name: true, code: true } },
+      session: { select: { id: true, name: true } },
       class: { select: { id: true, name: true } },
       section: { select: { id: true, name: true } },
+      teacher: { select: { id: true, firstName: true, lastName: true, employeeId: true } },
+      subject: { select: { id: true, name: true, code: true } },
     },
     orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
   })
@@ -375,20 +378,17 @@ export async function getTeacherTimetable(teacherId: string, sessionId?: string)
 export async function getTeacherSections(teacherId: string, sessionId?: string) {
   await getTeacherById(teacherId)
 
-  const assignments = await prisma.teacherAssignment.findMany({
+  return prisma.teacherAssignment.findMany({
     where: {
       teacherId,
       ...(sessionId ? { sessionId } : {}),
     },
     include: {
+      session: { select: { id: true, name: true } },
       class: { select: { id: true, name: true } },
       section: { select: { id: true, name: true } },
       subject: { select: { id: true, name: true, code: true } },
     },
+    orderBy: [{ class: { name: 'asc' } }, { section: { name: 'asc' } }],
   })
-
-  // We might want to just return assignments and group on frontend,
-  // or return unique sections. The frontend usually needs assignments for workload.
-  // We'll return assignments directly.
-  return assignments
 }
