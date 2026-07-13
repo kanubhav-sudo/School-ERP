@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import {
@@ -49,17 +49,19 @@ export function AttendancePage() {
 
   const { data: studentsData } = useQuery({
     queryKey: ['students', { sectionId: selectedSectionId }],
-    queryFn: () => fetchStudents({ sectionId: selectedSectionId, limit: 200, page: 1 }),
+    queryFn: () => fetchStudents({ sectionId: selectedSectionId, limit: 100, page: 1 }),
     enabled: !!selectedSectionId,
   })
 
-  const students: StudentRow[] = (studentsData?.students ?? []).map((s) => ({
-    id: s.id,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    admissionNumber: s.admissionNumber,
-    rollNumber: s.rollNumber,
-  }))
+  const students: StudentRow[] = useMemo(() => {
+    return (studentsData?.students ?? []).map((s) => ({
+      id: s.id,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      admissionNumber: s.admissionNumber,
+      rollNumber: s.rollNumber,
+    }))
+  }, [studentsData?.students])
 
   // ─── Existing Attendance Sheet ────────────────────────────────
 
@@ -179,7 +181,7 @@ export function AttendancePage() {
       {selectedSectionId ? (
         <AttendanceGrid
           students={students}
-          existingRecords={existingSheet?.records ?? []}
+          existingRecords={existingSheet?.records}
           onChange={setPendingRecords}
         />
       ) : (

@@ -66,6 +66,13 @@ export async function markAttendance(input: MarkAttendanceInput, userId?: string
 
   const parsedDate = parseDate(date)
 
+  // Guard: authenticated routes always have userId; defensive check
+  if (!userId) {
+    throw new ValidationError('Authentication required to mark attendance', [
+      { message: 'User ID is required', path: ['userId'] },
+    ])
+  }
+
   // 3. Upsert the parent Attendance row
   const attendance = await prisma.attendance.upsert({
     where: {
@@ -74,13 +81,13 @@ export async function markAttendance(input: MarkAttendanceInput, userId?: string
     create: {
       date: parsedDate,
       sectionId,
-      recordedById: userId ?? sectionId, // fallback; auth middleware ensures userId exists
-      createdById: userId ?? null,
-      updatedById: userId ?? null,
+      recordedById: userId,
+      createdById: userId,
+      updatedById: userId,
     },
     update: {
-      recordedById: userId ?? sectionId,
-      updatedById: userId ?? null,
+      recordedById: userId,
+      updatedById: userId,
       isDeleted: false,
       deletedAt: null,
       deletedById: null,
@@ -204,4 +211,93 @@ export async function listAttendance(filters: GetAttendanceInput) {
   })
 
   return sheets
+}
+
+// ─── Attendance Summary ───────────────────────────────────────
+
+/**
+ * Return per-student attendance summary for a section between startDate and endDate.
+ * Counts occurrences of each status for each student.
+ */
+export async function getAttendanceSummary(
+  sectionId: string,
+  startDate?: string,
+  endDate?: string
+) {
+  // Verify section exists
+  const section = await prisma.section.findFirst({
+    where: { id: sectionId, isActive: true },
+    select: { id: true, name: true },
+  })
+  if (!section) throw new NotFoundError('Section not found or inactive')
+
+  const whereDate: Record<string, Date> = {}
+  if (startDate) whereDate.gte = parseDate(startDate)
+  if (endDate) whereDate.lte = parseDate(endDate)
+
+  // Fetch all records for all attendance sheets in the section+date range
+  const records = await prisma.attendanceRecord.findMany({
+    where: {
+      attendance: {
+        sectionId,
+        isDeleted: false,
+        ...(Object.keys(whereDate).length > 0 ? { date: whereDate } : {}),
+      },
+    },
+    select: {
+      status: true,
+      student: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          admissionNumber: true,
+          rollNumber: true,
+        },
+      },
+    },
+  })
+
+  // Aggregate per-student
+  const summaryMap = new Map<
+    string,
+    {
+      student: {
+        id: string
+        firstName: string
+        lastName: string
+        admissionNumber: string
+        rollNumber: string | null
+      }
+      PRESENT: number
+      ABSENT: number
+      LATE: number
+      HALF_DAY: number
+      total: number
+    }
+  >()
+
+  for (const record of records) {
+    const { student, status } = record
+    if (!summaryMap.has(student.id)) {
+      summaryMap.set(student.id, {
+        student,
+        PRESENT: 0,
+        ABSENT: 0,
+        LATE: 0,
+        HALF_DAY: 0,
+        total: 0,
+      })
+    }
+    const entry = summaryMap.get(student.id)!
+    entry[status as 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY'] += 1
+    entry.total += 1
+  }
+
+  return {
+    section,
+    summary: Array.from(summaryMap.values()).sort((a, b) =>
+      (a.student.rollNumber ?? '').localeCompare(b.student.rollNumber ?? '')
+    ),
+  }
 }

@@ -94,7 +94,9 @@ export function TimetablePage() {
             onValueChange={(val) => setSelectedClassId(val as string)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select Class" />
+              <SelectValue placeholder="Select Class">
+                {selectedClassId ? classes.find((c) => c.id === selectedClassId)?.name : undefined}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {classes.map((cls) => (
@@ -114,7 +116,11 @@ export function TimetablePage() {
             disabled={!selectedClassId}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select Section" />
+              <SelectValue placeholder="Select Section">
+                {selectedSectionId
+                  ? sections.find((s) => s.id === selectedSectionId)?.name
+                  : undefined}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {sections.map((sec) => (
