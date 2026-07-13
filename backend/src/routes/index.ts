@@ -11,6 +11,7 @@ import timetableRoutes from './timetable.routes'
 import attendanceRoutes from './attendance.routes'
 import noticeRoutes from './notice.routes'
 import accountRoutes from './account.routes'
+import feePlanRoutes from './fee-plan.routes'
 import { generalApiLimiter } from '../middlewares/rateLimiter.middleware'
 
 const router = Router()
@@ -41,5 +42,8 @@ router.use('/notices', noticeRoutes)
 
 // Account Routes
 router.use('/accounts', accountRoutes)
+
+// Finance Routes (Milestone 5)
+router.use('/fee-plans', feePlanRoutes)
 
 export default router
