@@ -88,6 +88,15 @@ enum NoticePriority {
   HIGH
 }
 
+enum TeacherDesignation {
+  PRINCIPAL
+  VICE_PRINCIPAL
+  COORDINATOR
+  SENIOR_TEACHER
+  TEACHER
+  ASSISTANT_TEACHER
+}
+
 // ─── Finance Enums ────────────────────────────────────────────
 
 enum FeeCategory {
@@ -155,10 +164,11 @@ model AcademicSession {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  students   Student[]
-  timetables Timetable[]
-  feePlans   FeePlan[]
-  feeRecords FeeRecord[]
+  students           Student[]
+  timetables         Timetable[]
+  feePlans           FeePlan[]
+  feeRecords         FeeRecord[]
+  teacherAssignments TeacherAssignment[]
 
   @@index([isActive])
   @@map("academic_sessions")
@@ -250,26 +260,34 @@ model ClassSubject {
 // Teacher profile. Linked optionally to a User account for login.
 
 model Teacher {
-  id               String           @id @default(uuid()) @db.Uuid
-  userId           String?          @unique @map("user_id") @db.Uuid
-  employeeId       String           @unique @map("employee_id")
-  firstName        String           @map("first_name")
-  lastName         String           @map("last_name")
+  id               String              @id @default(uuid()) @db.Uuid
+  userId           String?             @unique @map("user_id") @db.Uuid
+  employeeId       String              @unique @map("employee_id")
+  firstName        String              @map("first_name")
+  lastName         String              @map("last_name")
   gender           Gender
-  dateOfBirth      DateTime?        @map("date_of_birth") @db.Date
+  dateOfBirth      DateTime?           @map("date_of_birth") @db.Date
   phone            String?
-  email            String           @unique
+  email            String              @unique
   qualification    String?
-  experienceYears  Int              @default(0) @map("experience_years")
+  experienceYears  Int                 @default(0) @map("experience_years")
   department       String?
-  joiningDate      DateTime         @map("joining_date") @db.Date
-  employmentStatus EmploymentStatus @default(PERMANENT) @map("employment_status")
+  designation      TeacherDesignation? @default(TEACHER) @map("designation")
+  // NOTE: designation will be consumed by Leave Module, Payroll, Dashboard, Permissions.
+  joiningDate      DateTime            @map("joining_date") @db.Date
+  employmentStatus EmploymentStatus    @default(PERMANENT) @map("employment_status")
   address          String?
+  bloodGroup       BloodGroup?         @map("blood_group")
+  emergencyContact String?             @map("emergency_contact")
+  emergencyPhone   String?             @map("emergency_phone")
+  photoUrl         String?             @map("photo_url")
+  // NOTE (photoUrl): URL-only in this milestone. Future Storage Module will add file upload
+  // while reusing this same column — no schema migration required at that point.
   notes            String?
-  isActive         Boolean          @default(true) @map("is_active")
-  deletedAt        DateTime?        @map("deleted_at")
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
+  isActive         Boolean             @default(true) @map("is_active")
+  deletedAt        DateTime?           @map("deleted_at")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
 
   user        User?               @relation(fields: [userId], references: [id])
   assignments TeacherAssignment[]
@@ -277,6 +295,7 @@ model Teacher {
 
   @@index([isActive])
   @@index([employmentStatus])
+  @@index([designation])
   @@index([deletedAt])
   @@map("teachers")
 }
@@ -285,20 +304,25 @@ model Teacher {
 // Maps a teacher to a class + section + subject combination.
 
 model TeacherAssignment {
-  id        String @id @default(uuid()) @db.Uuid
-  teacherId String @map("teacher_id") @db.Uuid
-  classId   String @map("class_id") @db.Uuid
-  sectionId String @map("section_id") @db.Uuid
-  subjectId String @map("subject_id") @db.Uuid
+  id             String  @id @default(uuid()) @db.Uuid
+  teacherId      String  @map("teacher_id") @db.Uuid
+  sessionId      String  @map("session_id") @db.Uuid
+  classId        String  @map("class_id") @db.Uuid
+  sectionId      String  @map("section_id") @db.Uuid
+  subjectId      String  @map("subject_id") @db.Uuid
+  isClassTeacher Boolean @default(false) @map("is_class_teacher")
 
-  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  class   Class   @relation(fields: [classId], references: [id])
-  section Section @relation(fields: [sectionId], references: [id])
-  subject Subject @relation(fields: [subjectId], references: [id])
+  teacher Teacher         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  session AcademicSession @relation(fields: [sessionId], references: [id])
+  class   Class           @relation(fields: [classId], references: [id])
+  section Section         @relation(fields: [sectionId], references: [id])
+  subject Subject         @relation(fields: [subjectId], references: [id])
 
-  @@unique([teacherId, classId, sectionId, subjectId])
+  @@unique([teacherId, sessionId, classId, sectionId, subjectId])
   @@index([teacherId])
+  @@index([sessionId])
   @@index([classId])
+  @@index([isClassTeacher])
   @@map("teacher_assignments")
 }
 

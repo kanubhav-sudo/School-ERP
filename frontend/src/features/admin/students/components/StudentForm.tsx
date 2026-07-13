@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 const studentSchema = z.object({
   admissionNumber: z.string().min(1, 'Admission number is required'),
@@ -150,7 +150,6 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
     },
   })
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const watchSessionId = watch('sessionId')
   const watchClassId = watch('classId')
   const watchFeeCategory = watch('feeCategory')
@@ -165,6 +164,18 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
       return true
     })
   }, [allFeePlans, watchSessionId, watchClassId])
+
+  // Auto-clear feePlanId if it becomes invalid due to session/class change
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/incompatible-library
+    const currentFeePlanId = watch('feePlanId')
+    if (currentFeePlanId) {
+      const isValid = filteredFeePlans.some((fp) => fp.id === currentFeePlanId)
+      if (!isValid) {
+        setValue('feePlanId', '')
+      }
+    }
+  }, [filteredFeePlans, watch, setValue])
 
   // Get selected sibling display name
   const selectedSiblingName = useMemo(() => {

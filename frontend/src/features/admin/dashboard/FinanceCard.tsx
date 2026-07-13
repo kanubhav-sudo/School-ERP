@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { fetchSessions } from '@/features/admin/academic-sessions/api'
-import { fetchStudents } from '@/features/admin/students/api'
+import { fetchFeeSummary } from '@/features/admin/fee-records/api'
 
 const MONTHS = [
   { value: 1, label: 'January' },
@@ -32,42 +32,15 @@ export function FinanceCard() {
   const activeSessionId = sessions.find((s) => s.isActive)?.id || sessions[0]?.id || ''
   const sessionId = selectedSessionId || activeSessionId
 
-  // Fetch all students for the selected session
-  const { data: studentData, isLoading: isLoadingStudents } = useQuery({
-    queryKey: ['students', { sessionId, limit: 1000 }],
-    queryFn: () => fetchStudents({ sessionId, limit: 1000 }),
+  // Fetch actual fee summary from the backend
+  const { data: summaryData, isLoading } = useQuery({
+    queryKey: ['fee-summary', { sessionId, month }],
+    queryFn: () => fetchFeeSummary(sessionId, month),
     enabled: !!sessionId,
   })
 
-  // Calculate pending fees
-  const pendingAmount = useMemo(() => {
-    if (!sessionId) return 0
-    const session = sessions.find((s) => s.id === sessionId)
-    if (!session) return 0
-
-    // Assume academic session starts in April (month 4) - or calculate from session.startDate if available.
-    // Let's assume the session starts in April.
-    const startMonth = 4
-
-    // Calculate months elapsed. If selected month is before startMonth, it implies next calendar year.
-    const monthsElapsed = month >= startMonth ? month - startMonth + 1 : 12 - startMonth + 1 + month
-
-    let totalPendingPaise = 0
-
-    const currentStudents = studentData?.students || []
-
-    for (const student of currentStudents) {
-      if (student.feeCategory === 'STANDARD' && student.feePlan) {
-        totalPendingPaise += student.feePlan.monthlyAmount * monthsElapsed
-      } else if (student.feeCategory === 'SIBLING' && student.siblingFeeAmount) {
-        totalPendingPaise += student.siblingFeeAmount * monthsElapsed
-      }
-    }
-
-    return totalPendingPaise
-  }, [studentData?.students, sessionId, month, sessions])
-
-  const displayAmount = metric === 'PAID' ? 0 : pendingAmount
+  const displayAmount =
+    metric === 'PENDING' ? summaryData?.totalPending || 0 : summaryData?.totalPaid || 0
 
   const formatINR = (paise: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -116,7 +89,7 @@ export function FinanceCard() {
       </div>
 
       <div className="mt-auto">
-        {isLoadingStudents ? (
+        {isLoading ? (
           <div className="text-xl font-bold text-muted-foreground animate-pulse">Loading...</div>
         ) : (
           <div

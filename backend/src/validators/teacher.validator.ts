@@ -19,6 +19,26 @@ const EmploymentStatusEnum = z.enum([
   'TERMINATED',
 ])
 
+const TeacherDesignationEnum = z.enum([
+  'PRINCIPAL',
+  'VICE_PRINCIPAL',
+  'COORDINATOR',
+  'SENIOR_TEACHER',
+  'TEACHER',
+  'ASSISTANT_TEACHER',
+])
+
+const BloodGroupEnum = z.enum([
+  'A_POSITIVE',
+  'A_NEGATIVE',
+  'B_POSITIVE',
+  'B_NEGATIVE',
+  'O_POSITIVE',
+  'O_NEGATIVE',
+  'AB_POSITIVE',
+  'AB_NEGATIVE',
+])
+
 // ─── Create ──────────────────────────────────────────────────
 
 export const createTeacherSchema = z.object({
@@ -47,6 +67,11 @@ export const createTeacherSchema = z.object({
   joiningDate: z.string().date('joiningDate must be a valid date (YYYY-MM-DD)'),
   employmentStatus: EmploymentStatusEnum.optional().default('PERMANENT'),
   address: z.string().max(500).trim().optional(),
+  bloodGroup: BloodGroupEnum.optional(),
+  emergencyContact: z.string().max(100).trim().optional(),
+  emergencyPhone: z.string().max(20).trim().optional(),
+  photoUrl: z.string().url().optional(),
+  designation: TeacherDesignationEnum.optional().default('TEACHER'),
   notes: z.string().max(1000).trim().optional(),
   isActive: z.boolean().optional().default(true),
 })
@@ -69,6 +94,11 @@ export const updateTeacherSchema = z.object({
   joiningDate: z.string().date().optional(),
   employmentStatus: EmploymentStatusEnum.optional(),
   address: z.string().max(500).trim().optional(),
+  bloodGroup: BloodGroupEnum.optional(),
+  emergencyContact: z.string().max(100).trim().optional(),
+  emergencyPhone: z.string().max(20).trim().optional(),
+  photoUrl: z.string().url().optional(),
+  designation: TeacherDesignationEnum.optional(),
   notes: z.string().max(1000).trim().optional(),
   isActive: z.boolean().optional(),
 })
@@ -78,9 +108,11 @@ export type UpdateTeacherInput = z.infer<typeof updateTeacherSchema>
 // ─── Assignment ───────────────────────────────────────────────
 
 export const createTeacherAssignmentSchema = z.object({
+  sessionId: z.string().uuid('sessionId must be a valid UUID'),
   classId: z.string().uuid('classId must be a valid UUID'),
   sectionId: z.string().uuid('sectionId must be a valid UUID'),
   subjectId: z.string().uuid('subjectId must be a valid UUID'),
+  isClassTeacher: z.boolean().optional().default(false),
 })
 
 export type CreateTeacherAssignmentInput = z.infer<typeof createTeacherAssignmentSchema>
@@ -93,6 +125,9 @@ export const listTeachersSchema = z.object({
   search: z.string().trim().optional(),
   department: z.string().trim().optional(),
   employmentStatus: EmploymentStatusEnum.optional(),
+  sessionId: z.string().uuid().optional(),
+  classId: z.string().uuid().optional(),
+  subjectId: z.string().uuid().optional(),
   isActive: z
     .string()
     .optional()

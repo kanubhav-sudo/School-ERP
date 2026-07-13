@@ -1,16 +1,13 @@
-# Current Task: Milestone 5 - Finance & Fee Management (MC-4)
+# Current Task: Milestone 6 - Teacher Management System (MC-3)
 
 ## Context
-We are implementing the Finance module for the School ERP. 
+We are implementing the Teacher Management System enhancements for the School ERP.
 
 ## Completed
-- MC-1: Prisma Schema & Migrations
-- MC-2: Fee Plan Backend CRUD
-- MC-3: Student Model Modifications & Finance Assignment UI (Fee Category, Fee Plan assignment, Sibling logic, Live Preview)
-- Fee Plans Page and Route
+- MC-1: Prisma Schema & Migrations (Teacher enhancements, session-scoped assignments)
+- MC-2: Backend Validators and Service Logic
 
-## Next Target: MC-4 - Fee Record Backend
-- Implement fee-record.validator.ts with validation for netAmount and status transitions.
-- Implement fee-record.service.ts for calculations (netAmount = monthlyAmount - discountAmount + lateFine).
-- Implement fee-record.controller.ts and fee-record.routes.ts.
-- Register routes in backend/src/routes/index.ts.
+## Next Target: MC-3 - Controller & Routes updates
+- Implement new logic in `teacher.controller.ts` for updated assignment schema.
+- Expose new endpoints for `GET /api/v1/teachers/:id/timetable` and `GET /api/v1/teachers/:id/sections`.
+- Expose endpoint for `GET /api/v1/teachers/stats`.

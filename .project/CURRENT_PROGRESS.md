@@ -84,16 +84,27 @@
     - Verification: Backend and frontend build successfully, all linters passing. Commits pushed to main.
 
 ## Milestone 5: Finance & Fee Management
-- **Status**: 30% Complete (In Progress)
+- **Status**: 100% Complete
 - **Completed Components**:
-  - **MC-1**: Prisma Schema & Migrations (FeePlan, FeeRecord, etc.)
-  - **MC-2**: Fee Plan Backend CRUD
-  - **MC-3**: Student Model Modifications & Finance Assignment UI (Backend & Frontend)
+  - Prisma Schema & Migrations (FeePlan, FeeRecord, etc.)
+  - Fee Plan Backend CRUD
+  - Student Model Modifications & Finance Assignment UI
+  - Fee Record Backend
+  - Dashboard Stats Backend
+  - Fee Plans UI
+  - Student Fee Assignment UI
+  - Fee Records UI
+  - Admin Dashboard Finance Widget
+  - Routing & Navigation
+
+## Milestone 6: Teacher Management System
+- **Status**: 10% Complete (In Progress)
+- **Completed Components**:
+  - **MC-1**: Prisma schema updates & database migration (Designation, Blood Group, Emergency Contact, Photo URL, session-scoped assignments).
+  - **MC-2**: Backend Validators and Service Logic for Teacher enhancements.
 - **Pending**:
-  - MC-4: Fee Record Backend
-  - MC-5: Dashboard Stats Backend
-  - MC-6: Fee Plans UI (Completed within MC-3)
-  - MC-7: Student Fee Assignment UI (Completed within MC-3)
-  - MC-8: Fee Records UI
-  - MC-9: Admin Dashboard Finance Widget
-  - MC-10: Routing & Navigation (Sidebar setup complete)
+  - MC-3: Controller & Routes updates
+  - MC-4: Frontend Shared Types & API updates
+  - MC-5: Teacher List UI updates
+  - MC-6: Teacher Detail Page UI
+  - MC-7: Integration with Timetable & Assignment Logic

@@ -110,3 +110,23 @@ This milestone focuses on operational aspects like timetables, attendance, notic
 - **Database Schema**: Added `Attendance` and `AttendanceRecord` models with `AttendanceStatus` enum. Implemented a parent-child relationship ensuring daily uniqueness per section via a compound index `@@unique([sectionId, date])`.
 - **Backend API**: Created full CRUD endpoints. Implemented transactional upsert logic in `attendance.service.ts` to ensure idempotent, atomic saves.
 - **Frontend Architecture**: Built an `AttendancePage` to select class, section, and date. Developed an `AttendanceGrid` containing per-student statuses and bulk action buttons. Integrated seamlessly into the Admin layout under Operations.
+
+## Milestone 5: Finance & Fee Management ✅
+This milestone focused on implementing comprehensive fee management, linking students with fee plans and tracking payment records.
+
+### 1. Database Schema
+- Added `FeePlan` and `FeeRecord` models with respective enums `FeePlanType`, `FeeRecordStatus`, and `PaymentMode`.
+- Extended `Student` model to associate with a fee plan and sibling for potential discount rules.
+
+### 2. Backend & Frontend Implementation
+- Created backend APIs for Fee Plans, enabling creation and tracking of active/inactive fee structures.
+- Implemented robust `FeeRecord` creation logic, including dynamic `netAmount` calculations incorporating late fees and discount logic.
+- Built interactive frontend management interfaces for Admin, including a Finance Dashboard widget for quick fee summary insights.
+
+## Milestone 6: Teacher Management System (In Progress)
+This milestone focuses on enhancing the Teacher module to provide detailed workloads, session-scoped assignments, and integration with the Timetable.
+
+### Checkpoint 6.1: Core Enhancements ✅
+- Extended `Teacher` schema to include `designation`, `bloodGroup`, `emergencyContact`, `emergencyPhone`, and `photoUrl`.
+- Updated `TeacherAssignment` to be fully session-scoped by making `sessionId` a required foreign key, along with a new `isClassTeacher` boolean flag.
+- Generated Prisma clients and updated all validators and services to properly ingest the new fields and strictly validate session-based assignments.

@@ -203,3 +203,42 @@
 - [x] Create frontend `AttendanceGrid` for tracking daily student attendance
 - [x] Add sidebar navigation
 - [x] Verify backend and frontend builds and linting
+
+---
+
+## Milestone 5: Finance & Fee Management ✅
+
+### Database Schema & Seed
+- [x] Create FeePlan, FeeRecord models in `schema.prisma`
+- [x] Update Student model for fee_plan_id and sibling_student_id
+- [x] Generate database migrations
+
+### Backend Implementation
+- [x] Implement FeePlan CRUD
+- [x] Implement FeeRecord CRUD and calculations (netAmount)
+- [x] Implement Dashboard Stats
+
+### Frontend Implementation
+- [x] Implement Fee Plans Page
+- [x] Implement Student Fee Assignment UI
+- [x] Implement Fee Records UI
+- [x] Implement Admin Dashboard Finance Widget
+
+---
+
+## Milestone 6: Teacher Management System (In Progress)
+
+### Checkpoint 6.1: Core Enhancements (MC-1 & MC-2) ✅
+- [x] Enhance Teacher schema (designation, bloodGroup, emergencyContact, photoUrl)
+- [x] Session-scoped TeacherAssignment (sessionId, isClassTeacher)
+- [x] Update Backend Validators and Service Logic
+- [x] Verify Backend and Frontend Build/Lint
+
+### Checkpoint 6.2: APIs & Frontend Shared Types (MC-3 & MC-4)
+- [ ] Implement new endpoints (stats, timetable, sections)
+- [ ] Update frontend Types and API client
+
+### Checkpoint 6.3: UI Enhancements (MC-5, MC-6, MC-7)
+- [ ] Update Teacher List UI (Summary cards, remove Blood Group filter)
+- [ ] Implement Teacher Detail Page (Timetable prioritized, Workload Summary, Subject Codes)
+- [ ] Integration with Assignment Logic

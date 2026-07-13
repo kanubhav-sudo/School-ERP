@@ -22,6 +22,7 @@ const BloodGroupEnum = z.enum([
   'AB_NEGATIVE',
 ])
 const StudentStatusEnum = z.enum(['ACTIVE', 'INACTIVE', 'TRANSFERRED', 'GRADUATED', 'EXPELLED'])
+const FeeCategoryEnum = z.enum(['STANDARD', 'SIBLING'])
 
 // ─── Create ──────────────────────────────────────────────────
 
@@ -71,8 +72,10 @@ export const createStudentSchema = z.object({
   sectionId: z.string().uuid().optional(),
 
   // Finance Assignment
+  feeCategory: FeeCategoryEnum.optional(),
   feePlanId: z.string().uuid().optional(),
   siblingStudentId: z.string().uuid().optional(),
+  siblingFeeAmount: z.coerce.number().int().nonnegative().optional(),
 
   admissionDate: z.string().date('admissionDate must be a valid date (YYYY-MM-DD)'),
   status: StudentStatusEnum.optional().default('ACTIVE'),
@@ -113,8 +116,10 @@ export const updateStudentSchema = z.object({
   classId: z.string().uuid().optional(),
   sectionId: z.string().uuid().optional(),
 
+  feeCategory: FeeCategoryEnum.optional(),
   feePlanId: z.string().uuid().optional(),
   siblingStudentId: z.string().uuid().optional(),
+  siblingFeeAmount: z.coerce.number().int().nonnegative().optional(),
 
   admissionDate: z.string().date().optional(),
   status: StudentStatusEnum.optional(),
