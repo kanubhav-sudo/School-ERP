@@ -13,16 +13,6 @@ import { fetchFeePlans, deleteFeePlan, type FeePlan, type FeePlanFilters } from 
 import { fetchSessions } from '@/features/admin/academic-sessions/api'
 import { FeePlanForm } from './components/FeePlanForm'
 
-const FEE_TYPE_LABELS: Record<string, string> = {
-  STANDARD_MONTHLY: 'Standard Monthly',
-  SIBLING_DISCOUNT: 'Sibling Discount',
-}
-
-const FEE_TYPE_COLORS: Record<string, string> = {
-  STANDARD_MONTHLY: 'bg-blue-100 text-blue-700',
-  SIBLING_DISCOUNT: 'bg-purple-100 text-purple-700',
-}
-
 /** Format paise to ₹ display */
 function formatINR(paise: number): string {
   return new Intl.NumberFormat('en-IN', {
@@ -138,77 +128,53 @@ export function FeePlansPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Plan Name</TableHead>
-              <TableHead>Type</TableHead>
               <TableHead>Session</TableHead>
               <TableHead>Class</TableHead>
               <TableHead className="text-right">Monthly Fee</TableHead>
-              <TableHead className="text-right">Discount</TableHead>
-              <TableHead className="text-right">Net Fee</TableHead>
               <TableHead className="text-center">Students</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {feePlans.map((plan) => {
-              const discountPaise =
-                plan.discountAmount + Math.round((plan.monthlyAmount * plan.discountPercent) / 100)
-              const netPaise = Math.max(0, plan.monthlyAmount - discountPaise)
-
-              return (
-                <TableRow key={plan.id}>
-                  <TableCell className="font-medium">{plan.name}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        FEE_TYPE_COLORS[plan.type] ?? 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {FEE_TYPE_LABELS[plan.type] ?? plan.type}
+            {feePlans.map((plan) => (
+              <TableRow key={plan.id}>
+                <TableCell className="font-medium">{plan.name}</TableCell>
+                <TableCell>{plan.session.name}</TableCell>
+                <TableCell>{plan.class.name}</TableCell>
+                <TableCell className="text-right font-mono">
+                  {formatINR(plan.monthlyAmount)}
+                </TableCell>
+                <TableCell className="text-center">{plan._count.students}</TableCell>
+                <TableCell>
+                  {plan.isActive ? (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                      Active
                     </span>
-                  </TableCell>
-                  <TableCell>{plan.session.name}</TableCell>
-                  <TableCell>{plan.class.name}</TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatINR(plan.monthlyAmount)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-orange-600">
-                    {discountPaise > 0 ? `− ${formatINR(discountPaise)}` : '—'}
-                  </TableCell>
-                  <TableCell className="text-right font-mono font-semibold text-primary">
-                    {formatINR(netPaise)}
-                  </TableCell>
-                  <TableCell className="text-center">{plan._count.students}</TableCell>
-                  <TableCell>
-                    {plan.isActive ? (
-                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                        Inactive
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(plan)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(plan)}
-                      disabled={deleteMutation.isPending}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              )
-            })}
+                  ) : (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                      Inactive
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(plan)}>
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(plan)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
             {feePlans.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   No fee plans found. Click "Add Fee Plan" to create one.
                 </TableCell>
               </TableRow>

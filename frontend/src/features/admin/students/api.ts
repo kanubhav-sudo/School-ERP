@@ -13,6 +13,7 @@ export type BloodGroup =
   | 'AB_POSITIVE'
   | 'AB_NEGATIVE'
 export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'TRANSFERRED' | 'GRADUATED' | 'EXPELLED'
+export type FeeCategory = 'STANDARD' | 'SIBLING'
 
 export interface Student {
   id: string
@@ -40,8 +41,10 @@ export interface Student {
   sessionId: string | null
   classId: string | null
   sectionId: string | null
+  feeCategory: FeeCategory | null
   feePlanId: string | null
   siblingStudentId: string | null
+  siblingFeeAmount: number | null
   admissionDate: string
   status: StudentStatus
   notes: string | null
@@ -54,7 +57,6 @@ export interface Student {
   feePlan: {
     id: string
     name: string
-    type: string
     monthlyAmount: number
   } | null
 }
@@ -104,8 +106,10 @@ export type CreateStudentPayload = {
   sessionId?: string
   classId?: string
   sectionId?: string
+  feeCategory?: FeeCategory
   feePlanId?: string
   siblingStudentId?: string
+  siblingFeeAmount?: number
   status?: StudentStatus
   notes?: string
   isActive?: boolean

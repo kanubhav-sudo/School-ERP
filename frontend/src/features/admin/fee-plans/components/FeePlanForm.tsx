@@ -10,22 +10,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-const FEE_PLAN_TYPE_LABELS: Record<string, string> = {
-  STANDARD_MONTHLY: 'Standard Monthly Fee',
-  SIBLING_DISCOUNT: 'Sibling Discount',
-}
-
 const feePlanSchema = z.object({
   name: z.string().min(1, 'Fee plan name is required').max(200, 'Name too long'),
-  type: z.enum(['STANDARD_MONTHLY', 'SIBLING_DISCOUNT']),
   sessionId: z.string().min(1, 'Academic session is required'),
   classId: z.string().min(1, 'Class is required'),
   monthlyAmount: z
     .number()
     .int('Amount must be a whole number')
     .positive('Amount must be positive'),
-  discountAmount: z.number().int().min(0),
-  discountPercent: z.number().int().min(0).max(100),
   description: z.string().max(1000).optional(),
 })
 
@@ -64,40 +56,24 @@ export function FeePlanForm({ feePlan, onClose }: Props) {
     resolver: zodResolver(feePlanSchema),
     defaultValues: {
       name: feePlan?.name ?? '',
-      type: feePlan?.type ?? 'STANDARD_MONTHLY',
       sessionId: feePlan?.sessionId ?? '',
       classId: feePlan?.classId ?? '',
       monthlyAmount: feePlan ? paiseToRupees(feePlan.monthlyAmount) : undefined,
-      discountAmount: feePlan ? paiseToRupees(feePlan.discountAmount) : 0,
-      discountPercent: feePlan?.discountPercent ?? 0,
       description: feePlan?.description ?? '',
     },
   })
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const watchType = watch('type')
-  const watchMonthly = watch('monthlyAmount')
-  const watchDiscountAmt = watch('discountAmount')
-  const watchDiscountPct = watch('discountPercent')
-
   // Calculate net fee preview
-  const monthlyNum = Number(watchMonthly) || 0
-  const discountAmt = Number(watchDiscountAmt) || 0
-  const discountPct = Number(watchDiscountPct) || 0
-  const percentDiscount = Math.round((monthlyNum * discountPct) / 100)
-  const totalDiscount = discountAmt + percentDiscount
-  const netPayable = Math.max(0, monthlyNum - totalDiscount)
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const monthlyNum = Number(watch('monthlyAmount')) || 0
 
   const mutation = useMutation({
     mutationFn: (data: FeePlanFormValues) => {
       const payload = {
         name: data.name,
-        type: data.type,
         sessionId: data.sessionId,
         classId: data.classId,
         monthlyAmount: data.monthlyAmount,
-        discountAmount: data.discountAmount,
-        discountPercent: data.discountPercent,
         description: data.description || undefined,
       }
       if (isEditing) {
@@ -110,13 +86,6 @@ export function FeePlanForm({ feePlan, onClose }: Props) {
       onClose()
     },
   })
-
-  const fmt = (val: number) =>
-    new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(val)
 
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
@@ -131,22 +100,6 @@ export function FeePlanForm({ feePlan, onClose }: Props) {
             <Label htmlFor="name">Plan Name *</Label>
             <Input id="name" {...register('name')} placeholder="e.g. Class 8 Monthly Fee" />
             {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
-          </div>
-
-          {/* Type */}
-          <div className="space-y-2">
-            <Label htmlFor="type">Fee Category *</Label>
-            <select
-              id="type"
-              {...register('type')}
-              className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-            >
-              {Object.entries(FEE_PLAN_TYPE_LABELS).map(([val, label]) => (
-                <option key={val} value={val}>
-                  {label}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Session + Class */}
@@ -202,33 +155,6 @@ export function FeePlanForm({ feePlan, onClose }: Props) {
             )}
           </div>
 
-          {/* Discount fields — shown for SIBLING_DISCOUNT type */}
-          {watchType === 'SIBLING_DISCOUNT' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="discountAmount">Flat Discount (₹)</Label>
-                <Input
-                  id="discountAmount"
-                  type="number"
-                  min={0}
-                  {...register('discountAmount', { valueAsNumber: true })}
-                  placeholder="e.g. 500"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="discountPercent">Discount (%)</Label>
-                <Input
-                  id="discountPercent"
-                  type="number"
-                  min={0}
-                  max={100}
-                  {...register('discountPercent', { valueAsNumber: true })}
-                  placeholder="e.g. 10"
-                />
-              </div>
-            </div>
-          )}
-
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
@@ -249,20 +175,13 @@ export function FeePlanForm({ feePlan, onClose }: Props) {
               </p>
               <div className="flex justify-between text-sm">
                 <span>Monthly Fee</span>
-                <span className="font-medium">{fmt(monthlyNum)}</span>
-              </div>
-              {totalDiscount > 0 && (
-                <div className="flex justify-between text-sm text-orange-600">
-                  <span>
-                    Discount
-                    {discountPct > 0 && ` (${discountPct}%)`}
-                  </span>
-                  <span>− {fmt(totalDiscount)}</span>
-                </div>
-              )}
-              <div className="border-t pt-1 mt-1 flex justify-between text-sm font-semibold">
-                <span>Net Payable</span>
-                <span className="text-primary">{fmt(netPayable)}</span>
+                <span className="font-medium">
+                  {new Intl.NumberFormat('en-IN', {
+                    style: 'currency',
+                    currency: 'INR',
+                    maximumFractionDigits: 0,
+                  }).format(monthlyNum)}
+                </span>
               </div>
             </div>
           )}

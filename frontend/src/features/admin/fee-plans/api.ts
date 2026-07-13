@@ -2,17 +2,12 @@ import { apiClient } from '@/lib/axios'
 
 // ─── Types ────────────────────────────────────────────────────
 
-export type FeePlanType = 'STANDARD_MONTHLY' | 'SIBLING_DISCOUNT'
-
 export interface FeePlan {
   id: string
   name: string
-  type: FeePlanType
   sessionId: string
   classId: string
   monthlyAmount: number // paise from backend
-  discountAmount: number // paise from backend
-  discountPercent: number
   description: string | null
   isActive: boolean
   createdById: string | null
@@ -39,18 +34,14 @@ export interface FeePlanFilters {
   limit?: number
   sessionId?: string
   classId?: string
-  type?: FeePlanType
   isActive?: boolean
 }
 
 export interface CreateFeePlanPayload {
   name: string
-  type: FeePlanType
   sessionId: string
   classId: string
   monthlyAmount: number // whole rupees – backend converts to paise
-  discountAmount?: number // whole rupees
-  discountPercent?: number
   description?: string
   isActive?: boolean
 }
@@ -63,7 +54,6 @@ export async function fetchFeePlans(filters: FeePlanFilters = {}): Promise<FeePl
   if (filters.limit) params.set('limit', String(filters.limit))
   if (filters.sessionId) params.set('sessionId', filters.sessionId)
   if (filters.classId) params.set('classId', filters.classId)
-  if (filters.type) params.set('type', filters.type)
   if (filters.isActive !== undefined) params.set('isActive', String(filters.isActive))
 
   const { data } = await apiClient.get(`/fee-plans?${params.toString()}`)

@@ -1,3 +1,5 @@
+import { FinanceCard } from './FinanceCard'
+
 export function AdminDashboard() {
   return (
     <div className="space-y-6">
@@ -16,10 +18,7 @@ export function AdminDashboard() {
           <h3 className="text-sm font-medium text-muted-foreground">Active Classes</h3>
           <div className="text-3xl font-bold mt-2">42</div>
         </div>
-        <div className="p-6 bg-card rounded-xl border border-border shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">Revenue (Term)</h3>
-          <div className="text-3xl font-bold mt-2">$45,231</div>
-        </div>
+        <FinanceCard />
       </div>
 
       <div className="p-6 bg-card rounded-xl border border-border shadow-sm min-h-[300px] flex items-center justify-center text-muted-foreground">

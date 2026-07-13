@@ -48,8 +48,10 @@ const studentSchema = z.object({
   sessionId: z.string().optional(),
   classId: z.string().optional(),
   sectionId: z.string().optional(),
+  feeCategory: z.enum(['STANDARD', 'SIBLING']).optional(),
   feePlanId: z.string().optional(),
   siblingStudentId: z.string().optional(),
+  siblingFeeAmount: z.number().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'TRANSFERRED', 'GRADUATED', 'EXPELLED']).optional(),
   notes: z.string().optional(),
 })
@@ -139,8 +141,10 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
       sessionId: student?.sessionId ?? '',
       classId: student?.classId ?? '',
       sectionId: student?.sectionId ?? '',
+      feeCategory: student?.feeCategory ?? 'STANDARD',
       feePlanId: student?.feePlanId ?? '',
       siblingStudentId: student?.siblingStudentId ?? '',
+      siblingFeeAmount: student?.siblingFeeAmount ? student.siblingFeeAmount / 100 : undefined,
       status: student?.status ?? 'ACTIVE',
       notes: student?.notes ?? '',
     },
@@ -149,7 +153,7 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchSessionId = watch('sessionId')
   const watchClassId = watch('classId')
-  const watchFeePlanId = watch('feePlanId')
+  const watchFeeCategory = watch('feeCategory')
   const watchSiblingId = watch('siblingStudentId')
 
   // Filter fee plans by selected session and class
@@ -161,22 +165,6 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
       return true
     })
   }, [allFeePlans, watchSessionId, watchClassId])
-
-  // Get selected fee plan details for preview
-  const selectedPlan = useMemo(() => {
-    if (!watchFeePlanId) return null
-    return allFeePlans.find((fp) => fp.id === watchFeePlanId) ?? null
-  }, [allFeePlans, watchFeePlanId])
-
-  // Calculate fee preview
-  const feePreview = useMemo(() => {
-    if (!selectedPlan) return null
-    const monthly = selectedPlan.monthlyAmount
-    const discountPaise =
-      selectedPlan.discountAmount + Math.round((monthly * selectedPlan.discountPercent) / 100)
-    const net = Math.max(0, monthly - discountPaise)
-    return { monthly, discount: discountPaise, net }
-  }, [selectedPlan])
 
   // Get selected sibling display name
   const selectedSiblingName = useMemo(() => {
@@ -195,8 +183,14 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
         sessionId: data.sessionId || undefined,
         classId: data.classId || undefined,
         sectionId: data.sectionId || undefined,
-        feePlanId: data.feePlanId || undefined,
-        siblingStudentId: data.siblingStudentId || undefined,
+        feeCategory: data.feeCategory || undefined,
+        feePlanId: data.feeCategory === 'STANDARD' ? data.feePlanId || undefined : undefined,
+        siblingStudentId:
+          data.feeCategory === 'SIBLING' ? data.siblingStudentId || undefined : undefined,
+        siblingFeeAmount:
+          data.feeCategory === 'SIBLING' && data.siblingFeeAmount
+            ? data.siblingFeeAmount * 100
+            : undefined,
         email: data.email || undefined,
         bloodGroup: data.bloodGroup || undefined,
       }
@@ -445,112 +439,114 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
               Fee &amp; Finance
             </p>
             <div className="grid grid-cols-2 gap-4">
-              {/* Fee Plan Dropdown — filtered by session + class */}
               <div className="space-y-2 col-span-2">
-                <Label htmlFor="feePlanId">Fee Plan</Label>
+                <Label htmlFor="feeCategory">Fee Category</Label>
                 <select
-                  id="feePlanId"
-                  {...register('feePlanId')}
+                  id="feeCategory"
+                  {...register('feeCategory')}
                   className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
                 >
-                  <option value="">— No Fee Plan —</option>
-                  {filteredFeePlans.map((fp) => (
-                    <option key={fp.id} value={fp.id}>
-                      {fp.name} ({fp.type === 'SIBLING_DISCOUNT' ? 'Sibling Discount' : 'Standard'})
-                      — {formatINR(fp.monthlyAmount)}
-                    </option>
-                  ))}
+                  <option value="STANDARD">Standard Fee</option>
+                  <option value="SIBLING">Sibling Fee</option>
                 </select>
-                {filteredFeePlans.length === 0 && watchSessionId && watchClassId && (
-                  <p className="text-xs text-amber-600">
-                    No fee plans configured for the selected session and class. Create one in Fee
-                    Plans first.
-                  </p>
-                )}
               </div>
 
-              {/* Sibling Student — shown when plan type is SIBLING_DISCOUNT */}
-              {selectedPlan?.type === 'SIBLING_DISCOUNT' && (
+              {/* Fee Plan Dropdown — filtered by session + class */}
+              {watchFeeCategory === 'STANDARD' && (
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="siblingSearch">Sibling Student</Label>
-                  <div className="space-y-2">
-                    <Input
-                      id="siblingSearch"
-                      placeholder="Search by name or admission number..."
-                      value={siblingSearch}
-                      onChange={(e) => setSiblingSearch(e.target.value)}
-                    />
-                    {/* Sibling search results */}
-                    {siblingSearch.length >= 2 && siblingOptions.length > 0 && (
-                      <div className="border rounded-md max-h-40 overflow-y-auto divide-y">
-                        {siblingOptions
-                          .filter((s) => s.id !== student?.id) // Prevent self-selection
-                          .map((s) => (
-                            <button
-                              key={s.id}
-                              type="button"
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${
-                                watchSiblingId === s.id
-                                  ? 'bg-primary/10 text-primary font-medium'
-                                  : ''
-                              }`}
-                              onClick={() => {
-                                setValue('siblingStudentId', s.id)
-                                setSiblingSearch('')
-                              }}
-                            >
-                              {s.firstName} {s.lastName}{' '}
-                              <span className="text-muted-foreground">({s.admissionNumber})</span>
-                            </button>
-                          ))}
-                      </div>
-                    )}
-                    {siblingSearch.length >= 2 &&
-                      siblingOptions.filter((s) => s.id !== student?.id).length === 0 && (
-                        <p className="text-xs text-muted-foreground">No students found.</p>
-                      )}
-
-                    {/* Display selected sibling */}
-                    {watchSiblingId && (
-                      <div className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2 text-sm">
-                        <span>{selectedSiblingName}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setValue('siblingStudentId', '')}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  <Label htmlFor="feePlanId">Fee Plan</Label>
+                  <select
+                    id="feePlanId"
+                    {...register('feePlanId')}
+                    className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                  >
+                    <option value="">— No Fee Plan —</option>
+                    {filteredFeePlans.map((fp) => (
+                      <option key={fp.id} value={fp.id}>
+                        {fp.name} — {formatINR(fp.monthlyAmount)}
+                      </option>
+                    ))}
+                  </select>
+                  {filteredFeePlans.length === 0 && watchSessionId && watchClassId && (
+                    <p className="text-xs text-amber-600">
+                      No fee plans configured for the selected session and class. Create one in Fee
+                      Plans first.
+                    </p>
+                  )}
                 </div>
               )}
-            </div>
 
-            {/* ── Fee Preview ── */}
-            {feePreview && (
-              <div className="mt-4 rounded-lg border bg-muted/50 p-4 space-y-1">
-                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">
-                  Fee Preview
-                </p>
-                <div className="flex justify-between text-sm">
-                  <span>Monthly Fee</span>
-                  <span className="font-medium">{formatINR(feePreview.monthly)}</span>
-                </div>
-                {feePreview.discount > 0 && (
-                  <div className="flex justify-between text-sm text-orange-600">
-                    <span>Discount</span>
-                    <span>− {formatINR(feePreview.discount)}</span>
+              {/* Sibling Student — shown when type is SIBLING */}
+              {watchFeeCategory === 'SIBLING' && (
+                <>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="siblingSearch">Sibling Student</Label>
+                    <div className="space-y-2">
+                      <Input
+                        id="siblingSearch"
+                        placeholder="Search by name or admission number..."
+                        value={siblingSearch}
+                        onChange={(e) => setSiblingSearch(e.target.value)}
+                      />
+                      {/* Sibling search results */}
+                      {siblingSearch.length >= 2 && siblingOptions.length > 0 && (
+                        <div className="border rounded-md max-h-40 overflow-y-auto divide-y">
+                          {siblingOptions
+                            .filter((s) => s.id !== student?.id) // Prevent self-selection
+                            .map((s) => (
+                              <button
+                                key={s.id}
+                                type="button"
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${
+                                  watchSiblingId === s.id
+                                    ? 'bg-primary/10 text-primary font-medium'
+                                    : ''
+                                }`}
+                                onClick={() => {
+                                  setValue('siblingStudentId', s.id)
+                                  setSiblingSearch('')
+                                }}
+                              >
+                                {s.firstName} {s.lastName}{' '}
+                                <span className="text-muted-foreground">({s.admissionNumber})</span>
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                      {siblingSearch.length >= 2 &&
+                        siblingOptions.filter((s) => s.id !== student?.id).length === 0 && (
+                          <p className="text-xs text-muted-foreground">No students found.</p>
+                        )}
+
+                      {/* Display selected sibling */}
+                      {watchSiblingId && (
+                        <div className="flex items-center justify-between bg-muted/50 rounded-md px-3 py-2 text-sm">
+                          <span>{selectedSiblingName}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setValue('siblingStudentId', '')}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-                <div className="border-t pt-1 mt-1 flex justify-between text-sm font-semibold">
-                  <span>Final Payable Fee</span>
-                  <span className="text-primary">{formatINR(feePreview.net)}</span>
-                </div>
-              </div>
-            )}
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="siblingFeeAmount">Sibling Monthly Fee (₹)</Label>
+                    <Input
+                      id="siblingFeeAmount"
+                      type="number"
+                      min={0}
+                      {...register('siblingFeeAmount', { valueAsNumber: true })}
+                      placeholder="e.g. 1500"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* ── Address + Notes ── */}

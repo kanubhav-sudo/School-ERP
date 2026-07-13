@@ -90,9 +90,9 @@ enum NoticePriority {
 
 // ─── Finance Enums ────────────────────────────────────────────
 
-enum FeePlanType {
-  STANDARD_MONTHLY
-  SIBLING_DISCOUNT
+enum FeeCategory {
+  STANDARD
+  SIBLING
 }
 
 enum FeeRecordStatus {
@@ -342,8 +342,10 @@ model Student {
   sectionId String? @map("section_id") @db.Uuid
 
   // Fee Assignment (Milestone 5)
-  feePlanId        String? @map("fee_plan_id") @db.Uuid
-  siblingStudentId String? @map("sibling_student_id") @db.Uuid
+  feeCategory      FeeCategory? @default(STANDARD) @map("fee_category")
+  feePlanId        String?      @map("fee_plan_id") @db.Uuid
+  siblingStudentId String?      @map("sibling_student_id") @db.Uuid
+  siblingFeeAmount Int?         @map("sibling_fee_amount")
 
   admissionDate DateTime      @map("admission_date") @db.Date
   status        StudentStatus @default(ACTIVE)
@@ -557,15 +559,12 @@ model AccountAuditLog {
 // All monetary values stored in paise (1 INR = 100 paise).
 
 model FeePlan {
-  id              String      @id @default(uuid()) @db.Uuid
-  name            String
-  type            FeePlanType
-  sessionId       String      @map("session_id") @db.Uuid
-  classId         String      @map("class_id") @db.Uuid
-  monthlyAmount   Int         @map("monthly_amount") // paise (e.g. 150000 = Rs 1500)
-  discountAmount  Int         @default(0) @map("discount_amount") // paise (for SIBLING_DISCOUNT)
-  discountPercent Int         @default(0) @map("discount_percent") // percentage (future use)
-  description     String?
+  id            String          @id @default(uuid()) @db.Uuid
+  name          String
+  sessionId     String          @map("session_id") @db.Uuid
+  classId       String          @map("class_id") @db.Uuid
+  monthlyAmount Int             @map("monthly_amount") // paise (e.g. 150000 = Rs 1500)
+  description   String?
   isActive        Boolean     @default(true) @map("is_active")
 
   // Audit
@@ -588,7 +587,6 @@ model FeePlan {
   @@unique([name, sessionId, classId])
   @@index([sessionId])
   @@index([classId])
-  @@index([type])
   @@index([isActive])
   @@index([isDeleted])
   @@map("fee_plans")
@@ -601,9 +599,9 @@ model FeePlan {
 
 model FeeRecord {
   id        String @id @default(uuid()) @db.Uuid
-  studentId String @map("student_id") @db.Uuid
-  feePlanId String @map("fee_plan_id") @db.Uuid
-  sessionId String @map("session_id") @db.Uuid
+  studentId String  @map("student_id") @db.Uuid
+  feePlanId String? @map("fee_plan_id") @db.Uuid
+  sessionId String  @map("session_id") @db.Uuid
   classId   String @map("class_id") @db.Uuid
 
   // Month identifier
@@ -611,10 +609,9 @@ model FeeRecord {
   year  Int // e.g. 2025
 
   // Financial fields (all in paise)
-  monthlyAmount  Int             @map("monthly_amount") // base amount from fee plan
-  discountAmount Int             @default(0) @map("discount_amount") // applied discount
+  monthlyAmount  Int             @map("monthly_amount") // base amount from fee plan or sibling fee
   lateFine       Int             @default(0) @map("late_fine") // future: applied by cron
-  netAmount      Int             @map("net_amount") // monthlyAmount - discountAmount + lateFine
+  netAmount      Int             @map("net_amount") // monthlyAmount + lateFine
   paidAmount     Int             @default(0) @map("paid_amount") // amount paid so far
   balanceAmount  Int             @map("balance_amount") // netAmount - paidAmount
   status         FeeRecordStatus @default(PENDING)
@@ -635,7 +632,7 @@ model FeeRecord {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   student  Student         @relation(fields: [studentId], references: [id])
-  feePlan  FeePlan         @relation(fields: [feePlanId], references: [id])
+  feePlan  FeePlan?        @relation(fields: [feePlanId], references: [id])
   session  AcademicSession @relation(fields: [sessionId], references: [id])
   class    Class           @relation(fields: [classId], references: [id])
   payments FeePayment[] // Full payment history (future)

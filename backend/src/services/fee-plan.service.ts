@@ -25,12 +25,9 @@ import type {
 const feePlanSelect = {
   id: true,
   name: true,
-  type: true,
   sessionId: true,
   classId: true,
   monthlyAmount: true,
-  discountAmount: true,
-  discountPercent: true,
   description: true,
   isActive: true,
   createdById: true,
@@ -45,7 +42,7 @@ const feePlanSelect = {
 // ─── List ──────────────────────────────────────────────────────
 
 export async function listFeePlans(filters: ListFeePlansInput) {
-  const { page, limit, sessionId, classId, type, isActive } = filters
+  const { page, limit, sessionId, classId, isActive } = filters
 
   const skip = (page - 1) * limit
 
@@ -53,7 +50,6 @@ export async function listFeePlans(filters: ListFeePlansInput) {
     isDeleted: false,
     ...(sessionId ? { sessionId } : {}),
     ...(classId ? { classId } : {}),
-    ...(type ? { type } : {}),
     ...(isActive !== undefined ? { isActive } : {}),
   }
 
@@ -112,12 +108,9 @@ export async function createFeePlan(data: CreateFeePlanInput, actorId: string) {
   const feePlan = await prisma.feePlan.create({
     data: {
       name: data.name,
-      type: data.type,
       sessionId: data.sessionId,
       classId: data.classId,
       monthlyAmount: data.monthlyAmount * 100, // rupees → paise
-      discountAmount: (data.discountAmount ?? 0) * 100, // rupees → paise
-      discountPercent: data.discountPercent ?? 0,
       description: data.description,
       isActive: data.isActive ?? true,
       createdById: actorId,
@@ -160,12 +153,9 @@ export async function updateFeePlan(id: string, data: UpdateFeePlanInput, actorI
     where: { id },
     data: {
       ...(data.name !== undefined && { name: data.name }),
-      ...(data.type !== undefined && { type: data.type }),
       ...(data.sessionId !== undefined && { sessionId: data.sessionId }),
       ...(data.classId !== undefined && { classId: data.classId }),
       ...(data.monthlyAmount !== undefined && { monthlyAmount: data.monthlyAmount * 100 }),
-      ...(data.discountAmount !== undefined && { discountAmount: data.discountAmount * 100 }),
-      ...(data.discountPercent !== undefined && { discountPercent: data.discountPercent }),
       ...(data.description !== undefined && { description: data.description }),
       ...(data.isActive !== undefined && { isActive: data.isActive }),
       updatedById: actorId,
