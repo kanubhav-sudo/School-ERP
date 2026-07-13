@@ -239,6 +239,6 @@
 - [x] Update frontend Types and API client
 
 ### Checkpoint 6.3: UI Enhancements (MC-5, MC-6, MC-7)
-- [ ] Update Teacher List UI (Summary cards, remove Blood Group filter)
-- [ ] Implement Teacher Detail Page (Timetable prioritized, Workload Summary, Subject Codes)
+- [x] Update Teacher List UI (Summary cards, remove Blood Group filter)
+- [ ] Update Teacher Detail Page (Timetable prioritized, Workload Summary, Subject Codes)
 - [ ] Integration with Assignment Logic

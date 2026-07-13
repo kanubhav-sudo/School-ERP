@@ -25,6 +25,31 @@ const teacherSchema = z.object({
     .optional(),
   address: z.string().optional(),
   notes: z.string().optional(),
+  designation: z
+    .enum([
+      'PRINCIPAL',
+      'VICE_PRINCIPAL',
+      'COORDINATOR',
+      'SENIOR_TEACHER',
+      'TEACHER',
+      'ASSISTANT_TEACHER',
+    ])
+    .optional(),
+  bloodGroup: z
+    .enum([
+      'A_POSITIVE',
+      'A_NEGATIVE',
+      'B_POSITIVE',
+      'B_NEGATIVE',
+      'O_POSITIVE',
+      'O_NEGATIVE',
+      'AB_POSITIVE',
+      'AB_NEGATIVE',
+    ])
+    .optional(),
+  emergencyContact: z.string().optional(),
+  emergencyPhone: z.string().optional(),
+  photoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
 })
 
 type TeacherFormValues = z.infer<typeof teacherSchema>
@@ -62,6 +87,11 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
       employmentStatus: teacher?.employmentStatus ?? 'PERMANENT',
       address: teacher?.address ?? '',
       notes: teacher?.notes ?? '',
+      designation: teacher?.designation ?? 'TEACHER',
+      bloodGroup: teacher?.bloodGroup ?? undefined,
+      emergencyContact: teacher?.emergencyContact ?? '',
+      emergencyPhone: teacher?.emergencyPhone ?? '',
+      photoUrl: teacher?.photoUrl ?? '',
     },
   })
 
@@ -180,6 +210,43 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
             </div>
           </div>
 
+          {/* Row 5.5: Designation + Blood Group */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="designation">Designation</Label>
+              <select
+                id="designation"
+                {...register('designation')}
+                className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+              >
+                <option value="PRINCIPAL">Principal</option>
+                <option value="VICE_PRINCIPAL">Vice Principal</option>
+                <option value="COORDINATOR">Coordinator</option>
+                <option value="SENIOR_TEACHER">Senior Teacher</option>
+                <option value="TEACHER">Teacher</option>
+                <option value="ASSISTANT_TEACHER">Assistant Teacher</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bloodGroup">Blood Group</Label>
+              <select
+                id="bloodGroup"
+                {...register('bloodGroup')}
+                className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+              >
+                <option value="">Select Blood Group</option>
+                <option value="A_POSITIVE">A+</option>
+                <option value="A_NEGATIVE">A-</option>
+                <option value="B_POSITIVE">B+</option>
+                <option value="B_NEGATIVE">B-</option>
+                <option value="O_POSITIVE">O+</option>
+                <option value="O_NEGATIVE">O-</option>
+                <option value="AB_POSITIVE">AB+</option>
+                <option value="AB_NEGATIVE">AB-</option>
+              </select>
+            </div>
+          </div>
+
           {/* Row 6: Qualification + Experience */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -199,6 +266,37 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
                 min={0}
               />
             </div>
+          </div>
+
+          {/* Row 7: Emergency Contact + Phone */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContact">Emergency Contact</Label>
+              <Input
+                id="emergencyContact"
+                {...register('emergencyContact')}
+                placeholder="Spouse, Parent..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emergencyPhone">Emergency Phone</Label>
+              <Input
+                id="emergencyPhone"
+                {...register('emergencyPhone')}
+                placeholder="+1 234 567 890"
+              />
+            </div>
+          </div>
+
+          {/* Photo URL */}
+          <div className="space-y-2">
+            <Label htmlFor="photoUrl">Photo URL</Label>
+            <Input
+              id="photoUrl"
+              {...register('photoUrl')}
+              placeholder="https://example.com/photo.jpg"
+            />
+            {errors.photoUrl && <p className="text-sm text-red-500">{errors.photoUrl.message}</p>}
           </div>
 
           {/* Address */}
