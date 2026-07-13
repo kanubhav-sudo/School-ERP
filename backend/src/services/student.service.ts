@@ -43,6 +43,8 @@ const studentSelect = {
   sessionId: true,
   classId: true,
   sectionId: true,
+  feePlanId: true,
+  siblingStudentId: true,
   admissionDate: true,
   status: true,
   notes: true,
@@ -52,6 +54,7 @@ const studentSelect = {
   session: { select: { id: true, name: true } },
   class: { select: { id: true, name: true } },
   section: { select: { id: true, name: true } },
+  feePlan: { select: { id: true, name: true, type: true, monthlyAmount: true } },
 } as const
 
 // ─── List ─────────────────────────────────────────────────────
@@ -149,6 +152,8 @@ export async function createStudent(data: CreateStudentInput) {
         sessionId: data.sessionId,
         classId: data.classId,
         sectionId: data.sectionId,
+        feePlanId: data.feePlanId,
+        siblingStudentId: data.siblingStudentId,
         admissionDate: new Date(data.admissionDate),
         status: data.status,
         notes: data.notes,
@@ -181,6 +186,11 @@ export async function updateStudent(id: string, data: UpdateStudentInput) {
     if (dup) throw new ConflictError(`Admission number "${data.admissionNumber}" is already in use`)
   }
 
+  // Validate sibling not self
+  if (data.siblingStudentId && data.siblingStudentId === id) {
+    throw new ConflictError(`A student cannot be their own sibling`)
+  }
+
   return prisma.student.update({
     where: { id },
     data: {
@@ -208,6 +218,8 @@ export async function updateStudent(id: string, data: UpdateStudentInput) {
       ...(data.sessionId !== undefined && { sessionId: data.sessionId }),
       ...(data.classId !== undefined && { classId: data.classId }),
       ...(data.sectionId !== undefined && { sectionId: data.sectionId }),
+      ...(data.feePlanId !== undefined && { feePlanId: data.feePlanId }),
+      ...(data.siblingStudentId !== undefined && { siblingStudentId: data.siblingStudentId }),
       ...(data.admissionDate !== undefined && { admissionDate: new Date(data.admissionDate) }),
       ...(data.status !== undefined && { status: data.status }),
       ...(data.notes !== undefined && { notes: data.notes }),

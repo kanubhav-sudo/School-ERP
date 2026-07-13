@@ -145,6 +145,33 @@ export function AdminLayout() {
           >
             Noticeboard
           </NavLink>
+          <div className="pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Finance
+          </div>
+          <NavLink
+            to="/admin/finance/fee-plans"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Fee Plans
+          </NavLink>
+          <NavLink
+            to="/admin/finance/fee-records"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Fee Records
+          </NavLink>
         </nav>
       </aside>
 

@@ -70,6 +70,10 @@ export const createStudentSchema = z.object({
   classId: z.string().uuid().optional(),
   sectionId: z.string().uuid().optional(),
 
+  // Finance Assignment
+  feePlanId: z.string().uuid().optional(),
+  siblingStudentId: z.string().uuid().optional(),
+
   admissionDate: z.string().date('admissionDate must be a valid date (YYYY-MM-DD)'),
   status: StudentStatusEnum.optional().default('ACTIVE'),
   notes: z.string().max(1000).trim().optional(),
@@ -108,6 +112,9 @@ export const updateStudentSchema = z.object({
   sessionId: z.string().uuid().optional(),
   classId: z.string().uuid().optional(),
   sectionId: z.string().uuid().optional(),
+
+  feePlanId: z.string().uuid().optional(),
+  siblingStudentId: z.string().uuid().optional(),
 
   admissionDate: z.string().date().optional(),
   status: StudentStatusEnum.optional(),
