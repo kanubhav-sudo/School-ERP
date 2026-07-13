@@ -238,7 +238,14 @@
 - [x] Implement new endpoints (stats, timetable, sections)
 - [x] Update frontend Types and API client
 
-### Checkpoint 6.3: UI Enhancements (MC-5, MC-6, MC-7)
+### Checkpoint 6.3: UI Enhancements (MC-5, MC-6, MC-7) ✅
 - [x] Update Teacher List UI (Summary cards, remove Blood Group filter)
-- [ ] Update Teacher Detail Page (Timetable prioritized, Workload Summary, Subject Codes)
-- [ ] Integration with Assignment Logic
+- [x] Update Teacher Detail Page (Timetable prioritized, Workload Summary, Subject Codes)
+- [x] Integration with Assignment Logic
+
+### Checkpoint 6.4: Bug Fix (MC-8) ✅
+- [x] Fix teacher creation 400 errors — empty strings for optional fields (dateOfBirth, photoUrl, bloodGroup)
+- [x] Add optionalDate, optionalUrl, optionalBloodGroup Zod helper schemas
+- [x] Apply fix to both createTeacherSchema and updateTeacherSchema
+- [x] Live API validation: teacher created successfully with auto-generated credentials
+- [x] Backend ESLint + Frontend TSC: zero errors

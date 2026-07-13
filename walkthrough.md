@@ -130,3 +130,17 @@ This milestone focuses on enhancing the Teacher module to provide detailed workl
 - Extended `Teacher` schema to include `designation`, `bloodGroup`, `emergencyContact`, `emergencyPhone`, and `photoUrl`.
 - Updated `TeacherAssignment` to be fully session-scoped by making `sessionId` a required foreign key, along with a new `isClassTeacher` boolean flag.
 - Generated Prisma clients and updated all validators and services to properly ingest the new fields and strictly validate session-based assignments.
+
+### Checkpoints 6.2–6.3: APIs, Frontend Types, and UI ✅
+- Added teacher stats, timetable, and sections endpoints.
+- Updated frontend types and API client for all new fields and assignment shapes.
+- Rebuilt Teacher List page with summary cards and Teacher Detail page with workload, assignment manager, and subject codes.
+
+### Checkpoint 6.4 (Bug Fix): Teacher Creation Validator — MC-8 ✅
+- **Root cause**: `TeacherForm` sends empty strings (`""`) for optional fields `dateOfBirth`, `photoUrl`, and `bloodGroup` when the user leaves them blank. The backend Zod schemas used `z.string().date()`, `z.string().url()`, and `BloodGroupEnum`, all of which reject empty strings, causing `HTTP 400` on every teacher creation attempt.
+- **Fix applied** in `backend/src/validators/teacher.validator.ts`:
+  - Introduced three reusable helper schemas: `optionalDate`, `optionalUrl`, `optionalBloodGroup`.
+  - Each uses `z.union([<strict validator>, z.literal('')]).optional().transform(v => v === '' ? undefined : v)`.
+  - Applied to both `createTeacherSchema` and `updateTeacherSchema`.
+- **Verification**: Live API POST to `/api/v1/teachers` with all optional fields as empty strings → `{ "success": true }` + auto-generated credentials (`TCH000003`).
+- **Lint**: Backend ESLint: 0 errors. Frontend `tsc --noEmit`: 0 errors.

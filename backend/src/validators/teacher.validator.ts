@@ -39,6 +39,35 @@ const BloodGroupEnum = z.enum([
   'AB_NEGATIVE',
 ])
 
+// ─── Helpers ──────────────────────────────────────────────────
+
+/**
+ * Accepts a valid date string (YYYY-MM-DD) OR an empty string.
+ * Empty strings are coerced to undefined so optional date fields are omitted.
+ */
+const optionalDate = z
+  .union([z.string().date(), z.literal('')])
+  .optional()
+  .transform((v) => (v === '' ? undefined : v))
+
+/**
+ * Accepts a valid URL string OR an empty string.
+ * Empty strings are coerced to undefined so optional URL fields are omitted.
+ */
+const optionalUrl = z
+  .union([z.string().url(), z.literal('')])
+  .optional()
+  .transform((v) => (v === '' ? undefined : v))
+
+/**
+ * Accepts a valid BloodGroup enum value OR an empty string.
+ * Empty strings are coerced to undefined so the field is treated as not supplied.
+ */
+const optionalBloodGroup = z
+  .union([BloodGroupEnum, z.literal('')])
+  .optional()
+  .transform((v) => (v === '' ? undefined : v))
+
 // ─── Create ──────────────────────────────────────────────────
 
 export const createTeacherSchema = z.object({
@@ -58,7 +87,7 @@ export const createTeacherSchema = z.object({
     .max(100, 'Last name must be 100 characters or fewer')
     .trim(),
   gender: GenderEnum,
-  dateOfBirth: z.string().date('dateOfBirth must be a valid date (YYYY-MM-DD)').optional(),
+  dateOfBirth: optionalDate,
   phone: z.string().max(20).trim().optional(),
   email: z.string().email('Invalid email address').trim(),
   qualification: z.string().max(200).trim().optional(),
@@ -67,10 +96,10 @@ export const createTeacherSchema = z.object({
   joiningDate: z.string().date('joiningDate must be a valid date (YYYY-MM-DD)'),
   employmentStatus: EmploymentStatusEnum.optional().default('PERMANENT'),
   address: z.string().max(500).trim().optional(),
-  bloodGroup: BloodGroupEnum.optional(),
+  bloodGroup: optionalBloodGroup,
   emergencyContact: z.string().max(100).trim().optional(),
   emergencyPhone: z.string().max(20).trim().optional(),
-  photoUrl: z.string().url().optional(),
+  photoUrl: optionalUrl,
   designation: TeacherDesignationEnum.optional().default('TEACHER'),
   notes: z.string().max(1000).trim().optional(),
   isActive: z.boolean().optional().default(true),
@@ -85,19 +114,19 @@ export const updateTeacherSchema = z.object({
   firstName: z.string().min(1).max(100).trim().optional(),
   lastName: z.string().min(1).max(100).trim().optional(),
   gender: GenderEnum.optional(),
-  dateOfBirth: z.string().date().optional(),
+  dateOfBirth: optionalDate,
   phone: z.string().max(20).trim().optional(),
   email: z.string().email().trim().optional(),
   qualification: z.string().max(200).trim().optional(),
   experienceYears: z.number().int().min(0).optional(),
   department: z.string().max(100).trim().optional(),
-  joiningDate: z.string().date().optional(),
+  joiningDate: optionalDate,
   employmentStatus: EmploymentStatusEnum.optional(),
   address: z.string().max(500).trim().optional(),
-  bloodGroup: BloodGroupEnum.optional(),
+  bloodGroup: optionalBloodGroup,
   emergencyContact: z.string().max(100).trim().optional(),
   emergencyPhone: z.string().max(20).trim().optional(),
-  photoUrl: z.string().url().optional(),
+  photoUrl: optionalUrl,
   designation: TeacherDesignationEnum.optional(),
   notes: z.string().max(1000).trim().optional(),
   isActive: z.boolean().optional(),

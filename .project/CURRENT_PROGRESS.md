@@ -98,13 +98,55 @@
   - Routing & Navigation
 
 ## Milestone 6: Teacher Management System
-- **Status**: 10% Complete (In Progress)
+- **Status**: 100% Complete ✅
 - **Completed Components**:
-  - **MC-1**: Prisma schema updates & database migration (Designation, Blood Group, Emergency Contact, Photo URL, session-scoped assignments).
-  - **MC-2**: Backend Validators and Service Logic for Teacher enhancements.
-- **Pending**:
-  - MC-3: Controller & Routes updates
-  - MC-4: Frontend Shared Types & API updates
-  - MC-5: Teacher List UI updates
-  - MC-6: Teacher Detail Page UI
-  - MC-7: Integration with Timetable & Assignment Logic
+  - **MC-1**: Prisma schema updates & database migration
+    - Added `TeacherDesignation` enum (PRINCIPAL, VICE_PRINCIPAL, COORDINATOR, SENIOR_TEACHER, TEACHER, ASSISTANT_TEACHER)
+    - Added `designation`, `bloodGroup`, `emergencyContact`, `emergencyPhone`, `photoUrl` to Teacher model
+    - Session-scoped `TeacherAssignment` with `sessionId` + `isClassTeacher` flag
+    - Unique constraint: `[teacherId, sessionId, classId, sectionId, subjectId]`
+    - Commit: `dc9656d`
+  - **MC-2**: Backend Validators & Service Logic
+    - Updated `teacher.validator.ts` with all new fields and session-aware assignment schema
+    - Updated `teacher.service.ts`: create/update handle all new fields, session validation, class-teacher conflict check
+    - Commit: included in `dc9656d`
+  - **MC-3**: Controller & Routes
+    - `GET /api/v1/teachers/stats` → `getTeacherStats`
+    - `GET /api/v1/teachers/:id/timetable` → `getTeacherTimetable`
+    - `GET /api/v1/teachers/:id/sections` → `getTeacherSections`
+    - Commit: `3dc56d7`
+  - **MC-4**: Frontend Shared Types & API Client
+    - Added `TeacherDesignation`, `BloodGroup` types
+    - Updated `TeacherAssignment` interface with `sessionId`, `isClassTeacher`, `session`
+    - Added `TeacherStats` interface
+    - Added `fetchTeacherStats`, `fetchTeacherTimetable`, `fetchTeacherSections` API functions
+    - Updated `addTeacherAssignment` payload signature to include `sessionId` + `isClassTeacher`
+    - Commit: `c412a54`
+  - **MC-5**: Teacher List UI
+    - Summary cards: Total Teachers, Active, Inactive, Class Teachers
+    - Assignment summary column: Subjects count + Classes count per row
+    - Commit: `f64ec3b`
+  - **MC-6**: Teacher Detail Page
+    - Teacher photo display (URL-based; future Storage Module will add upload)
+    - Designation + Employment Status badges in header
+    - Workload summary cards (Total Assignments, Unique Subjects, Classes, Class Teacher count)
+    - Full personal/employment/emergency info panels
+    - Assignment table with Subject Code visible alongside Subject Name
+    - isClassTeacher highlighted with star badge
+    - Inline Add Assignment form (session, class, section, subject, isClassTeacher)
+    - Remove assignment with optimistic invalidation
+    - Updated `TeacherForm` with all new fields
+    - Commit: `3034329`
+  - **MC-7**: Timetable & Sections Integration
+    - `getTeacherTimetable` now includes `session`, `teacher`, `class`, `section`, `subject` + `isDeleted: false` filter (matches `TimetableEntry` frontend type exactly)
+    - `getTeacherSections` now includes `session` and ordered by class/section name
+    - Attendance: Admin-only, no changes needed (architecture preserved)
+    - Noticeboard: Existing module untouched; future Teacher Portal will reuse Noticeboard service
+    - Homework: Architecture documented; no CRUD implemented this milestone
+    - Commit: `b5af80c`
+  - **MC-8 (Bug Fix)**: Teacher Creation Validator — Empty String Handling
+    - Root cause: Frontend `TeacherForm` sends empty strings for optional fields (`dateOfBirth`, `photoUrl`, `bloodGroup`). Backend Zod validators (`z.string().date()`, `z.string().url()`, enum) reject empty strings → 400 errors on every teacher creation.
+    - Fix: Added `optionalDate`, `optionalUrl`, `optionalBloodGroup` helper schemas using `z.union([..., z.literal('')]).optional().transform(v => v === '' ? undefined : v)`.
+    - Applied to both `createTeacherSchema` and `updateTeacherSchema`.
+    - Verified: Live API test with all empty-string optional fields returns `success: true`, credentials auto-generated.
+    - Lint: clean (backend ESLint + frontend TSC both zero errors).
