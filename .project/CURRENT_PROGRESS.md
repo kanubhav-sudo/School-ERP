@@ -144,9 +144,12 @@
     - Noticeboard: Existing module untouched; future Teacher Portal will reuse Noticeboard service
     - Homework: Architecture documented; no CRUD implemented this milestone
     - Commit: `b5af80c`
-  - **MC-8 (Bug Fix)**: Teacher Creation Validator — Empty String Handling
-    - Root cause: Frontend `TeacherForm` sends empty strings for optional fields (`dateOfBirth`, `photoUrl`, `bloodGroup`). Backend Zod validators (`z.string().date()`, `z.string().url()`, enum) reject empty strings → 400 errors on every teacher creation.
-    - Fix: Added `optionalDate`, `optionalUrl`, `optionalBloodGroup` helper schemas using `z.union([..., z.literal('')]).optional().transform(v => v === '' ? undefined : v)`.
-    - Applied to both `createTeacherSchema` and `updateTeacherSchema`.
-    - Verified: Live API test with all empty-string optional fields returns `success: true`, credentials auto-generated.
+  - **MC-8 (Bug Fix)**: Teacher Creation & Account Lifecycle
+    - Root cause 1 (Backend): Frontend `TeacherForm` sends empty strings for optional fields (`dateOfBirth`, `photoUrl`, `bloodGroup`). Backend Zod validators (`z.string().date()`, `z.string().url()`, enum) reject empty strings → 400 errors.
+    - Fix 1: Added `optionalDate`, `optionalUrl`, `optionalBloodGroup` helper schemas using `z.union([..., z.literal('')]).optional().transform(v => v === '' ? undefined : v)`. Applied to `createTeacherSchema` and `updateTeacherSchema`.
+    - Root cause 2 (Frontend): The `accountApi` response wrapper mistakenly expected `.then(res => res.data)` when it was already extracting the data in Axios interceptors, causing `data.temporaryPassword` to be undefined.
+    - Fix 2: Removed redundant unwrapping in `AccountManagementCard` and `accountApi`.
+    - Root cause 3 (Frontend): `TeacherForm` Zod schema enum validation failed on empty string placeholders for `<select>` elements.
+    - Fix 3: Updated `TeacherForm` Zod schema to accept `""` and built `buildPayload` helper to coerce empty strings to `undefined` before API submission. Also fixed TSX parse error due to generic syntax.
+    - Verified: Live API test with all empty-string optional fields returns `success: true`, credentials auto-generated, popup displays successfully, reissue password flow works, and teacher login is successful.
     - Lint: clean (backend ESLint + frontend TSC both zero errors).

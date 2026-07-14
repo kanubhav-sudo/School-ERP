@@ -13,6 +13,7 @@ import noticeRoutes from './notice.routes'
 import accountRoutes from './account.routes'
 import feePlanRoutes from './fee-plan.routes'
 import feeRecordRoutes from './fee-record.routes'
+import teacherPortalRoutes from './teacher-portal.routes'
 import { generalApiLimiter } from '../middlewares/rateLimiter.middleware'
 
 const router = Router()
@@ -32,7 +33,7 @@ router.use('/classes', classRoutes)
 router.use('/sections', sectionRoutes)
 router.use('/subjects', subjectRoutes)
 
-// People Management Routes (Milestone 3.2)
+// People Management Routes (Milestone 3.1)
 router.use('/teachers', teacherRoutes)
 router.use('/students', studentRoutes)
 
@@ -47,5 +48,8 @@ router.use('/accounts', accountRoutes)
 // Finance Routes (Milestone 5)
 router.use('/fee-plans', feePlanRoutes)
 router.use('/fee-records', feeRecordRoutes)
+
+// Teacher Portal
+router.use('/teacher-portal', teacherPortalRoutes)
 
 export default router

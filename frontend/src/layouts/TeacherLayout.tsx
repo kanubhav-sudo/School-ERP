@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '@/components/ui/button'
 
@@ -18,16 +18,54 @@ export function TeacherLayout() {
           Teacher Portal
         </div>
         <nav className="flex-1 p-4 space-y-2 text-sm">
-          <div className="p-2 bg-primary/10 text-primary font-medium rounded-md">Dashboard</div>
-          <div className="p-2 hover:bg-muted cursor-not-allowed text-muted-foreground rounded-md">
+          <NavLink
+            to="/teacher/dashboard"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Dashboard
+          </NavLink>
+          <NavLink
+            to="/teacher/my-classes"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
             My Classes
-          </div>
-          <div className="p-2 hover:bg-muted cursor-not-allowed text-muted-foreground rounded-md">
+          </NavLink>
+          <NavLink
+            to="/teacher/homework"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
             Homework
-          </div>
-          <div className="p-2 hover:bg-muted cursor-not-allowed text-muted-foreground rounded-md">
+          </NavLink>
+          <NavLink
+            to="/teacher/attendance"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
             Attendance
-          </div>
+          </NavLink>
         </nav>
       </aside>
 

@@ -13,6 +13,9 @@ import { NotFound } from './pages/NotFound'
 // Dashboards & Features
 import { AdminDashboard } from './features/admin/dashboard/AdminDashboard'
 import { TeacherDashboard } from './features/teacher/dashboard/TeacherDashboard'
+import { MyClassesPage } from './features/teacher/my-classes/MyClassesPage'
+import { HomeworkPlaceholderPage } from './features/teacher/homework/HomeworkPlaceholderPage'
+import { TeacherAttendancePage } from './features/teacher/attendance/TeacherAttendancePage'
 import { StudentDashboard } from './features/student/dashboard/StudentDashboard'
 import { AcademicSessionsPage } from './features/admin/academic-sessions/AcademicSessionsPage'
 import { ClassesPage } from './features/admin/classes/ClassesPage'
@@ -112,6 +115,9 @@ function App() {
             >
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<TeacherDashboard />} />
+              <Route path="my-classes" element={<MyClassesPage />} />
+              <Route path="homework" element={<HomeworkPlaceholderPage />} />
+              <Route path="attendance" element={<TeacherAttendancePage />} />
             </Route>
 
             {/* Protected Student Routes */}
