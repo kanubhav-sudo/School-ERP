@@ -30,30 +30,34 @@ export interface AccountDetails {
 }
 
 export interface CredentialsResponse {
-  temporaryPassword?: string
+  temporaryPassword: string
 }
 
+// All backend responses are wrapped in { success, data, message }.
+// These helpers unwrap res.data.data so callers get the inner payload directly.
+
 export const accountApi = {
-  getDetails: (id: string) => api.get<AccountDetails>(`/accounts/${id}`),
+  getDetails: (id: string): Promise<AccountDetails> =>
+    api.get(`/accounts/${id}`).then((res) => res.data.data),
 
-  resetPassword: (id: string, remarks?: string) =>
-    api.post<CredentialsResponse>(`/accounts/${id}/reset-password`, { remarks }),
+  resetPassword: (id: string, remarks?: string): Promise<CredentialsResponse> =>
+    api.post(`/accounts/${id}/reset-password`, { remarks }).then((res) => res.data.data),
 
-  reissueCredentials: (id: string, remarks?: string) =>
-    api.post<CredentialsResponse>(`/accounts/${id}/reissue-credentials`, { remarks }),
+  reissueCredentials: (id: string, remarks?: string): Promise<CredentialsResponse> =>
+    api.post(`/accounts/${id}/reissue-credentials`, { remarks }).then((res) => res.data.data),
 
-  activateAccount: (id: string, remarks?: string) =>
-    api.post<void>(`/accounts/${id}/activate`, { remarks }),
+  activateAccount: (id: string, remarks?: string): Promise<void> =>
+    api.post(`/accounts/${id}/activate`, { remarks }).then(() => undefined),
 
-  suspendAccount: (id: string, remarks?: string) =>
-    api.post<void>(`/accounts/${id}/suspend`, { remarks }),
+  suspendAccount: (id: string, remarks?: string): Promise<void> =>
+    api.post(`/accounts/${id}/suspend`, { remarks }).then(() => undefined),
 
-  disableAccount: (id: string, remarks?: string) =>
-    api.post<void>(`/accounts/${id}/disable`, { remarks }),
+  disableAccount: (id: string, remarks?: string): Promise<void> =>
+    api.post(`/accounts/${id}/disable`, { remarks }).then(() => undefined),
 
-  unlockAccount: (id: string, remarks?: string) =>
-    api.post<void>(`/accounts/${id}/unlock`, { remarks }),
+  unlockAccount: (id: string, remarks?: string): Promise<void> =>
+    api.post(`/accounts/${id}/unlock`, { remarks }).then(() => undefined),
 
-  forcePasswordChange: (id: string, remarks?: string) =>
-    api.post<void>(`/accounts/${id}/force-password-change`, { remarks }),
+  forcePasswordChange: (id: string, remarks?: string): Promise<void> =>
+    api.post(`/accounts/${id}/force-password-change`, { remarks }).then(() => undefined),
 }

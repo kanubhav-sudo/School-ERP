@@ -2,29 +2,44 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createTeacher, updateTeacher, type Teacher } from '../api'
+import { createTeacher, updateTeacher, type Teacher, type CreateTeacherPayload } from '../api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+// ─── Helpers ────────────────────────────────────────────────────
+
+/**
+ * Coerce an empty string to undefined.
+ * Used for optional enum fields where the <select> placeholder has value="".
+ */
+function emptyStrToUndefined<T>(val: T | '' | undefined) {
+  return val === '' ? undefined : val
+}
+
+// ─── Schema ─────────────────────────────────────────────────────
+
 const teacherSchema = z.object({
-  employeeId: z.string().min(1, 'Employee ID is required'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  employeeId: z.string().min(1, 'Employee ID is required').max(50),
+  firstName: z.string().min(1, 'First name is required').max(100),
+  lastName: z.string().min(1, 'Last name is required').max(100),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
   email: z.string().email('Invalid email address'),
   joiningDate: z.string().min(1, 'Joining date is required'),
+  // Optional strings — "" is treated same as omitted
   dateOfBirth: z.string().optional(),
   phone: z.string().optional(),
   qualification: z.string().optional(),
-  experienceYears: z.number().int().min(0).optional(),
   department: z.string().optional(),
-  employmentStatus: z
-    .enum(['PERMANENT', 'CONTRACT', 'PROBATION', 'RESIGNED', 'TERMINATED'])
-    .optional(),
   address: z.string().optional(),
   notes: z.string().optional(),
+  // Optional number
+  experienceYears: z.number().int().min(0).optional(),
+  // Optional enums — "" means "not set" (placeholder)
+  employmentStatus: z
+    .enum(['PERMANENT', 'CONTRACT', 'PROBATION', 'RESIGNED', 'TERMINATED', ''])
+    .optional(),
   designation: z
     .enum([
       'PRINCIPAL',
@@ -33,6 +48,7 @@ const teacherSchema = z.object({
       'SENIOR_TEACHER',
       'TEACHER',
       'ASSISTANT_TEACHER',
+      '',
     ])
     .optional(),
   bloodGroup: z
@@ -45,20 +61,57 @@ const teacherSchema = z.object({
       'O_NEGATIVE',
       'AB_POSITIVE',
       'AB_NEGATIVE',
+      '',
     ])
     .optional(),
   emergencyContact: z.string().optional(),
   emergencyPhone: z.string().optional(),
-  photoUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+  photoUrl: z.string().optional(),
 })
 
 type TeacherFormValues = z.infer<typeof teacherSchema>
+
+/**
+ * Build a clean API payload from form values.
+ * - Strips empty strings (converts to undefined so they are omitted)
+ * - Validates photoUrl is a proper URL if provided
+ */
+function buildPayload(data: TeacherFormValues): CreateTeacherPayload {
+  return {
+    employeeId: data.employeeId,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    gender: data.gender,
+    email: data.email,
+    joiningDate: data.joiningDate,
+    dateOfBirth: data.dateOfBirth || undefined,
+    phone: data.phone || undefined,
+    qualification: data.qualification || undefined,
+    department: data.department || undefined,
+    address: data.address || undefined,
+    notes: data.notes || undefined,
+    emergencyContact: data.emergencyContact || undefined,
+    emergencyPhone: data.emergencyPhone || undefined,
+    photoUrl: data.photoUrl || undefined,
+    experienceYears: data.experienceYears,
+    employmentStatus: emptyStrToUndefined(data.employmentStatus) as
+      CreateTeacherPayload['employmentStatus'] | undefined,
+    designation: emptyStrToUndefined(data.designation) as
+      CreateTeacherPayload['designation'] | undefined,
+    bloodGroup: emptyStrToUndefined(data.bloodGroup) as
+      CreateTeacherPayload['bloodGroup'] | undefined,
+  }
+}
+
+// ─── Props ──────────────────────────────────────────────────────
 
 interface Props {
   teacher: Teacher | null
   onClose: () => void
   onSuccess?: (credentials?: { username: string; temporaryPassword?: string }) => void
 }
+
+// ─── Component ──────────────────────────────────────────────────
 
 export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
   const queryClient = useQueryClient()
@@ -88,7 +141,7 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
       address: teacher?.address ?? '',
       notes: teacher?.notes ?? '',
       designation: teacher?.designation ?? 'TEACHER',
-      bloodGroup: teacher?.bloodGroup ?? undefined,
+      bloodGroup: teacher?.bloodGroup ?? '',
       emergencyContact: teacher?.emergencyContact ?? '',
       emergencyPhone: teacher?.emergencyPhone ?? '',
       photoUrl: teacher?.photoUrl ?? '',
@@ -97,13 +150,15 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
 
   const mutation = useMutation({
     mutationFn: async (data: TeacherFormValues) => {
+      const payload = buildPayload(data)
       if (isEditing) {
-        return updateTeacher({ id: teacher.id, payload: data })
+        return updateTeacher({ id: teacher.id, payload })
       }
-      return createTeacher(data)
+      return createTeacher(payload)
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['teachers'] })
+      queryClient.invalidateQueries({ queryKey: ['teacherStats'] })
       if (!isEditing && 'credentials' in response) {
         onSuccess?.(response.credentials)
       } else {
@@ -328,7 +383,13 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
               Cancel
             </Button>
             <Button type="submit" disabled={mutation.isPending}>
-              {isEditing ? 'Save Changes' : 'Add Teacher'}
+              {mutation.isPending
+                ? isEditing
+                  ? 'Saving...'
+                  : 'Creating...'
+                : isEditing
+                  ? 'Save Changes'
+                  : 'Add Teacher'}
             </Button>
           </div>
         </form>

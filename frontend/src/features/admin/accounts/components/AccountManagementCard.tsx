@@ -31,14 +31,14 @@ export function AccountManagementCard({ userId }: AccountManagementCardProps) {
     error,
   } = useQuery({
     queryKey: ['account', userId],
-    queryFn: () => accountApi.getDetails(userId!).then((res) => res.data),
+    queryFn: () => accountApi.getDetails(userId!),
     enabled: !!userId,
   })
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['account', userId] })
 
   const resetPassword = useMutation({
-    mutationFn: () => accountApi.resetPassword(userId!).then((res) => res.data),
+    mutationFn: () => accountApi.resetPassword(userId!),
     onSuccess: (data) => {
       setCredentials({ username: account!.username, temporaryPassword: data.temporaryPassword })
       invalidate()
@@ -46,7 +46,7 @@ export function AccountManagementCard({ userId }: AccountManagementCardProps) {
   })
 
   const reissueCredentials = useMutation({
-    mutationFn: () => accountApi.reissueCredentials(userId!).then((res) => res.data),
+    mutationFn: () => accountApi.reissueCredentials(userId!),
     onSuccess: (data) => {
       setCredentials({ username: account!.username, temporaryPassword: data.temporaryPassword })
       invalidate()
@@ -55,27 +55,27 @@ export function AccountManagementCard({ userId }: AccountManagementCardProps) {
 
   const activate = useMutation({
     mutationFn: () => accountApi.activateAccount(userId!),
-    onSuccess: invalidate,
+    onSuccess: () => invalidate(),
   })
 
   const suspend = useMutation({
     mutationFn: () => accountApi.suspendAccount(userId!),
-    onSuccess: invalidate,
+    onSuccess: () => invalidate(),
   })
 
   const disable = useMutation({
     mutationFn: () => accountApi.disableAccount(userId!),
-    onSuccess: invalidate,
+    onSuccess: () => invalidate(),
   })
 
   const forcePasswordChange = useMutation({
     mutationFn: () => accountApi.forcePasswordChange(userId!),
-    onSuccess: invalidate,
+    onSuccess: () => invalidate(),
   })
 
   const unlock = useMutation({
     mutationFn: () => accountApi.unlockAccount(userId!),
-    onSuccess: invalidate,
+    onSuccess: () => invalidate(),
   })
 
   if (!userId) {
