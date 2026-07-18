@@ -169,6 +169,10 @@ model AcademicSession {
   feePlans           FeePlan[]
   feeRecords         FeeRecord[]
   teacherAssignments TeacherAssignment[]
+  announcements      Announcement[]
+  exams              Exam[]
+  admitCards         AdmitCard[]
+  periodMasters      PeriodMaster[]
 
   @@index([isActive])
   @@map("academic_sessions")
@@ -192,6 +196,7 @@ model Class {
   timetables         Timetable[]
   feePlans           FeePlan[]
   feeRecords         FeeRecord[]
+  announcements      Announcement[]
 
   @@index([isActive])
   @@index([displayOrder])
@@ -215,6 +220,7 @@ model Section {
   students           Student[]
   timetables         Timetable[]
   attendance         Attendance[]
+  announcements      Announcement[]
 
   @@unique([classId, name])
   @@index([classId])
@@ -289,9 +295,10 @@ model Teacher {
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
 
-  user        User?               @relation(fields: [userId], references: [id])
-  assignments TeacherAssignment[]
-  timetables  Timetable[]
+  user          User?               @relation(fields: [userId], references: [id])
+  assignments   TeacherAssignment[]
+  timetables    Timetable[]
+  announcements Announcement[]
 
   @@index([isActive])
   @@index([employmentStatus])
@@ -392,6 +399,8 @@ model Student {
 
   attendanceRecords AttendanceRecord[]
   feeRecords        FeeRecord[]
+  admitCards        AdmitCard[]
+  reportCards       ReportCard[]
 
   @@index([isActive])
   @@index([status])
@@ -416,9 +425,11 @@ model Timetable {
   subjectId    String    @map("subject_id") @db.Uuid
   dayOfWeek    DayOfWeek @map("day_of_week")
   periodNumber Int       @map("period_number")
-  startTime    String    @map("start_time") // "HH:MM" 24-hour format
-  endTime      String    @map("end_time") // "HH:MM" 24-hour format
   room         String?
+
+  // For substitute/override logic
+  isOverride   Boolean   @default(false) @map("is_override")
+  overrideDate DateTime? @map("override_date") @db.Date
 
   // Audit fields — plain UUIDs, populated from req.user.sub
   createdById String? @map("created_by_id") @db.Uuid
@@ -444,13 +455,24 @@ model Timetable {
   @@index([sessionId])
   @@index([sectionId])
   @@index([teacherId])
-  @@index([isDeleted])
+  @@index([deletedAt])
   @@map("timetables")
 }
 
-// ─── Attendance ───────────────────────────────────────────────
-// Parent: one attendance sheet per section per day.
-// Soft-delete on parent cascades logically (records are also preserved).
+model PeriodMaster {
+  id           String    @id @default(uuid()) @db.Uuid
+  sessionId    String    @map("session_id") @db.Uuid
+  periodNumber Int       @map("period_number")
+  startTime    String    @map("start_time") // "HH:MM" 24-hour format
+  endTime      String    @map("end_time") // "HH:MM" 24-hour format
+
+  session AcademicSession @relation(fields: [sessionId], references: [id])
+
+  @@unique([sessionId, periodNumber])
+  @@map("period_master")
+}
+
+// ─── Notices & Announcements ───────────────────────────────────────────────
 
 enum AttendanceStatus {
   PRESENT
@@ -710,4 +732,94 @@ model FeeReminderRule {
   updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@map("fee_reminder_rules")
+}
+
+// ─── Announcements (Teacher to Section) ───────────────────────
+
+model Announcement {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String
+  content     String    @db.Text
+  isPinned    Boolean   @default(false) @map("is_pinned")
+  expiresAt   DateTime? @map("expires_at")
+  attachments String[]  @default([])
+
+  // Assignment scope
+  sessionId String @map("session_id") @db.Uuid
+  classId   String @map("class_id") @db.Uuid
+  sectionId String @map("section_id") @db.Uuid
+
+  authorId String @map("author_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  session AcademicSession @relation(fields: [sessionId], references: [id])
+  class   Class           @relation(fields: [classId], references: [id])
+  section Section         @relation(fields: [sectionId], references: [id])
+  author  Teacher         @relation(fields: [authorId], references: [id])
+
+  @@index([sessionId])
+  @@index([classId])
+  @@index([sectionId])
+  @@index([authorId])
+  @@map("announcements")
+}
+
+// ─── Exams (Admin/Global setup for Report Cards) ──────────────
+
+model Exam {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @map("session_id") @db.Uuid
+  name      String
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  session     AcademicSession @relation(fields: [sessionId], references: [id])
+  reportCards ReportCard[]
+
+  @@unique([sessionId, name])
+  @@index([sessionId])
+  @@map("exams")
+}
+
+// ─── Admit Cards ──────────────────────────────────────────────
+
+model AdmitCard {
+  id        String @id @default(uuid()) @db.Uuid
+  sessionId String @map("session_id") @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  fileUrl   String @map("file_url")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  session AcademicSession @relation(fields: [sessionId], references: [id])
+  student Student         @relation(fields: [studentId], references: [id])
+
+  @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+  @@map("admit_cards")
+}
+
+// ─── Report Cards ─────────────────────────────────────────────
+
+model ReportCard {
+  id        String @id @default(uuid()) @db.Uuid
+  examId    String @map("exam_id") @db.Uuid
+  studentId String @map("student_id") @db.Uuid
+  fileUrl   String @map("file_url")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  exam    Exam    @relation(fields: [examId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([studentId])
+  @@map("report_cards")
 }

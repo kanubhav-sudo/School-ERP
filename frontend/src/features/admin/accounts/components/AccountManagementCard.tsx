@@ -37,12 +37,17 @@ export function AccountManagementCard({ userId }: AccountManagementCardProps) {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['account', userId] })
 
+  const onError = (error: any) => {
+    alert(error?.response?.data?.error?.message || error?.message || 'An error occurred')
+  }
+
   const resetPassword = useMutation({
     mutationFn: () => accountApi.resetPassword(userId!),
     onSuccess: (data) => {
       setCredentials({ username: account!.username, temporaryPassword: data.temporaryPassword })
       invalidate()
     },
+    onError,
   })
 
   const reissueCredentials = useMutation({
@@ -51,31 +56,37 @@ export function AccountManagementCard({ userId }: AccountManagementCardProps) {
       setCredentials({ username: account!.username, temporaryPassword: data.temporaryPassword })
       invalidate()
     },
+    onError,
   })
 
   const activate = useMutation({
     mutationFn: () => accountApi.activateAccount(userId!),
     onSuccess: () => invalidate(),
+    onError,
   })
 
   const suspend = useMutation({
     mutationFn: () => accountApi.suspendAccount(userId!),
     onSuccess: () => invalidate(),
+    onError,
   })
 
   const disable = useMutation({
     mutationFn: () => accountApi.disableAccount(userId!),
     onSuccess: () => invalidate(),
+    onError,
   })
 
   const forcePasswordChange = useMutation({
     mutationFn: () => accountApi.forcePasswordChange(userId!),
     onSuccess: () => invalidate(),
+    onError,
   })
 
   const unlock = useMutation({
     mutationFn: () => accountApi.unlockAccount(userId!),
     onSuccess: () => invalidate(),
+    onError,
   })
 
   if (!userId) {

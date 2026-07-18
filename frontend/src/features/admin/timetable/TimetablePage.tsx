@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,8 +11,12 @@ import {
 import { fetchTimetableBySection, deleteTimetable, type TimetableEntry } from './api'
 import { fetchClasses } from '../classes/api'
 import { fetchSections } from '../sections/api'
+import { fetchPeriodMasters } from '../period-master/api'
+import { fetchSessions } from '../academic-sessions/api'
 import { TimetableForm } from './components/TimetableForm'
 import { TimetableGrid } from './components/TimetableGrid'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertTriangle } from 'lucide-react'
 
 export function TimetablePage() {
   const queryClient = useQueryClient()
@@ -34,12 +38,27 @@ export function TimetablePage() {
   })
   const sections = (sectionsData ?? []).filter((s) => s.classId === selectedClassId)
 
-  // Main Timetable Query
-  const { data: timetableEntries, isLoading } = useQuery({
+  const { data: timetableEntries, isLoading: timetableLoading } = useQuery({
     queryKey: ['timetable', 'section', selectedSectionId],
     queryFn: () => fetchTimetableBySection(selectedSectionId),
     enabled: !!selectedSectionId,
   })
+
+  // Period Master dependencies
+  const { data: sessionsData } = useQuery({
+    queryKey: ['sessions'],
+    queryFn: fetchSessions,
+  })
+  
+  const activeSessionId = sessionsData?.find((s) => s.isActive)?.id
+
+  const { data: periodMasters, isLoading: periodsLoading } = useQuery({
+    queryKey: ['periodMaster', activeSessionId],
+    queryFn: () => fetchPeriodMasters(activeSessionId!),
+    enabled: !!activeSessionId,
+  })
+
+  const isLoading = timetableLoading || periodsLoading
 
   const deleteMutation = useMutation({
     mutationFn: deleteTimetable,
@@ -48,15 +67,6 @@ export function TimetablePage() {
     },
   })
 
-  // Auto-select first section when class changes
-  useEffect(() => {
-    if (sections.length > 0 && !sections.find((s) => s.id === selectedSectionId)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedSectionId(sections[0].id)
-    } else if (sections.length === 0) {
-      setSelectedSectionId('')
-    }
-  }, [sections, selectedSectionId])
 
   const handleEdit = (entry: TimetableEntry) => {
     setEditingEntry(entry)
@@ -91,7 +101,10 @@ export function TimetablePage() {
           <label className="text-sm font-medium">Class</label>
           <Select
             value={selectedClassId}
-            onValueChange={(val) => setSelectedClassId(val as string)}
+            onValueChange={(val) => {
+              setSelectedClassId(val as string)
+              setSelectedSectionId('')
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select Class">
@@ -133,6 +146,18 @@ export function TimetablePage() {
         </div>
       </div>
 
+      {/* Period Master warning */}
+      {activeSessionId && (periodMasters ?? []).length === 0 && !periodsLoading && (
+        <Alert variant="destructive" className="border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-700">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            No periods configured for the active session.{' '}
+            <a href="/admin/period-master" className="underline font-medium">Configure Period Master</a>{' '}
+            before creating timetable entries.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Grid */}
       {selectedSectionId ? (
         isLoading ? (
@@ -140,6 +165,7 @@ export function TimetablePage() {
         ) : (
           <TimetableGrid
             entries={timetableEntries ?? []}
+            periodMasters={periodMasters}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

@@ -8,9 +8,9 @@ export interface TimetableEntry {
   id: string
   dayOfWeek: DayOfWeek
   periodNumber: number
-  startTime: string
-  endTime: string
   room: string | null
+  isOverride: boolean
+  overrideDate: string | null
   createdById: string | null
   updatedById: string | null
   createdAt: string
@@ -38,9 +38,9 @@ export type CreateTimetablePayload = {
   subjectId: string
   dayOfWeek: DayOfWeek
   periodNumber: number
-  startTime: string
-  endTime: string
   room?: string
+  isOverride: boolean
+  overrideDate?: string
 }
 
 export type UpdateTimetablePayload = Partial<CreateTimetablePayload>

@@ -66,6 +66,54 @@ export function TeacherLayout() {
           >
             Attendance
           </NavLink>
+          <NavLink
+            to="/teacher/timetable"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Timetable
+          </NavLink>
+          <NavLink
+            to="/teacher/notices"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Notices
+          </NavLink>
+          <NavLink
+            to="/teacher/announcements"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Announcements
+          </NavLink>
+          <NavLink
+            to="/teacher/exams"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Exams & Results
+          </NavLink>
         </nav>
       </aside>
 

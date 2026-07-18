@@ -63,7 +63,7 @@ export function SectionsPage() {
           <TableBody>
             {sections.map((section) => (
               <TableRow key={section.id}>
-                <TableCell>{section.class?.name || section.classId}</TableCell>
+                <TableCell>{section.class?.name || '-'}</TableCell>
                 <TableCell className="font-medium">{section.name}</TableCell>
                 <TableCell>{section.capacity}</TableCell>
                 <TableCell>{section.roomNumber || '-'}</TableCell>

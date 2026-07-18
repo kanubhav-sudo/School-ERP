@@ -126,3 +126,93 @@ export async function markAttendance(
     next(err)
   }
 }
+
+export async function getTeacherTimetable(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await TeacherPortalService.getTeacherTimetable(requireUser(req))
+    res.json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function getNotices(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await TeacherPortalService.getNotices(requireUser(req))
+    res.json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function getAnnouncements(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await TeacherPortalService.getAnnouncements(requireUser(req))
+    res.json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function createAnnouncement(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await TeacherPortalService.createAnnouncement(requireUser(req), req.body)
+    res.status(201).json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function updateAnnouncement(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await TeacherPortalService.updateAnnouncement(requireUser(req), req.params.id as string, req.body)
+    res.json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function deleteAnnouncement(req: Request, res: Response, next: NextFunction) {
+  try {
+    await TeacherPortalService.deleteAnnouncement(requireUser(req), req.params.id as string)
+    res.json({ success: true, data: null })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function getExams(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await TeacherPortalService.getExams(requireUser(req), req.query.sessionId as string)
+    res.json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function getExamStudents(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await TeacherPortalService.getExamStudents(requireUser(req), req.params.sectionId as string, req.query.examId as string)
+    res.json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function uploadAdmitCard(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await TeacherPortalService.uploadAdmitCard(requireUser(req), req.body)
+    res.status(201).json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export async function uploadReportCard(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await TeacherPortalService.uploadReportCard(requireUser(req), req.body)
+    res.status(201).json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}

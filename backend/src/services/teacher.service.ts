@@ -14,6 +14,7 @@ import type {
   UpdateTeacherInput,
   ListTeachersInput,
   CreateTeacherAssignmentInput,
+  UpdateTeacherAssignmentInput,
 } from '../validators/teacher.validator'
 
 // ─── Teacher Select Shape ─────────────────────────────────────
@@ -306,6 +307,82 @@ export async function addTeacherAssignment(teacherId: string, data: CreateTeache
       sectionId: data.sectionId,
       subjectId: data.subjectId,
       isClassTeacher: data.isClassTeacher,
+    },
+    select: {
+      id: true,
+      sessionId: true,
+      isClassTeacher: true,
+      session: { select: { id: true, name: true } },
+      class: { select: { id: true, name: true } },
+      section: { select: { id: true, name: true } },
+      subject: { select: { id: true, name: true, code: true } },
+    },
+  })
+}
+
+export async function updateTeacherAssignment(
+  teacherId: string,
+  assignmentId: string,
+  data: UpdateTeacherAssignmentInput
+) {
+  const assignment = await prisma.teacherAssignment.findUnique({
+    where: { id: assignmentId, teacherId },
+  })
+  if (!assignment) throw new NotFoundError('Assignment not found')
+
+  const sessionId = data.sessionId ?? assignment.sessionId
+  const classId = data.classId ?? assignment.classId
+  const sectionId = data.sectionId ?? assignment.sectionId
+  const subjectId = data.subjectId ?? assignment.subjectId
+  const isClassTeacher = data.isClassTeacher ?? assignment.isClassTeacher
+
+  // Validate section belongs to class if section or class changed
+  if (data.classId || data.sectionId) {
+    const section = await prisma.section.findFirst({
+      where: { id: sectionId, classId },
+    })
+    if (!section) throw new ValidationError('Section does not belong to the selected class', [])
+  }
+
+  // Prevent duplicates (excluding self)
+  const existing = await prisma.teacherAssignment.findFirst({
+    where: {
+      teacherId,
+      sessionId,
+      classId,
+      sectionId,
+      subjectId,
+      id: { not: assignmentId },
+    },
+  })
+  if (existing) throw new ConflictError('This assignment already exists for this teacher')
+
+  // Check class teacher uniqueness if setting isClassTeacher
+  if (isClassTeacher) {
+    const existingClassTeacher = await prisma.teacherAssignment.findFirst({
+      where: {
+        sessionId,
+        classId,
+        sectionId,
+        isClassTeacher: true,
+        id: { not: assignmentId },
+      },
+    })
+    if (existingClassTeacher) {
+      throw new ConflictError(
+        'A class teacher is already assigned to this section for this session'
+      )
+    }
+  }
+
+  return prisma.teacherAssignment.update({
+    where: { id: assignmentId },
+    data: {
+      sessionId,
+      classId,
+      sectionId,
+      subjectId,
+      isClassTeacher,
     },
     select: {
       id: true,

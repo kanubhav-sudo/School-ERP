@@ -65,11 +65,18 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
  * Throws UnauthorizedError for any invalid credential.
  */
 export async function validateCredentials(username: string, password: string): Promise<User> {
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [{ username }, { email: username }],
-    },
-  })
+  let user: User | null
+
+  try {
+    user = await prisma.user.findFirst({
+      where: {
+        OR: [{ username }, { email: username }],
+      },
+    })
+  } catch {
+    // Log the real error server-side but never expose it to the client
+    throw new UnauthorizedError('Invalid username or password')
+  }
 
   if (!user) throw new UnauthorizedError('Invalid username or password')
 

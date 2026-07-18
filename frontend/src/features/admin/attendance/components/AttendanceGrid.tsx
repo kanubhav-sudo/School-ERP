@@ -44,12 +44,13 @@ function statusColor(status: AttendanceStatus): string {
 
 // ─── Component ────────────────────────────────────────────────
 
-export function AttendanceGrid({ students, existingRecords = [], onChange }: AttendanceGridProps) {
+export function AttendanceGrid({ students, existingRecords, onChange }: AttendanceGridProps) {
   // Build initial state from existing records; default new students to PRESENT
   const buildInitial = (): Record<string, MarkAttendanceRecord> => {
     const map: Record<string, MarkAttendanceRecord> = {}
+    const recordsToUse = existingRecords || []
     for (const s of students) {
-      const existing = existingRecords.find((r) => r.student.id === s.id)
+      const existing = recordsToUse.find((r) => r.student.id === s.id)
       map[s.id] = existing
         ? { studentId: s.id, status: existing.status, remarks: existing.remarks ?? '' }
         : { studentId: s.id, status: 'PRESENT', remarks: '' }

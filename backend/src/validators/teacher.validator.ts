@@ -146,6 +146,16 @@ export const createTeacherAssignmentSchema = z.object({
 
 export type CreateTeacherAssignmentInput = z.infer<typeof createTeacherAssignmentSchema>
 
+export const updateTeacherAssignmentSchema = z.object({
+  sessionId: z.string().uuid('sessionId must be a valid UUID').optional(),
+  classId: z.string().uuid('classId must be a valid UUID').optional(),
+  sectionId: z.string().uuid('sectionId must be a valid UUID').optional(),
+  subjectId: z.string().uuid('subjectId must be a valid UUID').optional(),
+  isClassTeacher: z.boolean().optional(),
+})
+
+export type UpdateTeacherAssignmentInput = z.infer<typeof updateTeacherAssignmentSchema>
+
 // ─── Query / Filters ─────────────────────────────────────────
 
 export const listTeachersSchema = z.object({

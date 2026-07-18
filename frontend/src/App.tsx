@@ -16,6 +16,10 @@ import { TeacherDashboard } from './features/teacher/dashboard/TeacherDashboard'
 import { MyClassesPage } from './features/teacher/my-classes/MyClassesPage'
 import { HomeworkPlaceholderPage } from './features/teacher/homework/HomeworkPlaceholderPage'
 import { TeacherAttendancePage } from './features/teacher/attendance/TeacherAttendancePage'
+import { TeacherTimetablePage } from './features/teacher/timetable/TeacherTimetablePage'
+import { TeacherNoticesPage } from './features/teacher/notices/TeacherNoticesPage'
+import { TeacherAnnouncementsPage } from './features/teacher/announcements/TeacherAnnouncementsPage'
+import { TeacherExamsPage } from './features/teacher/exams/TeacherExamsPage'
 import { StudentDashboard } from './features/student/dashboard/StudentDashboard'
 import { AcademicSessionsPage } from './features/admin/academic-sessions/AcademicSessionsPage'
 import { ClassesPage } from './features/admin/classes/ClassesPage'
@@ -24,6 +28,7 @@ import { SubjectsPage } from './features/admin/subjects/SubjectsPage'
 import { TeachersPage } from './features/admin/teachers/TeachersPage'
 import { StudentsPage } from './features/admin/students/StudentsPage'
 import { TimetablePage } from './features/admin/timetable/TimetablePage'
+import { PeriodMasterPage } from './features/admin/period-master/PeriodMasterPage'
 import { AttendancePage } from './features/admin/attendance/AttendancePage'
 import { NoticesPage } from './features/admin/notices/NoticesPage'
 import { TeacherDetailPage } from './features/admin/teachers/TeacherDetailPage'
@@ -96,6 +101,7 @@ function App() {
               <Route path="students" element={<StudentsPage />} />
               <Route path="students/:id" element={<StudentDetailPage />} />
               <Route path="timetable" element={<TimetablePage />} />
+              <Route path="period-master" element={<PeriodMasterPage />} />
               <Route path="attendance" element={<AttendancePage />} />
               <Route path="notices" element={<NoticesPage />} />
               <Route path="finance/fee-plans" element={<FeePlansPage />} />
@@ -118,6 +124,10 @@ function App() {
               <Route path="my-classes" element={<MyClassesPage />} />
               <Route path="homework" element={<HomeworkPlaceholderPage />} />
               <Route path="attendance" element={<TeacherAttendancePage />} />
+              <Route path="timetable" element={<TeacherTimetablePage />} />
+              <Route path="notices" element={<TeacherNoticesPage />} />
+              <Route path="announcements" element={<TeacherAnnouncementsPage />} />
+              <Route path="exams" element={<TeacherExamsPage />} />
             </Route>
 
             {/* Protected Student Routes */}

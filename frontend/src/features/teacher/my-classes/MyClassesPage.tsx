@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { fetchMyClasses } from '../teacher-portal.api'
 import { BookOpen, Users, Star } from 'lucide-react'
 
 export function MyClassesPage() {
+  const navigate = useNavigate()
   const {
     data: classes,
     isLoading,
@@ -61,6 +63,14 @@ export function MyClassesPage() {
             <div className="p-5 flex-1 space-y-4">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                  <Users className="h-4 w-4" />
+                  Students
+                </div>
+                <p className="text-2xl font-bold">{cls.studentCount}</p>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
                   <BookOpen className="h-4 w-4" />
                   Subjects Taught
                 </div>
@@ -82,8 +92,11 @@ export function MyClassesPage() {
                 <Users className="h-4 w-4" />
                 Manage Students
               </span>
-              <button className="text-sm font-medium text-primary hover:underline">
-                View Details &rarr;
+              <button 
+                onClick={() => navigate('/teacher/attendance')}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                View Attendance &rarr;
               </button>
             </div>
           </div>

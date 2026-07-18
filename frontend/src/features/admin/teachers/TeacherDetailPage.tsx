@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   fetchTeacher,
-  addTeacherAssignment,
+  addTeacherAssignment, updateTeacherAssignment,
   removeTeacherAssignment,
   type TeacherAssignment,
 } from './api'
@@ -20,6 +20,7 @@ import {
   BookOpen,
   Star,
   Trash2,
+  Pencil,
 } from 'lucide-react'
 import { AccountManagementCard } from '@/features/admin/accounts/components/AccountManagementCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -87,10 +88,12 @@ function InfoRow({
 function AssignmentRow({
   assignment,
   onRemove,
+  onEdit,
   isRemoving,
 }: {
   assignment: TeacherAssignment
   onRemove: (id: string) => void
+  onEdit?: (asg: TeacherAssignment) => void
   isRemoving: boolean
 }) {
   return (
@@ -117,7 +120,16 @@ function AssignmentRow({
       <td className="py-2.5 px-4 text-sm text-muted-foreground">
         {assignment.session?.name ?? '—'}
       </td>
-      <td className="py-2.5 px-4 text-right">
+      <td className="py-2.5 px-4 text-right space-x-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 h-7 w-7 p-0"
+          onClick={() => onEdit?.(assignment)}
+          disabled={isRemoving}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
         <Button
           variant="ghost"
           size="sm"
@@ -131,6 +143,180 @@ function AssignmentRow({
     </tr>
   )
 }
+
+// ─── Edit Assignment Form ───────────────────────────────────────
+
+function EditAssignmentForm({
+  teacherId,
+  assignment,
+  onSuccess,
+  onCancel,
+}: {
+  teacherId: string
+  assignment: TeacherAssignment
+  onSuccess: () => void
+  onCancel: () => void
+}) {
+  const queryClient = useQueryClient()
+  const [sessionId, setSessionId] = useState(assignment.sessionId)
+  const [classId, setClassId] = useState(assignment.class?.id || '')
+  const [sectionId, setSectionId] = useState(assignment.section?.id || '')
+  const [subjectId, setSubjectId] = useState(assignment.subject?.id || '')
+  const [isClassTeacher, setIsClassTeacher] = useState(assignment.isClassTeacher)
+  const [error, setError] = useState<string | null>(null)
+
+  const { data: sessions } = useQuery<AcademicSession[]>({
+    queryKey: ['sessions'],
+    queryFn: fetchSessions,
+  })
+
+  const { data: allClasses } = useQuery<ClassData[]>({
+    queryKey: ['classes'],
+    queryFn: fetchClasses,
+  })
+
+  const { data: allSections } = useQuery<SectionData[]>({
+    queryKey: ['sections'],
+    queryFn: fetchSections,
+  })
+
+  const { data: allSubjects } = useQuery<SubjectData[]>({
+    queryKey: ['subjects'],
+    queryFn: fetchSubjects,
+  })
+
+  const filteredSections = (allSections ?? []).filter((s) => classId && s.classId === classId)
+
+  const editMutation = useMutation({
+    mutationFn: () =>
+      updateTeacherAssignment(teacherId, assignment.id, {
+        sessionId,
+        classId,
+        sectionId,
+        subjectId,
+        isClassTeacher,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacher', teacherId] })
+      queryClient.invalidateQueries({ queryKey: ['teacherStats'] })
+      setError(null)
+      onSuccess()
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
+  const canSubmit = sessionId && classId && sectionId && subjectId
+
+  return (
+    <div className="border rounded-lg p-4 bg-muted/30 space-y-3 mb-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold">Edit Assignment</p>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {/* Session */}
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Session *</label>
+          <select
+            value={sessionId}
+            onChange={(e) => setSessionId(e.target.value)}
+            className="w-full h-8 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="">Select session</option>
+            {(sessions ?? []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Class */}
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Class *</label>
+          <select
+            value={classId}
+            onChange={(e) => {
+              setClassId(e.target.value)
+              setSectionId('')
+            }}
+            className="w-full h-8 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="">Select class</option>
+            {(allClasses ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Section */}
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Section *</label>
+          <select
+            value={sectionId}
+            onChange={(e) => setSectionId(e.target.value)}
+            className="w-full h-8 rounded-md border border-input bg-background px-2 text-sm"
+            disabled={!classId}
+          >
+            <option value="">Select section</option>
+            {filteredSections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Subject */}
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Subject *</label>
+          <select
+            value={subjectId}
+            onChange={(e) => setSubjectId(e.target.value)}
+            className="w-full h-8 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="">Select subject</option>
+            {(allSubjects ?? []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.code})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Is Class Teacher */}
+        <div className="space-y-1 md:col-span-2 flex flex-col justify-end">
+          <label className="flex items-center gap-2 text-sm cursor-pointer mt-1">
+            <input
+              type="checkbox"
+              checked={isClassTeacher}
+              onChange={(e) => setIsClassTeacher(e.target.checked)}
+              className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+            />
+            <span className="font-medium text-foreground">Set as Class Teacher</span>
+          </label>
+        </div>
+      </div>
+
+      {error && <p className="text-sm text-red-600 font-medium bg-red-50 p-2 rounded">{error}</p>}
+
+      <div className="flex justify-end mt-2">
+        <Button
+          onClick={() => editMutation.mutate()}
+          disabled={!canSubmit || editMutation.isPending}
+          size="sm"
+        >
+          {editMutation.isPending ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 
 // ─── Add Assignment Form ───────────────────────────────────────
 
@@ -164,7 +350,7 @@ function AddAssignmentForm({ teacherId, onSuccess }: { teacherId: string; onSucc
   })
 
   // Filter sections client-side by selected class
-  const filteredSections = (allSections ?? []).filter((s) => !classId || s.classId === classId)
+  const filteredSections = (allSections ?? []).filter((s) => classId && s.classId === classId)
 
   const addMutation = useMutation({
     mutationFn: () =>
@@ -304,6 +490,7 @@ export function TeacherDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingAssignment, setEditingAssignment] = useState<TeacherAssignment | null>(null)
 
   const {
     data: teacher,
@@ -513,6 +700,15 @@ export function TeacherDetailPage() {
                 <AddAssignmentForm teacherId={teacher.id} onSuccess={() => setShowAddForm(false)} />
               )}
 
+              {editingAssignment && (
+                <EditAssignmentForm
+                  teacherId={teacher.id}
+                  assignment={editingAssignment}
+                  onSuccess={() => setEditingAssignment(null)}
+                  onCancel={() => setEditingAssignment(null)}
+                />
+              )}
+
               {assignments.length > 0 ? (
                 <div className="overflow-x-auto rounded-md border">
                   <table className="w-full text-sm">
@@ -542,6 +738,10 @@ export function TeacherDetailPage() {
                           key={asg.id}
                           assignment={asg}
                           onRemove={(asgId) => removeMutation.mutate({ asgId })}
+                          onEdit={(asg) => {
+                            setShowAddForm(false)
+                            setEditingAssignment(asg)
+                          }}
                           isRemoving={removeMutation.isPending}
                         />
                       ))}

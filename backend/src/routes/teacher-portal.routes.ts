@@ -1,11 +1,3 @@
-/**
- * Teacher Portal Routes
- *
- * All routes are protected and restricted to TEACHER role.
- *
- * @module routes/teacher-portal
- */
-
 import { Router } from 'express'
 import { authenticate } from '../middlewares/authenticate.middleware'
 import { authorize } from '../middlewares/authorize.middleware'
@@ -27,5 +19,23 @@ router.get('/sections', TeacherPortalController.getTeacherSections)
 router.get('/sections/:sectionId/students', TeacherPortalController.getSectionStudents)
 router.get('/sections/:sectionId/attendance', TeacherPortalController.getAttendanceSheet)
 router.post('/sections/:sectionId/attendance', TeacherPortalController.markAttendance)
+
+// Timetable
+router.get('/timetable', TeacherPortalController.getTeacherTimetable)
+
+// Notices
+router.get('/notices', TeacherPortalController.getNotices)
+
+// Announcements
+router.get('/announcements', TeacherPortalController.getAnnouncements)
+router.post('/announcements', TeacherPortalController.createAnnouncement)
+router.put('/announcements/:id', TeacherPortalController.updateAnnouncement)
+router.delete('/announcements/:id', TeacherPortalController.deleteAnnouncement)
+
+// Exams & Report/Admit Cards
+router.get('/exams', TeacherPortalController.getExams)
+router.get('/sections/:sectionId/exam-students', TeacherPortalController.getExamStudents)
+router.post('/admit-cards', TeacherPortalController.uploadAdmitCard)
+router.post('/report-cards', TeacherPortalController.uploadReportCard)
 
 export default router

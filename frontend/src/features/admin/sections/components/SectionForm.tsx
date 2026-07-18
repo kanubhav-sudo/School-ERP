@@ -98,7 +98,11 @@ export function SectionForm({ section, onClose }: Props) {
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a class" />
+                    <SelectValue placeholder="Select a class">
+                      {field.value
+                        ? classes.find((c) => c.id === field.value)?.name
+                        : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {classes.map((cls) => (

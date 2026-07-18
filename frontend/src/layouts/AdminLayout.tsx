@@ -122,6 +122,18 @@ export function AdminLayout() {
             Timetable
           </NavLink>
           <NavLink
+            to="/admin/period-master"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Period Master
+          </NavLink>
+          <NavLink
             to="/admin/attendance"
             className={({ isActive }) =>
               `block p-2 rounded-md ${

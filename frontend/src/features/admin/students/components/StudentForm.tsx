@@ -150,10 +150,25 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
     },
   })
 
+
+
   const watchSessionId = watch('sessionId')
   const watchClassId = watch('classId')
   const watchFeeCategory = watch('feeCategory')
   const watchSiblingId = watch('siblingStudentId')
+
+  const [prevClassId, setPrevClassId] = useState(watchClassId)
+  useEffect(() => {
+    if (watchClassId !== prevClassId) {
+      setValue('sectionId', '')
+      setPrevClassId(watchClassId)
+    }
+  }, [watchClassId, prevClassId, setValue])
+
+  const filteredSections = useMemo(() => {
+    if (!watchClassId) return []
+    return sections.filter((s) => s.classId === watchClassId)
+  }, [sections, watchClassId])
 
   // Filter fee plans by selected session and class
   const filteredFeePlans = useMemo(() => {
@@ -188,27 +203,30 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
 
   const mutation = useMutation({
     mutationFn: (data: StudentFormValues) => {
-      // Convert empty strings to undefined for optional FK fields
-      const cleaned = {
-        ...data,
-        sessionId: data.sessionId || undefined,
-        classId: data.classId || undefined,
-        sectionId: data.sectionId || undefined,
-        feeCategory: data.feeCategory || undefined,
-        feePlanId: data.feeCategory === 'STANDARD' ? data.feePlanId || undefined : undefined,
-        siblingStudentId:
-          data.feeCategory === 'SIBLING' ? data.siblingStudentId || undefined : undefined,
-        siblingFeeAmount:
-          data.feeCategory === 'SIBLING' && data.siblingFeeAmount
-            ? data.siblingFeeAmount * 100
-            : undefined,
-        email: data.email || undefined,
-        bloodGroup: data.bloodGroup || undefined,
+      const payload: any = { ...data }
+      // Clean up empty strings to undefined for all fields
+      for (const key of Object.keys(payload)) {
+        if (payload[key] === '') {
+          payload[key] = undefined
+        }
       }
+
+      if (payload.siblingFeeAmount) {
+        payload.siblingFeeAmount = Math.round(payload.siblingFeeAmount * 100)
+      }
+      
+      // Additional specific cleanup if needed
+      if (payload.feeCategory === 'SIBLING') {
+        payload.feePlanId = undefined
+      } else {
+        payload.siblingStudentId = undefined
+        payload.siblingFeeAmount = undefined
+      }
+
       if (isEditing) {
-        return updateStudent({ id: student.id, payload: cleaned })
+        return updateStudent({ id: student!.id, payload })
       }
-      return createStudent(cleaned)
+      return createStudent(payload)
     },
     onSuccess: (response: Student | import('../api').CreateStudentResponse) => {
       queryClient.invalidateQueries({ queryKey: ['students'] })
@@ -434,7 +452,7 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
                   className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
                 >
                   <option value="">— Select Section —</option>
-                  {sections.map((s) => (
+                  {filteredSections.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
                     </option>

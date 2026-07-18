@@ -165,16 +165,31 @@ export async function deleteTeacher(id: string): Promise<void> {
 
 export async function addTeacherAssignment(
   teacherId: string,
-  payload: {
+  data: {
     sessionId: string
     classId: string
     sectionId: string
     subjectId: string
+    isClassTeacher: boolean
+  }
+): Promise<unknown> {
+  const res = await apiClient.post(`/teachers/${teacherId}/assignments`, data)
+  return res.data.data
+}
+
+export async function updateTeacherAssignment(
+  teacherId: string,
+  asgId: string,
+  data: {
+    sessionId?: string
+    classId?: string
+    sectionId?: string
+    subjectId?: string
     isClassTeacher?: boolean
   }
-): Promise<TeacherAssignment> {
-  const { data } = await apiClient.post(`/teachers/${teacherId}/assignments`, payload)
-  return data.data
+): Promise<unknown> {
+  const res = await apiClient.put(`/teachers/${teacherId}/assignments/${asgId}`, data)
+  return res.data.data
 }
 
 export async function removeTeacherAssignment(

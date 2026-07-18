@@ -8,6 +8,7 @@ import subjectRoutes from './subject.routes'
 import teacherRoutes from './teacher.routes'
 import studentRoutes from './student.routes'
 import timetableRoutes from './timetable.routes'
+import periodMasterRoutes from './period-master.routes'
 import attendanceRoutes from './attendance.routes'
 import noticeRoutes from './notice.routes'
 import accountRoutes from './account.routes'
@@ -39,6 +40,7 @@ router.use('/students', studentRoutes)
 
 // Operations Routes (Milestone 4)
 router.use('/timetable', timetableRoutes)
+router.use('/period-master', periodMasterRoutes)
 router.use('/attendance', attendanceRoutes)
 router.use('/notices', noticeRoutes)
 

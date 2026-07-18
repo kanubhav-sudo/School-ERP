@@ -35,7 +35,7 @@ const teacherSchema = z.object({
   address: z.string().optional(),
   notes: z.string().optional(),
   // Optional number
-  experienceYears: z.number().int().min(0).optional(),
+  experienceYears: z.coerce.number().int().min(0).optional(),
   // Optional enums — "" means "not set" (placeholder)
   employmentStatus: z
     .enum(['PERMANENT', 'CONTRACT', 'PROBATION', 'RESIGNED', 'TERMINATED', ''])
@@ -122,7 +122,8 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
     handleSubmit,
     formState: { errors },
   } = useForm<TeacherFormValues>({
-    resolver: zodResolver(teacherSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(teacherSchema) as any,
     defaultValues: {
       employeeId: teacher?.employeeId ?? '',
       firstName: teacher?.firstName ?? '',
@@ -175,7 +176,7 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
           <DialogTitle>{isEditing ? 'Edit Teacher' : 'Add New Teacher'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="space-y-4">
+        <form onSubmit={handleSubmit((data) => mutation.mutate(data as TeacherFormValues))} className="space-y-4">
           {/* Row 1: IDs */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -374,7 +375,7 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
 
           {mutation.isError && (
             <p className="text-sm text-red-500">
-              {mutation.error instanceof Error ? mutation.error.message : 'An error occurred'}
+              {(mutation.error as any).response?.data?.error?.message || (mutation.error instanceof Error ? mutation.error.message : 'An error occurred')}
             </p>
           )}
 

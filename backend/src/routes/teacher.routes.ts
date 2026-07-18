@@ -36,8 +36,7 @@ router.delete('/:id', TeacherController.deleteTeacher)
 
 // POST /api/v1/teachers/:id/assignments
 router.post('/:id/assignments', TeacherController.addAssignment)
-
-// DELETE /api/v1/teachers/:id/assignments/:asgId
+router.put('/:id/assignments/:asgId', TeacherController.updateAssignment)
 router.delete('/:id/assignments/:asgId', TeacherController.removeAssignment)
 
 // GET /api/v1/teachers/:id/timetable

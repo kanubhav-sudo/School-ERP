@@ -22,10 +22,28 @@ import {
   updateTeacherSchema,
   listTeachersSchema,
   createTeacherAssignmentSchema,
+  updateTeacherAssignmentSchema,
 } from '../validators/teacher.validator'
 import * as TeacherService from '../services/teacher.service'
+import { ValidationError } from '../core/errors'
 
 // ─── List ─────────────────────────────────────────────────────
+
+export async function updateAssignment(req: Request, res: Response, next: NextFunction) {
+  try {
+    const id = req.params.id as string
+    const asgId = req.params.asgId as string
+    const parsed = updateTeacherAssignmentSchema.safeParse(req.body)
+    if (!parsed.success) {
+      throw new ValidationError('Invalid assignment data', parsed.error.issues)
+    }
+
+    const assignment = await TeacherService.updateTeacherAssignment(id, asgId, parsed.data)
+    res.json({ success: true, data: assignment })
+  } catch (error) {
+    next(error)
+  }
+}
 
 export async function listTeachers(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
