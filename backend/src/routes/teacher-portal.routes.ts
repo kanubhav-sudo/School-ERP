@@ -38,4 +38,11 @@ router.get('/sections/:sectionId/exam-students', TeacherPortalController.getExam
 router.post('/admit-cards', TeacherPortalController.uploadAdmitCard)
 router.post('/report-cards', TeacherPortalController.uploadReportCard)
 
+// Homework
+import { HomeworkController } from '../controllers/homework.controller'
+router.get('/homework', HomeworkController.getTeacherHomeworks)
+router.post('/homework', HomeworkController.createHomework)
+router.put('/homework/:id', HomeworkController.updateHomework)
+router.delete('/homework/:id', HomeworkController.deleteHomework)
+
 export default router

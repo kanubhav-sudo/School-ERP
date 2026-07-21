@@ -173,6 +173,7 @@ model AcademicSession {
   exams              Exam[]
   admitCards         AdmitCard[]
   periodMasters      PeriodMaster[]
+  homework           Homework[]
 
   @@index([isActive])
   @@map("academic_sessions")
@@ -197,6 +198,7 @@ model Class {
   feePlans           FeePlan[]
   feeRecords         FeeRecord[]
   announcements      Announcement[]
+  homework           Homework[]
 
   @@index([isActive])
   @@index([displayOrder])
@@ -221,6 +223,7 @@ model Section {
   timetables         Timetable[]
   attendance         Attendance[]
   announcements      Announcement[]
+  homework           Homework[]
 
   @@unique([classId, name])
   @@index([classId])
@@ -243,6 +246,7 @@ model Subject {
   classSubjects      ClassSubject[]
   teacherAssignments TeacherAssignment[]
   timetables         Timetable[]
+  homework           Homework[]
 
   @@index([isActive])
   @@map("subjects")
@@ -299,6 +303,7 @@ model Teacher {
   assignments   TeacherAssignment[]
   timetables    Timetable[]
   announcements Announcement[]
+  homework      Homework[]
 
   @@index([isActive])
   @@index([employmentStatus])
@@ -397,10 +402,11 @@ model Student {
   sibling   Student?  @relation("SiblingRelation", fields: [siblingStudentId], references: [id])
   siblingOf Student[] @relation("SiblingRelation")
 
-  attendanceRecords AttendanceRecord[]
-  feeRecords        FeeRecord[]
-  admitCards        AdmitCard[]
-  reportCards       ReportCard[]
+  attendanceRecords   AttendanceRecord[]
+  feeRecords          FeeRecord[]
+  admitCards          AdmitCard[]
+  reportCards         ReportCard[]
+  homeworkSubmissions HomeworkSubmission[]
 
   @@index([isActive])
   @@index([status])
@@ -460,11 +466,11 @@ model Timetable {
 }
 
 model PeriodMaster {
-  id           String    @id @default(uuid()) @db.Uuid
-  sessionId    String    @map("session_id") @db.Uuid
-  periodNumber Int       @map("period_number")
-  startTime    String    @map("start_time") // "HH:MM" 24-hour format
-  endTime      String    @map("end_time") // "HH:MM" 24-hour format
+  id           String @id @default(uuid()) @db.Uuid
+  sessionId    String @map("session_id") @db.Uuid
+  periodNumber Int    @map("period_number")
+  startTime    String @map("start_time") // "HH:MM" 24-hour format
+  endTime      String @map("end_time") // "HH:MM" 24-hour format
 
   session AcademicSession @relation(fields: [sessionId], references: [id])
 
@@ -605,13 +611,13 @@ model AccountAuditLog {
 // All monetary values stored in paise (1 INR = 100 paise).
 
 model FeePlan {
-  id            String          @id @default(uuid()) @db.Uuid
+  id            String  @id @default(uuid()) @db.Uuid
   name          String
-  sessionId     String          @map("session_id") @db.Uuid
-  classId       String          @map("class_id") @db.Uuid
-  monthlyAmount Int             @map("monthly_amount") // paise (e.g. 150000 = Rs 1500)
+  sessionId     String  @map("session_id") @db.Uuid
+  classId       String  @map("class_id") @db.Uuid
+  monthlyAmount Int     @map("monthly_amount") // paise (e.g. 150000 = Rs 1500)
   description   String?
-  isActive        Boolean     @default(true) @map("is_active")
+  isActive      Boolean @default(true) @map("is_active")
 
   // Audit
   createdById String? @map("created_by_id") @db.Uuid
@@ -644,24 +650,24 @@ model FeePlan {
 // All monetary values stored in paise.
 
 model FeeRecord {
-  id        String @id @default(uuid()) @db.Uuid
+  id        String  @id @default(uuid()) @db.Uuid
   studentId String  @map("student_id") @db.Uuid
   feePlanId String? @map("fee_plan_id") @db.Uuid
   sessionId String  @map("session_id") @db.Uuid
-  classId   String @map("class_id") @db.Uuid
+  classId   String  @map("class_id") @db.Uuid
 
   // Month identifier
   month Int // 1-12
   year  Int // e.g. 2025
 
   // Financial fields (all in paise)
-  monthlyAmount  Int             @map("monthly_amount") // base amount from fee plan or sibling fee
-  lateFine       Int             @default(0) @map("late_fine") // future: applied by cron
-  netAmount      Int             @map("net_amount") // monthlyAmount + lateFine
-  paidAmount     Int             @default(0) @map("paid_amount") // amount paid so far
-  balanceAmount  Int             @map("balance_amount") // netAmount - paidAmount
-  status         FeeRecordStatus @default(PENDING)
-  dueDate        DateTime?       @map("due_date") @db.Date // future: configurable
+  monthlyAmount Int             @map("monthly_amount") // base amount from fee plan or sibling fee
+  lateFine      Int             @default(0) @map("late_fine") // future: applied by cron
+  netAmount     Int             @map("net_amount") // monthlyAmount + lateFine
+  paidAmount    Int             @default(0) @map("paid_amount") // amount paid so far
+  balanceAmount Int             @map("balance_amount") // netAmount - paidAmount
+  status        FeeRecordStatus @default(PENDING)
+  dueDate       DateTime?       @map("due_date") @db.Date // future: configurable
 
   // Latest payment snapshot (full history in FeePayment table)
   lastPaymentDate DateTime?    @map("last_payment_date") @db.Date
@@ -769,13 +775,13 @@ model Announcement {
 // ─── Exams (Admin/Global setup for Report Cards) ──────────────
 
 model Exam {
-  id        String   @id @default(uuid()) @db.Uuid
-  sessionId String   @map("session_id") @db.Uuid
+  id        String @id @default(uuid()) @db.Uuid
+  sessionId String @map("session_id") @db.Uuid
   name      String
-  
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   session     AcademicSession @relation(fields: [sessionId], references: [id])
   reportCards ReportCard[]
 
@@ -791,10 +797,10 @@ model AdmitCard {
   sessionId String @map("session_id") @db.Uuid
   studentId String @map("student_id") @db.Uuid
   fileUrl   String @map("file_url")
-  
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   session AcademicSession @relation(fields: [sessionId], references: [id])
   student Student         @relation(fields: [studentId], references: [id])
 
@@ -811,10 +817,10 @@ model ReportCard {
   examId    String @map("exam_id") @db.Uuid
   studentId String @map("student_id") @db.Uuid
   fileUrl   String @map("file_url")
-  
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   exam    Exam    @relation(fields: [examId], references: [id])
   student Student @relation(fields: [studentId], references: [id])
 
@@ -822,4 +828,68 @@ model ReportCard {
   @@index([examId])
   @@index([studentId])
   @@map("report_cards")
+}
+
+// ─── Homework & Assignments ───────────────────────────────────
+
+enum HomeworkStatus {
+  ASSIGNED
+  SUBMITTED
+  GRADED
+  LATE
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Homework {
+  id            String        @id @default(uuid()) @db.Uuid
+  title         String
+  description   String?       @db.Text
+  dueDate       DateTime      @map("due_date") @db.Date
+  attachmentUrl String?       @map("attachment_url")
+  marks         Int?
+  status        PublishStatus @default(PUBLISHED)
+
+  sessionId String @map("session_id") @db.Uuid
+  classId   String @map("class_id") @db.Uuid
+  sectionId String @map("section_id") @db.Uuid
+  subjectId String @map("subject_id") @db.Uuid
+  teacherId String @map("teacher_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  session AcademicSession @relation(fields: [sessionId], references: [id])
+  class   Class           @relation(fields: [classId], references: [id])
+  section Section         @relation(fields: [sectionId], references: [id])
+  subject Subject         @relation(fields: [subjectId], references: [id])
+  teacher Teacher         @relation(fields: [teacherId], references: [id])
+
+  submissions HomeworkSubmission[]
+
+  @@index([sessionId])
+  @@index([sectionId])
+  @@map("homework")
+}
+
+model HomeworkSubmission {
+  id            String         @id @default(uuid()) @db.Uuid
+  homeworkId    String         @map("homework_id") @db.Uuid
+  studentId     String         @map("student_id") @db.Uuid
+  status        HomeworkStatus @default(ASSIGNED)
+  remarks       String?
+  submissionUrl String?        @map("submission_url")
+
+  submittedAt DateTime? @map("submitted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  homework Homework @relation(fields: [homeworkId], references: [id])
+  student  Student  @relation(fields: [studentId], references: [id])
+
+  @@unique([homeworkId, studentId])
+  @@map("homework_submissions")
 }

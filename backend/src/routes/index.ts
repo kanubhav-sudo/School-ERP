@@ -45,6 +45,9 @@ router.use('/period-master', periodMasterRoutes)
 router.use('/attendance', attendanceRoutes)
 router.use('/notices', noticeRoutes)
 
+import homeworkRoutes from './homework.routes'
+router.use('/homework', homeworkRoutes)
+
 // Account Routes
 router.use('/accounts', accountRoutes)
 
@@ -54,6 +57,10 @@ router.use('/fee-records', feeRecordRoutes)
 
 // Teacher Portal
 router.use('/teacher-portal', teacherPortalRoutes)
+
+// Student Portal
+import studentPortalRoutes from './student-portal.routes'
+router.use('/student-portal', studentPortalRoutes)
 
 // Admin Dashboard
 router.use('/admin-dashboard', adminDashboardRoutes)

@@ -157,6 +157,18 @@ export function AdminLayout() {
           >
             Noticeboard
           </NavLink>
+          <NavLink
+            to="/admin/homework"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Homework
+          </NavLink>
           <div className="pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Finance
           </div>

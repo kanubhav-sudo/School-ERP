@@ -241,3 +241,73 @@ export async function uploadReportCard(payload: {
   const { data } = await api.post('/teacher-portal/report-cards', payload)
   return data.data
 }
+
+// ─── Homework ─────────────────────────────────────────────────
+
+export interface HomeworkDto {
+  id: string
+  title: string
+  description: string | null
+  dueDate: string
+  attachmentUrl: string | null
+  marks: number | null
+  status: 'DRAFT' | 'PUBLISHED'
+  sessionId: string
+  classId: string
+  sectionId: string
+  subjectId: string
+  teacherId: string
+  class: { id: string; name: string }
+  section: { id: string; name: string }
+  subject: { id: string; name: string; code: string }
+  _count: { submissions: number }
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateHomeworkPayload {
+  title: string
+  description?: string
+  dueDate: string
+  attachmentUrl?: string
+  marks?: number
+  status: 'DRAFT' | 'PUBLISHED'
+  sessionId: string
+  classId: string
+  sectionId: string
+  subjectId: string
+}
+
+export interface UpdateHomeworkPayload {
+  title?: string
+  description?: string
+  dueDate?: string
+  attachmentUrl?: string
+  marks?: number
+  status?: 'DRAFT' | 'PUBLISHED'
+}
+
+export async function fetchTeacherHomeworks(filters?: {
+  classId?: string
+  sectionId?: string
+  subjectId?: string
+  status?: string
+}): Promise<HomeworkDto[]> {
+  const { data } = await api.get('/teacher-portal/homework', { params: filters })
+  return data.data
+}
+
+export async function createHomework(payload: CreateHomeworkPayload): Promise<HomeworkDto> {
+  const { data } = await api.post('/teacher-portal/homework', payload)
+  return data.data
+}
+
+export async function updateHomework(id: string, payload: UpdateHomeworkPayload): Promise<HomeworkDto> {
+  const { data } = await api.put(`/teacher-portal/homework/${id}`, payload)
+  return data.data
+}
+
+export async function deleteHomework(id: string): Promise<void> {
+  await api.delete(`/teacher-portal/homework/${id}`)
+}
+

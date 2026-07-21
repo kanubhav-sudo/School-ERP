@@ -14,13 +14,21 @@ import { NotFound } from './pages/NotFound'
 import { AdminDashboard } from './features/admin/dashboard/AdminDashboard'
 import { TeacherDashboard } from './features/teacher/dashboard/TeacherDashboard'
 import { MyClassesPage } from './features/teacher/my-classes/MyClassesPage'
-import { HomeworkPlaceholderPage } from './features/teacher/homework/HomeworkPlaceholderPage'
+import { TeacherHomeworkPage } from './features/teacher/homework/TeacherHomeworkPage'
 import { TeacherAttendancePage } from './features/teacher/attendance/TeacherAttendancePage'
 import { TeacherTimetablePage } from './features/teacher/timetable/TeacherTimetablePage'
 import { TeacherNoticesPage } from './features/teacher/notices/TeacherNoticesPage'
 import { TeacherAnnouncementsPage } from './features/teacher/announcements/TeacherAnnouncementsPage'
 import { TeacherExamsPage } from './features/teacher/exams/TeacherExamsPage'
 import { StudentDashboard } from './features/student/dashboard/StudentDashboard'
+import { StudentProfilePage } from './features/student/profile/StudentProfilePage'
+import { StudentAttendancePage } from './features/student/attendance/StudentAttendancePage'
+import { StudentTimetablePage } from './features/student/timetable/StudentTimetablePage'
+import { StudentFeesPage } from './features/student/fees/StudentFeesPage'
+import { StudentExamsPage } from './features/student/exams/StudentExamsPage'
+import { StudentHomeworkPage } from './features/student/homework/StudentHomeworkPage'
+import { StudentNoticesPage } from './features/student/notices/StudentNoticesPage'
+import { StudentAnnouncementsPage } from './features/student/announcements/StudentAnnouncementsPage'
 import { AcademicSessionsPage } from './features/admin/academic-sessions/AcademicSessionsPage'
 import { ClassesPage } from './features/admin/classes/ClassesPage'
 import { SectionsPage } from './features/admin/sections/SectionsPage'
@@ -36,6 +44,7 @@ import { StudentDetailPage } from './features/admin/students/StudentDetailPage'
 import { ChangePasswordPage } from './features/admin/accounts/ChangePasswordPage'
 import { FeePlansPage } from './features/admin/fee-plans/FeePlansPage'
 import { FeeRecordsPage } from './features/admin/fee-records/FeeRecordsPage'
+import { AdminHomeworkPage } from './features/admin/homework/AdminHomeworkPage'
 // Route Guards
 import { GuestRoute, ProtectedRoute, RoleRoute, getDashboardPath } from './routes/guards'
 
@@ -106,6 +115,7 @@ function App() {
               <Route path="notices" element={<NoticesPage />} />
               <Route path="finance/fee-plans" element={<FeePlansPage />} />
               <Route path="finance/fee-records" element={<FeeRecordsPage />} />
+              <Route path="homework" element={<AdminHomeworkPage />} />
             </Route>
 
             {/* Protected Teacher Routes */}
@@ -122,13 +132,14 @@ function App() {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<TeacherDashboard />} />
               <Route path="my-classes" element={<MyClassesPage />} />
-              <Route path="homework" element={<HomeworkPlaceholderPage />} />
+              <Route path="homework" element={<TeacherHomeworkPage />} />
               <Route path="attendance" element={<TeacherAttendancePage />} />
               <Route path="timetable" element={<TeacherTimetablePage />} />
               <Route path="notices" element={<TeacherNoticesPage />} />
               <Route path="announcements" element={<TeacherAnnouncementsPage />} />
               <Route path="exams" element={<TeacherExamsPage />} />
             </Route>
+
 
             {/* Protected Student Routes */}
             <Route
@@ -143,6 +154,14 @@ function App() {
             >
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="profile" element={<StudentProfilePage />} />
+              <Route path="attendance" element={<StudentAttendancePage />} />
+              <Route path="timetable" element={<StudentTimetablePage />} />
+              <Route path="fees" element={<StudentFeesPage />} />
+              <Route path="exams" element={<StudentExamsPage />} />
+              <Route path="homework" element={<StudentHomeworkPage />} />
+              <Route path="notices" element={<StudentNoticesPage />} />
+              <Route path="announcements" element={<StudentAnnouncementsPage />} />
             </Route>
 
             {/* Error Pages */}

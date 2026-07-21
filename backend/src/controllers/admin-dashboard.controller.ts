@@ -4,7 +4,7 @@ import * as AdminDashboardService from '../services/admin-dashboard.service'
 import { logger } from '../core'
 
 export async function getDashboardStats(
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {

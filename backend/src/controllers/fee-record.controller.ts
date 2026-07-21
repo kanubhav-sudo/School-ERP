@@ -47,7 +47,7 @@ export async function processPayment(
   next: NextFunction
 ): Promise<void> {
   try {
-    const studentId = req.params.studentId
+    const studentId = req.params.studentId as string
     const parsed = payFeeSchema.safeParse(req.body)
     
     if (!parsed.success) {
@@ -55,7 +55,7 @@ export async function processPayment(
       return
     }
 
-    const result = await FeeRecordService.addFeePayment(studentId, parsed.data, req.user!.id)
+    const result = await FeeRecordService.addFeePayment(studentId, parsed.data, req.user?.sub as string)
     ApiResponse.success(res, result, 'Fee payment processed successfully')
   } catch (err) {
     next(err)

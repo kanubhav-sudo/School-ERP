@@ -144,7 +144,7 @@ export async function generateFeeRecordsForStudent(studentId: string, tx: Prisma
     }
   })
 
-  if (!student || !student.feePlanId || !student.feePlan) return
+  if (!student || !student.feePlanId || !student.feePlan || !student.session || !student.sessionId || !student.classId) return
 
   // Basic assumption: session name is like "2026-27"
   const startYear = parseInt(student.session.name.substring(0, 4))
@@ -165,9 +165,10 @@ export async function generateFeeRecordsForStudent(studentId: string, tx: Prisma
 
     if (!existing) {
       let monthlyAmount = student.feePlan.monthlyAmount
-      if (student.feeCategory === 'SIBLING' && student.siblingFeeAmount !== null) {
+      const category = student.feeCategory as string
+      if (category === 'SIBLING' && student.siblingFeeAmount !== null) {
         monthlyAmount = student.siblingFeeAmount * 100 // convert to paise
-      } else if (student.feeCategory === 'RTE' || student.feeCategory === 'STAFF_CHILD') {
+      } else if (category === 'RTE' || category === 'STAFF_CHILD') {
         monthlyAmount = 0
       }
 
