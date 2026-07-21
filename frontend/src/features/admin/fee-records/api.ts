@@ -26,14 +26,17 @@ export interface FeeRecord {
   feePlan?: { id: string; name: string }
 }
 
-export interface ListFeeRecordsParams {
+export interface FetchFeeRecordsParams {
   page?: number
   limit?: number
   sessionId?: string
   classId?: string
+  sectionId?: string
   month?: number
   status?: string
   studentId?: string
+  search?: string
+  sortBy?: string
 }
 
 export interface FeeRecordListResponse {
@@ -46,9 +49,7 @@ export interface FeeRecordListResponse {
   }
 }
 
-export async function fetchFeeRecords(
-  params: ListFeeRecordsParams = {}
-): Promise<FeeRecordListResponse> {
+export async function fetchFeeRecords(params: FetchFeeRecordsParams) {
   const { data } = await apiClient.get('/fee-records', { params })
   return data.data
 }
@@ -58,7 +59,21 @@ export interface FeeSummary {
   totalPaid: number
 }
 
-export async function fetchFeeSummary(sessionId: string, month: number): Promise<FeeSummary> {
+export async function fetchFeeSummary(sessionId: string, month: number) {
   const { data } = await apiClient.get('/fee-records/summary', { params: { sessionId, month } })
+  return data.data
+}
+
+export interface AddFeePaymentParams {
+  studentId: string
+  amount: number
+  paymentMode: 'CASH' | 'CHEQUE' | 'BANK_TRANSFER' | 'UPI' | 'CARD'
+  transactionId?: string
+  remarks?: string
+}
+
+export async function addFeePayment(params: AddFeePaymentParams) {
+  const { studentId, ...payload } = params
+  const { data } = await apiClient.post(`/fee-records/student/${studentId}/pay`, payload)
   return data.data
 }

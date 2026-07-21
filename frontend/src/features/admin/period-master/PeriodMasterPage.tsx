@@ -13,12 +13,37 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 
 const MAX_PERIODS = 10
 
-const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/
+const timeRegex12h = /^(0?[1-9]|1[0-2]):([0-5][0-9])\s?(AM|PM|am|pm)$/i
+
+function to12h(time24: string): string {
+  if (!time24) return ''
+  const parts = time24.split(':')
+  if (parts.length < 2) return time24
+  let hour = parseInt(parts[0], 10)
+  const minute = parts[1]
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  hour = hour % 12 || 12
+  const hourStr = hour.toString().padStart(2, '0')
+  return `${hourStr}:${minute} ${ampm}`
+}
+
+function to24h(time12: string): string {
+  if (!time12) return ''
+  const match = time12.trim().match(timeRegex12h)
+  if (!match) return time12
+  let hour = parseInt(match[1], 10)
+  const minute = match[2]
+  const ampm = match[3].toUpperCase()
+  if (ampm === 'PM' && hour < 12) hour += 12
+  if (ampm === 'AM' && hour === 12) hour = 0
+  const hourStr = hour.toString().padStart(2, '0')
+  return `${hourStr}:${minute}`
+}
 
 const periodSchema = z.object({
   periodNumber: z.number().min(1).max(MAX_PERIODS),
-  startTime: z.string().regex(timeRegex, 'Must be HH:MM format'),
-  endTime: z.string().regex(timeRegex, 'Must be HH:MM format'),
+  startTime: z.string().regex(timeRegex12h, 'Must be hh:mm AM/PM (e.g. 08:30 AM)'),
+  endTime: z.string().regex(timeRegex12h, 'Must be hh:mm AM/PM (e.g. 09:15 AM)'),
 })
 
 const formSchema = z.object({
@@ -75,8 +100,8 @@ export function PeriodMasterPage() {
       reset({
         periods: existingPeriods.map((p) => ({
           periodNumber: p.periodNumber,
-          startTime: p.startTime,
-          endTime: p.endTime,
+          startTime: to12h(p.startTime),
+          endTime: to12h(p.endTime),
         })),
       })
     }
@@ -97,6 +122,8 @@ export function PeriodMasterPage() {
         periods: data.periods.map((p, index) => ({
           ...p,
           periodNumber: index + 1, // Enforce sequential period numbers
+          startTime: to24h(p.startTime),
+          endTime: to24h(p.endTime),
         })),
       }),
     onSuccess: () => {
@@ -161,7 +188,7 @@ export function PeriodMasterPage() {
               <div>
                 <CardTitle>Periods</CardTitle>
                 <CardDescription>
-                  Configure period start and end times in 24-hour format (HH:MM).{' '}
+                  Configure period start and end times in 12-hour format (e.g. 08:30 AM).{' '}
                   {fields.length}/{MAX_PERIODS} periods configured.
                 </CardDescription>
               </div>
@@ -232,7 +259,8 @@ export function PeriodMasterPage() {
                         {/* Start time */}
                         <div className="space-y-1">
                           <Input
-                            type="time"
+                            type="text"
+                            placeholder="08:30 AM"
                             {...register(`periods.${index}.startTime` as const)}
                             className={
                               errors.periods?.[index]?.startTime ? 'border-destructive' : ''
@@ -248,7 +276,8 @@ export function PeriodMasterPage() {
                         {/* End time */}
                         <div className="space-y-1">
                           <Input
-                            type="time"
+                            type="text"
+                            placeholder="09:15 AM"
                             {...register(`periods.${index}.endTime` as const)}
                             className={
                               errors.periods?.[index]?.endTime ? 'border-destructive' : ''

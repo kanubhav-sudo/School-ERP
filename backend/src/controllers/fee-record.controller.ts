@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import { ApiResponse } from '../core/response'
-import { listFeeRecordsSchema, feeSummarySchema } from '../validators/fee-record.validator'
+import { listFeeRecordsSchema, feeSummarySchema, payFeeSchema } from '../validators/fee-record.validator'
 import * as FeeRecordService from '../services/fee-record.service'
 
 export async function listFeeRecords(
@@ -40,3 +40,25 @@ export async function getFeeSummary(
     next(err)
   }
 }
+
+export async function processPayment(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const studentId = req.params.studentId
+    const parsed = payFeeSchema.safeParse(req.body)
+    
+    if (!parsed.success) {
+      ApiResponse.badRequest(res, 'Invalid payment data', parsed.error.issues)
+      return
+    }
+
+    const result = await FeeRecordService.addFeePayment(studentId, parsed.data, req.user!.id)
+    ApiResponse.success(res, result, 'Fee payment processed successfully')
+  } catch (err) {
+    next(err)
+  }
+}
+

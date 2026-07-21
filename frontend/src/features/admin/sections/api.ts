@@ -12,8 +12,8 @@ export interface SectionData {
   isActive: boolean
 }
 
-export async function fetchSections(): Promise<SectionData[]> {
-  const { data } = await apiClient.get('/sections')
+export async function fetchSections(params?: { classId?: string }): Promise<SectionData[]> {
+  const { data } = await apiClient.get('/sections', { params })
   return data.data.sections || data.data
 }
 

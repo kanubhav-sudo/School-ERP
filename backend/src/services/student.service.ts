@@ -119,6 +119,7 @@ export async function getStudentById(id: string) {
 }
 
 import { createUserForStudent } from './account.service'
+import { generateFeeRecordsForStudent } from './fee-record.service'
 
 export async function createStudent(data: CreateStudentInput) {
   // Check for duplicate admission number
@@ -181,6 +182,9 @@ export async function createStudent(data: CreateStudentInput) {
       where: { id: student.id },
       select: studentSelect,
     })
+
+    // Generate fee records
+    await generateFeeRecordsForStudent(student.id, tx)
 
     return { student: finalStudent!, credentials }
   })

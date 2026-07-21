@@ -3,7 +3,10 @@ import { useState } from 'react'
 import { fetchFeeRecords, type FeeRecord } from './api'
 import { fetchSessions } from '@/features/admin/academic-sessions/api'
 import { fetchClasses } from '@/features/admin/classes/api'
-import { format } from 'date-fns'
+import { fetchSections } from '@/features/admin/sections/api'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { FeePaymentDialog } from './components/FeePaymentDialog'
 
 const MONTHS = [
   { value: 1, label: 'January' },
@@ -24,8 +27,15 @@ export function FeeRecordsPage() {
   const [page, setPage] = useState(1)
   const [sessionId, setSessionId] = useState('')
   const [classId, setClassId] = useState('')
+  const [sectionId, setSectionId] = useState('')
   const [month, setMonth] = useState('')
   const [status, setStatus] = useState('')
+  const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState('newest')
+
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [selectedStudentId, setSelectedStudentId] = useState('')
+  const [selectedStudentName, setSelectedStudentName] = useState('')
 
   const { data: sessions = [] } = useQuery({
     queryKey: ['academic-sessions'],
@@ -37,15 +47,24 @@ export function FeeRecordsPage() {
     queryFn: fetchClasses,
   })
 
+  const { data: sections = [] } = useQuery({
+    queryKey: ['sections', classId],
+    queryFn: () => fetchSections({ classId }),
+    enabled: !!classId,
+  })
+
   const { data, isLoading } = useQuery({
-    queryKey: ['fee-records', { page, sessionId, classId, month, status }],
+    queryKey: ['fee-records', { page, sessionId, classId, sectionId, month, status, search, sortBy }],
     queryFn: () =>
       fetchFeeRecords({
         page,
         sessionId: sessionId || undefined,
         classId: classId || undefined,
+        sectionId: sectionId || undefined,
         month: month ? Number(month) : undefined,
         status: status || undefined,
+        search: search || undefined,
+        sortBy: sortBy || undefined,
       }),
   })
 
@@ -66,6 +85,15 @@ export function FeeRecordsPage() {
       </div>
 
       <div className="flex flex-wrap gap-4 bg-card p-4 rounded-lg border border-border shadow-sm">
+        <Input
+          placeholder="Search student or receipt..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(1)
+          }}
+          className="h-10 w-64"
+        />
         <select
           value={sessionId}
           onChange={(e) => {
@@ -86,6 +114,7 @@ export function FeeRecordsPage() {
           value={classId}
           onChange={(e) => {
             setClassId(e.target.value)
+            setSectionId('') // reset section when class changes
             setPage(1)
           }}
           className="h-10 rounded-md border border-input bg-background px-3 text-sm"
@@ -94,6 +123,23 @@ export function FeeRecordsPage() {
           {classes.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={sectionId}
+          onChange={(e) => {
+            setSectionId(e.target.value)
+            setPage(1)
+          }}
+          disabled={!classId}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
+        >
+          <option value="">All Sections</option>
+          {sections.map((s: any) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
             </option>
           ))}
         </select>
@@ -124,9 +170,24 @@ export function FeeRecordsPage() {
         >
           <option value="">All Statuses</option>
           <option value="PENDING">Pending</option>
-          <option value="PARTIALLY_PAID">Partially Paid</option>
+          <option value="PARTIAL">Partially Paid</option>
           <option value="PAID">Paid</option>
           <option value="CANCELLED">Cancelled</option>
+        </select>
+
+        <select
+          value={sortBy}
+          onChange={(e) => {
+            setSortBy(e.target.value)
+            setPage(1)
+          }}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm ml-auto"
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="highest">Highest Amount</option>
+          <option value="lowest">Lowest Amount</option>
+          <option value="name">Student Name</option>
         </select>
       </div>
 
@@ -142,7 +203,7 @@ export function FeeRecordsPage() {
                 <th className="px-4 py-3 font-medium">Amount Paid</th>
                 <th className="px-4 py-3 font-medium">Balance</th>
                 <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Due Date</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -198,7 +259,19 @@ export function FeeRecordsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {record.dueDate ? format(new Date(record.dueDate), 'MMM dd, yyyy') : '-'}
+                      {record.status !== 'PAID' && record.status !== 'WAIVED' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedStudentId(record.studentId)
+                            setSelectedStudentName(`${record.student.firstName} ${record.student.lastName}`)
+                            setPaymentDialogOpen(true)
+                          }}
+                        >
+                          Receive Fee
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -209,6 +282,15 @@ export function FeeRecordsPage() {
       </div>
 
       {/* Pagination controls can be added here */}
+
+      {selectedStudentId && (
+        <FeePaymentDialog
+          studentId={selectedStudentId}
+          studentName={selectedStudentName}
+          open={paymentDialogOpen}
+          onOpenChange={setPaymentDialogOpen}
+        />
+      )}
     </div>
   )
 }

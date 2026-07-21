@@ -15,6 +15,7 @@ import accountRoutes from './account.routes'
 import feePlanRoutes from './fee-plan.routes'
 import feeRecordRoutes from './fee-record.routes'
 import teacherPortalRoutes from './teacher-portal.routes'
+import adminDashboardRoutes from './admin-dashboard.routes'
 import { generalApiLimiter } from '../middlewares/rateLimiter.middleware'
 
 const router = Router()
@@ -53,5 +54,8 @@ router.use('/fee-records', feeRecordRoutes)
 
 // Teacher Portal
 router.use('/teacher-portal', teacherPortalRoutes)
+
+// Admin Dashboard
+router.use('/admin-dashboard', adminDashboardRoutes)
 
 export default router
