@@ -15,6 +15,11 @@
 ## Bug Fixed
 `teacher.validator.ts` — `dateOfBirth`, `photoUrl`, `bloodGroup` now accept empty strings (coerced to `undefined`). Teacher creation from the UI now works without 400 errors.
 
+**Admin Dashboard Crash / Infinite Loading Bug (Post-Milestone Fix)**
+- Fixed brittle dashboard statistics aggregation in `admin-dashboard.service.ts` that returned a 500 internal server error upon individual query failures (e.g. calculating fees without an active session). Rewrote to isolate queries and gracefully fallback to 0.
+- Handled infinite loading on the frontend `AdminDashboard.tsx` when API throws an error (added `isError` handling and retry button).
+- Identified and restarted the stuck `tsx watch` dev server process that was not picking up code updates.
+
 ## Next Milestone
 **Milestone 7 — Student Portal / Teacher Portal**
 

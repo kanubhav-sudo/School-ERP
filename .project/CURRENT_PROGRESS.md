@@ -153,3 +153,9 @@
     - Fix 3: Updated `TeacherForm` Zod schema to accept `""` and built `buildPayload` helper to coerce empty strings to `undefined` before API submission. Also fixed TSX parse error due to generic syntax.
     - Verified: Live API test with all empty-string optional fields returns `success: true`, credentials auto-generated, popup displays successfully, reissue password flow works, and teacher login is successful.
     - Lint: clean (backend ESLint + frontend TSC both zero errors).
+
+## Post-Milestone 6 Bug Fixes & Stabilization
+- **Admin Dashboard Stabilization**:
+  - Rewrote the `/admin-dashboard/stats` backend service to provide graceful failure containment. Individual widget aggregation queries now catch their own exceptions (e.g., fee calculation errors when there is no active session) and return 0 instead of crashing the entire page.
+  - Added robust UI error state handling to `AdminDashboard.tsx`, introducing an error message block and a "Retry" button. This resolved the infinite skeleton loading issue.
+  - Identified and killed the hung `tsx watch` process, restarting the development server to guarantee file recompilation and data accuracy.

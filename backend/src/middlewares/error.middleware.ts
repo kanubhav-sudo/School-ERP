@@ -10,6 +10,7 @@
 
 import { Request, Response, NextFunction } from 'express'
 import { AppError, ValidationError, ApiResponse, logger } from '../core'
+import { env } from '../config'
 
 export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
   // If it's a known operational error (AppError subclass)
@@ -30,8 +31,11 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
     return
   }
 
-  // Unhandled/unknown error — NEVER expose internal details to clients
+  // Unhandled/unknown error
   logger.fatal({ err, req }, 'Unhandled Exception')
 
-  ApiResponse.serverError(res, 'Internal server error')
+  const message =
+    env.NODE_ENV === 'production' ? 'Internal server error' : err.message || 'Internal server error'
+
+  ApiResponse.serverError(res, message)
 }
