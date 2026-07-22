@@ -1,6 +1,8 @@
 import prisma from '../database/prisma'
 import { NotFoundError, AppError } from '../core/errors'
 import { PublishStatus } from '../generated/prisma'
+import { deleteFile } from '../utils/file.util'
+import path from 'path'
 
 export interface CreateHomeworkInput {
   title: string
@@ -20,7 +22,7 @@ export interface UpdateHomeworkInput {
   title?: string
   description?: string
   dueDate?: string
-  attachmentUrl?: string
+  attachmentUrl?: string | null
   marks?: number
   status?: PublishStatus
 }
@@ -29,6 +31,17 @@ export class HomeworkService {
   static async createHomework(data: CreateHomeworkInput) {
     const section = await prisma.section.findUnique({ where: { id: data.sectionId } })
     if (!section) throw new NotFoundError('Section not found')
+
+    let teacherId = data.teacherId
+    const teacher = await prisma.teacher.findFirst({
+      where: {
+        OR: [{ id: teacherId }, { userId: teacherId }],
+      },
+      select: { id: true },
+    })
+    if (teacher) {
+      teacherId = teacher.id
+    }
 
     return await prisma.homework.create({
       data: {
@@ -42,7 +55,7 @@ export class HomeworkService {
         classId: data.classId,
         sectionId: data.sectionId,
         subjectId: data.subjectId,
-        teacherId: data.teacherId
+        teacherId: teacherId,
       },
       include: {
         class: true,
@@ -58,6 +71,14 @@ export class HomeworkService {
     
     if (teacherId && homework.teacherId !== teacherId) {
       throw new AppError('You do not have permission to edit this homework', 403)
+    }
+
+    // Delete old attachment if it's being replaced or deleted
+    if (data.attachmentUrl !== undefined && homework.attachmentUrl && data.attachmentUrl !== homework.attachmentUrl) {
+      const fileName = homework.attachmentUrl.split('/').pop()
+      if (fileName) {
+        deleteFile(path.join(process.cwd(), 'uploads', fileName))
+      }
     }
 
     return await prisma.homework.update({
@@ -82,6 +103,13 @@ export class HomeworkService {
       throw new AppError('You do not have permission to delete this homework', 403)
     }
 
+    if (homework.attachmentUrl) {
+      const fileName = homework.attachmentUrl.split('/').pop()
+      if (fileName) {
+        deleteFile(path.join(process.cwd(), 'uploads', fileName))
+      }
+    }
+
     await prisma.$transaction([
       prisma.homeworkSubmission.deleteMany({ where: { homeworkId: id } }),
       prisma.homework.delete({ where: { id } })
@@ -99,9 +127,9 @@ export class HomeworkService {
         ...(filters?.status && { status: filters.status }),
       },
       include: {
-        class: true,
-        section: true,
-        subject: true,
+        class: { select: { id: true, name: true } },
+        section: { select: { id: true, name: true } },
+        subject: { select: { id: true, name: true, code: true } },
         _count: {
           select: { submissions: true }
         }
@@ -120,10 +148,10 @@ export class HomeworkService {
         ...(filters?.status && { status: filters.status }),
       },
       include: {
-        class: true,
-        section: true,
-        subject: true,
-        teacher: true,
+        class: { select: { id: true, name: true } },
+        section: { select: { id: true, name: true } },
+        subject: { select: { id: true, name: true, code: true } },
+        teacher: { select: { id: true, firstName: true, lastName: true } },
         _count: {
           select: { submissions: true }
         }

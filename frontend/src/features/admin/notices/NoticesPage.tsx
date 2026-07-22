@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { fetchNotices, deleteNotice } from './api'
 import type { Notice } from './api'
 import { NoticeForm } from './components/NoticeForm'
@@ -11,12 +11,17 @@ import { Plus, Edit2, Trash2, Megaphone } from 'lucide-react'
 export function NoticesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingNotice, setEditingNotice] = useState<Notice | undefined>()
+  const [filters, setFilters] = useState({ page: 1, limit: 12 })
   const queryClient = useQueryClient()
 
-  const { data: notices, isLoading } = useQuery({
-    queryKey: ['notices'],
-    queryFn: () => fetchNotices(),
+  const { data, isLoading } = useQuery({
+    queryKey: ['notices', filters],
+    queryFn: () => fetchNotices(filters),
+    placeholderData: keepPreviousData,
   })
+
+  const notices = data?.notices ?? []
+  const pagination = data?.pagination
 
   const deleteMutation = useMutation({
     mutationFn: deleteNotice,
@@ -50,13 +55,16 @@ export function NoticesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Noticeboard</h1>
           <p className="text-muted-foreground">Manage school announcements and notices</p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
+        <Button onClick={() => {
+          setEditingNotice(undefined)
+          setIsFormOpen(true)
+        }}>
           <Plus className="mr-2 h-4 w-4" /> Add Notice
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {notices?.map((notice) => (
+        {notices.map((notice) => (
           <div
             key={notice.id}
             className="rounded-lg border bg-card text-card-foreground shadow-sm flex flex-col"
@@ -105,19 +113,46 @@ export function NoticesPage() {
             </div>
           </div>
         ))}
-        {(!notices || notices.length === 0) && (
+        {notices.length === 0 && (
           <div className="col-span-full text-center py-12 text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
             No notices found
           </div>
         )}
       </div>
 
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
+          <span>
+            Showing {(pagination.page - 1) * pagination.limit + 1}–
+            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page <= 1}
+              onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>{editingNotice ? 'Edit Notice' : 'Create Notice'}</DialogTitle>
           </DialogHeader>
-          <NoticeForm notice={editingNotice} onClose={handleCloseForm} />
+          <NoticeForm key={editingNotice?.id || 'new'} notice={editingNotice} onClose={handleCloseForm} />
         </DialogContent>
       </Dialog>
     </div>

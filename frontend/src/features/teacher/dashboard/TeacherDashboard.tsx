@@ -26,10 +26,12 @@ export function TeacherDashboard() {
     queryFn: fetchTeacherTimetable,
   })
 
-  const { data: announcements, isLoading: announcementsLoading } = useQuery({
+  const { data: announcementsData, isLoading: announcementsLoading } = useQuery({
     queryKey: ['teacher-announcements'],
-    queryFn: fetchAnnouncements,
+    queryFn: () => fetchAnnouncements(1, 10),
   })
+
+  const announcementsList = announcementsData?.announcements ?? []
 
   const { data: myClasses, isLoading: classesLoading } = useQuery({
     queryKey: ['teacher-my-classes'],
@@ -153,9 +155,9 @@ export function TeacherDashboard() {
                   <Skeleton className="h-16 w-full" />
                   <Skeleton className="h-16 w-full" />
                 </div>
-              ) : announcements && announcements.length > 0 ? (
+              ) : announcementsList && announcementsList.length > 0 ? (
                 <div className="space-y-4">
-                  {announcements.slice(0, 3).map((announcement) => (
+                  {announcementsList.slice(0, 3).map((announcement) => (
                     <div key={announcement.id} className="border-l-4 border-primary pl-4 py-1">
                       <p className="text-sm font-medium line-clamp-1">{announcement.title}</p>
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">

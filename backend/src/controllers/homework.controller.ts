@@ -3,13 +3,13 @@ import { HomeworkService } from '../services/homework.service'
 import { ApiResponse } from '../core'
 import { z } from 'zod'
 import { PublishStatus } from '../generated/prisma'
+import { deleteFile } from '../utils/file.util'
 
 const createHomeworkSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
   dueDate: z.string(),
-  attachmentUrl: z.string().optional(),
-  marks: z.number().int().optional(),
+  marks: z.coerce.number().int().optional(),
   status: z.nativeEnum(PublishStatus),
   sessionId: z.string().uuid(),
   classId: z.string().uuid(),
@@ -21,9 +21,9 @@ const updateHomeworkSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().optional(),
   dueDate: z.string().optional(),
-  attachmentUrl: z.string().optional(),
-  marks: z.number().int().optional(),
-  status: z.nativeEnum(PublishStatus).optional()
+  marks: z.coerce.number().int().optional(),
+  status: z.nativeEnum(PublishStatus).optional(),
+  retainedAttachment: z.string().optional() // if present, keep it; if not, and no new file, it means deleted
 })
 
 export class HomeworkController {
@@ -31,19 +31,27 @@ export class HomeworkController {
     try {
       const parsed = createHomeworkSchema.safeParse(req.body)
       if (!parsed.success) {
+        if (req.file) deleteFile(req.file.path)
         ApiResponse.badRequest(res, 'Invalid input', parsed.error.issues)
         return
       }
 
       const teacherId = req.user?.sub
       if (!teacherId) {
+        if (req.file) deleteFile(req.file.path)
         ApiResponse.unauthorized(res, 'Not authorized')
         return
       }
 
-      const homework = await HomeworkService.createHomework({ ...parsed.data, teacherId })
+      let attachmentUrl: string | undefined = undefined
+      if (req.file) {
+        attachmentUrl = `/uploads/${req.file.filename}`
+      }
+
+      const homework = await HomeworkService.createHomework({ ...parsed.data, attachmentUrl, teacherId })
       ApiResponse.created(res, homework, 'Homework created successfully')
     } catch (error) {
+      if (req.file) deleteFile(req.file.path)
       next(error)
     }
   }
@@ -53,15 +61,33 @@ export class HomeworkController {
       const { id } = req.params as { id: string }
       const parsed = updateHomeworkSchema.safeParse(req.body)
       if (!parsed.success) {
+        if (req.file) deleteFile(req.file.path)
         ApiResponse.badRequest(res, 'Invalid input', parsed.error.issues)
         return
       }
 
       const role = req.user?.role
       const teacherId = role === 'ADMIN' ? undefined : req.user?.sub
-      const homework = await HomeworkService.updateHomework(id, parsed.data, teacherId)
+      
+      let attachmentUrl: string | null | undefined = undefined
+      if (req.file) {
+        attachmentUrl = `/uploads/${req.file.filename}`
+      } else if (parsed.data.retainedAttachment) {
+        attachmentUrl = parsed.data.retainedAttachment
+      } else {
+        attachmentUrl = null // explicitly deleted
+      }
+
+      // We might need to delete old attachment if a new one is uploaded or if explicitly deleted
+      // We'll let the service handle disk deletion or we can do it here if we fetch the old record first.
+      // But we need the old record to know what to delete. Let's do it in the service.
+
+      const { retainedAttachment, ...payload } = parsed.data
+
+      const homework = await HomeworkService.updateHomework(id, { ...payload, attachmentUrl }, teacherId)
       ApiResponse.success(res, homework, 'Homework updated successfully')
     } catch (error) {
+      if (req.file) deleteFile(req.file.path)
       next(error)
     }
   }

@@ -148,13 +148,12 @@ export async function getTimetableById(id: string) {
 // ─── Create ───────────────────────────────────────────────────
 
 export async function createTimetableEntry(data: CreateTimetableInput, userId?: string) {
-  // 1. Verify session is active
   const session = await prisma.academicSession.findFirst({
-    where: { id: data.sessionId, isActive: true },
+    where: { id: data.sessionId },
   })
   if (!session) {
-    throw new ValidationError('The selected academic session is not active or does not exist', [
-      { message: 'Session is not active', path: ['sessionId'] },
+    throw new ValidationError('The selected academic session does not exist', [
+      { message: 'Session does not exist', path: ['sessionId'] },
     ])
   }
 

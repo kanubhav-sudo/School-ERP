@@ -32,11 +32,18 @@ export function TeacherAnnouncementsPage() {
   const [content, setContent] = useState('')
   const [sectionId, setSectionId] = useState('')
   const [isPinned, setIsPinned] = useState(false)
+  const [attachments, setAttachments] = useState<File[]>([])
+  const [retainedAttachments, setRetainedAttachments] = useState<string[]>([])
 
-  const { data: announcements, isLoading } = useQuery({
-    queryKey: ['teacher-announcements'],
-    queryFn: fetchAnnouncements,
+  const [page, setPage] = useState(1)
+
+  const { data: announcementsData, isLoading } = useQuery({
+    queryKey: ['teacher-announcements', page],
+    queryFn: () => fetchAnnouncements(page, 20),
   })
+
+  const announcements = announcementsData?.announcements ?? []
+  const pagination = announcementsData?.pagination
 
   const { data: sections } = useQuery({
     queryKey: ['teacher-sections'],
@@ -52,7 +59,7 @@ export function TeacherAnnouncementsPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: (data: { id: string; payload: Parameters<typeof updateAnnouncement>[1] }) =>
+    mutationFn: (data: { id: string; payload: FormData }) =>
       updateAnnouncement(data.id, data.payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher-announcements'] })
@@ -72,6 +79,8 @@ export function TeacherAnnouncementsPage() {
     setContent('')
     setSectionId('')
     setIsPinned(false)
+    setAttachments([])
+    setRetainedAttachments([])
     setEditingAnnouncement(null)
     setIsFormOpen(true)
   }
@@ -81,6 +90,8 @@ export function TeacherAnnouncementsPage() {
     setContent(ann.content)
     setSectionId(ann.sectionId)
     setIsPinned(ann.isPinned)
+    setAttachments([])
+    setRetainedAttachments(ann.attachments || [])
     setEditingAnnouncement(ann)
     setIsFormOpen(true)
   }
@@ -96,20 +107,28 @@ export function TeacherAnnouncementsPage() {
     const selectedSection = sections?.find((s) => s.id === sectionId)
     if (!selectedSection) return
 
+    const formData = new FormData()
+    formData.append('title', title)
+    formData.append('content', content)
+    formData.append('isPinned', isPinned.toString())
+    
+    attachments.forEach(file => {
+      formData.append('attachments', file)
+    })
+
     if (editingAnnouncement) {
+      retainedAttachments.forEach(att => {
+        formData.append('retainedAttachments', att)
+      })
       updateMutation.mutate({
         id: editingAnnouncement.id,
-        payload: { title, content, isPinned },
+        payload: formData,
       })
     } else {
-      createMutation.mutate({
-        title,
-        content,
-        isPinned,
-        sessionId: 'dummy-replaced-by-backend', // typically the backend figures this out from the section or we need to pass it
-        classId: selectedSection.classId,
-        sectionId: selectedSection.id,
-      })
+      formData.append('classId', selectedSection.classId)
+      formData.append('sectionId', selectedSection.id)
+
+      createMutation.mutate(formData)
     }
   }
 
@@ -130,7 +149,7 @@ export function TeacherAnnouncementsPage() {
       </div>
 
       <div className="grid gap-4">
-        {!announcements || announcements.length === 0 ? (
+        {announcements.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground border rounded-xl border-dashed">
             You haven&apos;t posted any announcements yet.
           </div>
@@ -169,11 +188,52 @@ export function TeacherAnnouncementsPage() {
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-wrap text-sm">{ann.content}</p>
+                {ann.attachments && ann.attachments.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {ann.attachments.map((url, i) => (
+                      <a
+                        key={i}
+                        href={`http://localhost:3000${url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center rounded-md bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
+                      >
+                        Attachment {i + 1}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))
         )}
       </div>
+
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Page {pagination.page} of {pagination.totalPages} ({pagination.total} announcements)
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
@@ -223,6 +283,39 @@ export function TeacherAnnouncementsPage() {
               <label htmlFor="pin" className="text-sm font-medium cursor-pointer">
                 Pin to top
               </label>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Attachments</label>
+              <Input
+                type="file"
+                multiple
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setAttachments(Array.from(e.target.files))
+                  }
+                }}
+              />
+              {/* Display Retained Attachments for Edit Mode */}
+              {retainedAttachments.length > 0 && (
+                <div className="text-sm space-y-1 mt-2">
+                  <p className="font-medium">Existing Attachments:</p>
+                  {retainedAttachments.map((url) => (
+                    <div key={url} className="flex items-center justify-between bg-muted p-2 rounded">
+                      <a href={`http://localhost:3000${url}`} target="_blank" rel="noreferrer" className="text-primary hover:underline truncate">
+                        {url.split('/').pop()}
+                      </a>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 h-6 px-2"
+                        onClick={() => setRetainedAttachments(retainedAttachments.filter(a => a !== url))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

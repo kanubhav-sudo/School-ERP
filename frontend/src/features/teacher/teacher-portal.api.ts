@@ -152,34 +152,34 @@ export interface AnnouncementDto {
   section: { name: string }
 }
 
-export async function fetchAnnouncements(): Promise<AnnouncementDto[]> {
-  const { data } = await api.get('/teacher-portal/announcements')
+export interface AnnouncementListResponse {
+  announcements: AnnouncementDto[]
+  pagination: { page: number; limit: number; total: number; totalPages: number }
+}
+
+export async function fetchAnnouncements(page = 1, limit = 20): Promise<AnnouncementListResponse> {
+  const { data } = await api.get(`/teacher-portal/announcements?page=${page}&limit=${limit}`)
   return data.data
 }
 
-export async function createAnnouncement(payload: {
-  title: string
-  content: string
-  isPinned?: boolean
-  expiresAt?: string
-  sessionId: string
-  classId: string
-  sectionId: string
-}): Promise<AnnouncementDto> {
-  const { data } = await api.post('/teacher-portal/announcements', payload)
+export async function createAnnouncement(payload: FormData): Promise<AnnouncementDto> {
+  const { data } = await api.post('/teacher-portal/announcements', payload, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
   return data.data
 }
 
 export async function updateAnnouncement(
   id: string,
-  payload: {
-    title?: string
-    content?: string
-    isPinned?: boolean
-    expiresAt?: string | null
-  }
+  payload: FormData
 ): Promise<AnnouncementDto> {
-  const { data } = await api.put(`/teacher-portal/announcements/${id}`, payload)
+  const { data } = await api.put(`/teacher-portal/announcements/${id}`, payload, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
   return data.data
 }
 
@@ -216,14 +216,18 @@ export async function fetchExamStudents(
   sectionId: string,
   examId?: string
 ): Promise<ExamStudentDto[]> {
+  const params: Record<string, string> = {}
+  if (examId && examId !== 'none') {
+    params.examId = examId
+  }
   const { data } = await api.get(`/teacher-portal/sections/${sectionId}/exam-students`, {
-    params: examId ? { examId } : {},
+    params,
   })
   return data.data
 }
 
 export async function uploadAdmitCard(payload: {
-  sessionId: string
+  sessionId?: string
   studentId: string
   fileUrl: string
   sectionId: string
@@ -297,13 +301,17 @@ export async function fetchTeacherHomeworks(filters?: {
   return data.data
 }
 
-export async function createHomework(payload: CreateHomeworkPayload): Promise<HomeworkDto> {
-  const { data } = await api.post('/teacher-portal/homework', payload)
+export async function createHomework(payload: FormData): Promise<HomeworkDto> {
+  const { data } = await api.post('/teacher-portal/homework', payload, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
   return data.data
 }
 
-export async function updateHomework(id: string, payload: UpdateHomeworkPayload): Promise<HomeworkDto> {
-  const { data } = await api.put(`/teacher-portal/homework/${id}`, payload)
+export async function updateHomework(id: string, payload: FormData): Promise<HomeworkDto> {
+  const { data } = await api.put(`/teacher-portal/homework/${id}`, payload, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
   return data.data
 }
 

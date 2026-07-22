@@ -1,12 +1,19 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { studentPortalApi } from '../api/student-portal.api'
-import { Bell } from 'lucide-react'
+import { Bell, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export function StudentNoticesPage() {
+  const [page, setPage] = useState(1)
+
   const { data, isLoading } = useQuery({
-    queryKey: ['student-notices'],
-    queryFn: studentPortalApi.getNotices,
+    queryKey: ['student-notices', page],
+    queryFn: () => studentPortalApi.getNotices({ page, limit: 20 }),
   })
+
+  const notices = data?.notices ?? []
+  const pagination = data?.pagination
 
   if (isLoading) return <div>Loading notices...</div>
 
@@ -15,12 +22,12 @@ export function StudentNoticesPage() {
       <h1 className="text-2xl font-bold tracking-tight">Noticeboard</h1>
 
       <div className="grid gap-4">
-        {data?.length === 0 ? (
+        {notices.length === 0 ? (
           <div className="p-8 text-center bg-card border rounded-xl shadow-sm text-muted-foreground">
             No notices available.
           </div>
         ) : (
-          data?.map((notice: any) => (
+          notices.map((notice: any) => (
             <div key={notice.id} className="p-6 bg-card rounded-xl border shadow-sm">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
@@ -47,6 +54,34 @@ export function StudentNoticesPage() {
           ))
         )}
       </div>
+
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            Page {pagination.page} of {pagination.totalPages} ({pagination.total} notices)
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

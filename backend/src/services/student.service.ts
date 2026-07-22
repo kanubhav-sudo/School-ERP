@@ -14,6 +14,7 @@ import type {
   UpdateStudentInput,
   ListStudentsInput,
 } from '../validators/student.validator'
+import { getPaginationMeta, getPaginationSkip } from '../utils/pagination'
 
 // ─── Student Select Shape ─────────────────────────────────────
 
@@ -64,7 +65,7 @@ const studentSelect = {
 export async function listStudents(filters: ListStudentsInput) {
   const { page, limit, search, sessionId, classId, sectionId, status, isActive } = filters
 
-  const skip = (page - 1) * limit
+  const skip = getPaginationSkip(page, limit)
 
   const where = {
     deletedAt: null,
@@ -98,12 +99,7 @@ export async function listStudents(filters: ListStudentsInput) {
 
   return {
     students,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
+    pagination: getPaginationMeta(page, limit, total),
   }
 }
 

@@ -199,6 +199,7 @@ model Class {
   feeRecords         FeeRecord[]
   announcements      Announcement[]
   homework           Homework[]
+  exams              Exam[]
 
   @@index([isActive])
   @@index([displayOrder])
@@ -224,6 +225,7 @@ model Section {
   attendance         Attendance[]
   announcements      Announcement[]
   homework           Homework[]
+  exams              Exam[]
 
   @@unique([classId, name])
   @@index([classId])
@@ -247,6 +249,8 @@ model Subject {
   teacherAssignments TeacherAssignment[]
   timetables         Timetable[]
   homework           Homework[]
+  examSchedules      ExamSchedule[]
+  examMarks          ExamMark[]
 
   @@index([isActive])
   @@map("subjects")
@@ -335,6 +339,7 @@ model TeacherAssignment {
   @@index([sessionId])
   @@index([classId])
   @@index([isClassTeacher])
+  @@index([teacherId, sectionId])
   @@map("teacher_assignments")
 }
 
@@ -386,6 +391,7 @@ model Student {
   admissionDate DateTime      @map("admission_date") @db.Date
   status        StudentStatus @default(ACTIVE)
   notes         String?
+  advanceBalance Int        @default(0) @map("advance_balance") // paise
 
   isActive  Boolean   @default(true) @map("is_active")
   deletedAt DateTime? @map("deleted_at")
@@ -406,6 +412,7 @@ model Student {
   feeRecords          FeeRecord[]
   admitCards          AdmitCard[]
   reportCards         ReportCard[]
+  examMarks           ExamMark[]
   homeworkSubmissions HomeworkSubmission[]
 
   @@index([isActive])
@@ -415,6 +422,8 @@ model Student {
   @@index([classId])
   @@index([sectionId])
   @@index([feePlanId])
+  @@index([classId, sectionId, isActive])
+  @@index([userId])
   @@map("students")
 }
 
@@ -616,6 +625,10 @@ model FeePlan {
   sessionId     String  @map("session_id") @db.Uuid
   classId       String  @map("class_id") @db.Uuid
   monthlyAmount Int     @map("monthly_amount") // paise (e.g. 150000 = Rs 1500)
+  admissionFee  Int     @default(0) @map("admission_fee") // paise
+  annualFee     Int     @default(0) @map("annual_fee") // paise
+  transportFee  Int     @default(0) @map("transport_fee") // paise
+  otherCharges  Int     @default(0) @map("other_charges") // paise
   description   String?
   isActive      Boolean @default(true) @map("is_active")
 
@@ -706,10 +719,11 @@ model FeeRecord {
 model FeePayment {
   id             String      @id @default(uuid()) @db.Uuid
   feeRecordId    String      @map("fee_record_id") @db.Uuid
+  studentId      String?     @map("student_id") @db.Uuid
   amount         Int // paise
   paymentDate    DateTime    @map("payment_date") @db.Date
   paymentMode    PaymentMode @map("payment_mode")
-  receiptNumber  String?     @map("receipt_number")
+  receiptNumber  String      @unique @map("receipt_number")
   transactionRef String?     @map("transaction_ref") // bank/gateway ref
   remarks        String?
 
@@ -720,6 +734,7 @@ model FeePayment {
   feeRecord FeeRecord @relation(fields: [feeRecordId], references: [id])
 
   @@index([feeRecordId])
+  @@index([studentId])
   @@index([paymentDate])
   @@map("fee_payments")
 }
@@ -769,54 +784,126 @@ model Announcement {
   @@index([classId])
   @@index([sectionId])
   @@index([authorId])
+  @@index([sectionId, createdAt])
   @@map("announcements")
 }
 
 // ─── Exams (Admin/Global setup for Report Cards) ──────────────
 
+// ─── Exams (Admin/Global setup for Report Cards & Timetables) ─
+
 model Exam {
-  id        String @id @default(uuid()) @db.Uuid
-  sessionId String @map("session_id") @db.Uuid
+  id        String        @id @default(uuid()) @db.Uuid
+  sessionId String        @map("session_id") @db.Uuid
+  classId   String?       @map("class_id") @db.Uuid
+  sectionId String?       @map("section_id") @db.Uuid
   name      String
+  startDate DateTime?     @map("start_date")
+  endDate   DateTime?     @map("end_date")
+  status    PublishStatus @default(DRAFT)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   session     AcademicSession @relation(fields: [sessionId], references: [id])
+  class       Class?          @relation(fields: [classId], references: [id])
+  section     Section?        @relation(fields: [sectionId], references: [id])
+  schedules   ExamSchedule[]
   reportCards ReportCard[]
+  admitCards  AdmitCard[]
+  marks       ExamMark[]
 
-  @@unique([sessionId, name])
+  @@unique([sessionId, classId, sectionId, name])
   @@index([sessionId])
   @@map("exams")
+}
+
+model ExamSchedule {
+  id        String   @id @default(uuid()) @db.Uuid
+  examId    String   @map("exam_id") @db.Uuid
+  subjectId String   @map("subject_id") @db.Uuid
+  examDate  DateTime @map("exam_date")
+  startTime String   @map("start_time")
+  endTime   String   @map("end_time")
+  room      String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@unique([examId, subjectId])
+  @@index([examId])
+  @@map("exam_schedules")
 }
 
 // ─── Admit Cards ──────────────────────────────────────────────
 
 model AdmitCard {
-  id        String @id @default(uuid()) @db.Uuid
-  sessionId String @map("session_id") @db.Uuid
-  studentId String @map("student_id") @db.Uuid
-  fileUrl   String @map("file_url")
+  id            String   @id @default(uuid()) @db.Uuid
+  sessionId     String   @map("session_id") @db.Uuid
+  examId        String?  @map("exam_id") @db.Uuid
+  studentId     String   @map("student_id") @db.Uuid
+  fileUrl       String?  @map("file_url")
+  adminStatus   String   @default("AUTO") @map("admin_status") // RELEASED | HOLD | AUTO
+  teacherStatus String   @default("NONE") @map("teacher_status") // RELEASED | HOLD | NONE
+  remark        String?
+  isReleased    Boolean  @default(false) @map("is_released")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   session AcademicSession @relation(fields: [sessionId], references: [id])
+  exam    Exam?           @relation(fields: [examId], references: [id])
   student Student         @relation(fields: [studentId], references: [id])
 
-  @@unique([sessionId, studentId])
+  @@unique([sessionId, studentId, examId])
   @@index([sessionId])
   @@index([studentId])
   @@map("admit_cards")
 }
 
+// ─── Exam Marks ───────────────────────────────────────────────
+
+model ExamMark {
+  id            String   @id @default(uuid()) @db.Uuid
+  examId        String   @map("exam_id") @db.Uuid
+  studentId     String   @map("student_id") @db.Uuid
+  subjectId     String   @map("subject_id") @db.Uuid
+  maxMarks      Float    @default(100) @map("max_marks")
+  obtainedMarks Float    @default(0) @map("obtained_marks")
+  remarks       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, studentId, subjectId])
+  @@index([examId])
+  @@index([studentId])
+  @@index([subjectId])
+  @@map("exam_marks")
+}
+
 // ─── Report Cards ─────────────────────────────────────────────
 
 model ReportCard {
-  id        String @id @default(uuid()) @db.Uuid
-  examId    String @map("exam_id") @db.Uuid
-  studentId String @map("student_id") @db.Uuid
-  fileUrl   String @map("file_url")
+  id            String   @id @default(uuid()) @db.Uuid
+  examId        String   @map("exam_id") @db.Uuid
+  studentId     String   @map("student_id") @db.Uuid
+  fileUrl       String?  @map("file_url")
+  totalMarks    Float?   @map("total_marks")
+  obtainedMarks Float?   @map("obtained_marks")
+  percentage    Float?
+  grade         String?
+  remarks       String?
+  adminStatus   String   @default("AUTO") @map("admin_status") // RELEASED | HOLD | AUTO
+  teacherStatus String   @default("NONE") @map("teacher_status") // COMPLETED | DRAFT | NONE
+  isReleased    Boolean  @default(false) @map("is_released")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -828,6 +915,25 @@ model ReportCard {
   @@index([examId])
   @@index([studentId])
   @@map("report_cards")
+}
+
+// ─── Exam Templates ───────────────────────────────────────────
+
+model ExamTemplate {
+  id                    String   @id @default(uuid()) @db.Uuid
+  type                  String   @unique // ADMIT_CARD | RESULT
+  schoolName            String   @default("School ERP Academy") @map("school_name")
+  logoUrl               String?  @map("logo_url")
+  headerText            String?  @map("header_text")
+  footerText            String?  @map("footer_text")
+  principalSignatureUrl String?  @map("principal_signature_url")
+  schoolStampUrl        String?  @map("school_stamp_url")
+  config                Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("exam_templates")
 }
 
 // ─── Homework & Assignments ───────────────────────────────────
@@ -871,7 +977,11 @@ model Homework {
   submissions HomeworkSubmission[]
 
   @@index([sessionId])
+  @@index([classId])
   @@index([sectionId])
+  @@index([teacherId])
+  @@index([status])
+  @@index([dueDate])
   @@map("homework")
 }
 
@@ -891,5 +1001,7 @@ model HomeworkSubmission {
   student  Student  @relation(fields: [studentId], references: [id])
 
   @@unique([homeworkId, studentId])
+  @@index([studentId])
+  @@index([homeworkId])
   @@map("homework_submissions")
 }

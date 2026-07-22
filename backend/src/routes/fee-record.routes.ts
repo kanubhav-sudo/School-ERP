@@ -10,7 +10,10 @@ router.use(authenticate)
 router.use(authorize('ADMIN', 'SUPERADMIN'))
 
 router.get('/', FeeRecordController.listFeeRecords)
+router.get('/students', FeeRecordController.getStudentFeeList)
 router.get('/summary', FeeRecordController.getFeeSummary)
+router.get('/student/:studentId', FeeRecordController.getStudentFeeProfile)
 router.post('/student/:studentId/pay', FeeRecordController.processPayment)
 
 export default router
+

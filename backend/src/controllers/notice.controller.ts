@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { NoticeService } from '../services/notice.service'
 import { success, created } from '../core/response'
+import { noticeQuerySchema } from '../validators/notice.validator'
 
 export class NoticeController {
   static async createNotice(req: Request, res: Response, next: NextFunction) {
@@ -14,7 +15,8 @@ export class NoticeController {
 
   static async getNotices(req: Request, res: Response, next: NextFunction) {
     try {
-      const notices = await NoticeService.getNotices(req.query)
+      const parsedQuery = noticeQuerySchema.shape.query.parse(req.query)
+      const notices = await NoticeService.getNotices(parsedQuery)
       success(res, notices)
     } catch (error) {
       next(error)

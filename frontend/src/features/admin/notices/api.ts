@@ -43,15 +43,29 @@ export interface NoticeFilters {
   activeOnly?: boolean
   role?: Role
   classId?: string
+  page?: number
+  limit?: number
+}
+
+export interface NoticeListResponse {
+  notices: Notice[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
 }
 
 // ─── API Functions ────────────────────────────────────────────
 
-export async function fetchNotices(filters: NoticeFilters = {}): Promise<Notice[]> {
+export async function fetchNotices(filters: NoticeFilters = {}): Promise<NoticeListResponse> {
   const params = new URLSearchParams()
   if (filters.activeOnly !== undefined) params.set('activeOnly', String(filters.activeOnly))
   if (filters.role) params.set('role', filters.role)
   if (filters.classId) params.set('classId', filters.classId)
+  if (filters.page) params.set('page', String(filters.page))
+  if (filters.limit) params.set('limit', String(filters.limit))
 
   const { data } = await apiClient.get(`/notices?${params.toString()}`)
   return data.data

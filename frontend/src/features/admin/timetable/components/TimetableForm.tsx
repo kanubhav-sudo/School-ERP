@@ -142,11 +142,19 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
   })
 
   const onSubmit = (data: FormData) => {
+    // Clean up overrideDate for backend validation (z.string().datetime().optional())
+    const payload = { ...data }
+    if (payload.isOverride && payload.overrideDate) {
+      payload.overrideDate = new Date(payload.overrideDate).toISOString()
+    } else {
+      delete payload.overrideDate
+    }
+
     if (entry) {
-      updateMutation.mutate({ id: entry.id, payload: data })
+      updateMutation.mutate({ id: entry.id, payload })
     } else {
       createMutation.mutate({
-        ...data,
+        ...payload,
         sectionId,
         classId,
       })

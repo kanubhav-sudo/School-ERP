@@ -1,8 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { studentPortalApi } from '../api/student-portal.api'
 import { Badge } from '@/components/ui/badge'
 import { BookOpen, Calendar, User, Paperclip, ClipboardList } from 'lucide-react'
 import { format, isPast } from 'date-fns'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 
 interface HomeworkItem {
   id: string
@@ -31,10 +41,37 @@ function StatusBadge({ status, dueDate }: { status: string; dueDate: string }) {
 }
 
 export function StudentHomeworkPage() {
+  const queryClient = useQueryClient()
+  const [submittingHw, setSubmittingHw] = useState<HomeworkItem | null>(null)
+  const [solutionFile, setSolutionFile] = useState<File | null>(null)
+
   const { data = [], isLoading } = useQuery<HomeworkItem[]>({
     queryKey: ['student-homework'],
     queryFn: studentPortalApi.getHomework,
   })
+
+  const submitMutation = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => {
+      const formData = new FormData()
+      formData.append('solution', file)
+      return studentPortalApi.submitHomework(id, formData)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-homework'] })
+      closeSubmitForm()
+    }
+  })
+
+  function closeSubmitForm() {
+    setSubmittingHw(null)
+    setSolutionFile(null)
+  }
+
+  function handleSubmitSolution() {
+    if (submittingHw && solutionFile) {
+      submitMutation.mutate({ id: submittingHw.id, file: solutionFile })
+    }
+  }
 
   if (isLoading) {
     return (
@@ -129,7 +166,7 @@ export function StudentHomeworkPage() {
                 {/* Attachment */}
                 {hw.attachmentUrl && (
                   <a
-                    href={hw.attachmentUrl}
+                    href={`http://localhost:3000${hw.attachmentUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:underline"
@@ -141,13 +178,26 @@ export function StudentHomeworkPage() {
 
                 {/* Submission info */}
                 {hw.submittedAt && (
-                  <div className="text-xs text-green-600 bg-green-50 dark:bg-green-950/20 px-3 py-1.5 rounded-md">
+                  <div className="text-xs text-green-600 bg-green-50 dark:bg-green-950/20 px-3 py-1.5 rounded-md mt-2">
                     Submitted on {format(new Date(hw.submittedAt), 'dd MMM yyyy, hh:mm a')}
                   </div>
                 )}
                 {hw.submissionRemarks && (
-                  <div className="text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-md">
+                  <div className="text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-md mt-2">
                     Teacher remarks: {hw.submissionRemarks}
+                  </div>
+                )}
+                
+                {/* Submit Button */}
+                {(!hw.submittedAt || hw.submissionStatus === 'ASSIGNED' || hw.submissionStatus === 'LATE') && (
+                  <div className="pt-2 border-t mt-2">
+                    <Button 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => setSubmittingHw(hw)}
+                    >
+                      {hw.submittedAt ? 'Resubmit Solution' : 'Submit Solution'}
+                    </Button>
                   </div>
                 )}
               </div>
@@ -155,6 +205,41 @@ export function StudentHomeworkPage() {
           })}
         </div>
       )}
+
+      {/* Submission Dialog */}
+      <Dialog open={!!submittingHw} onOpenChange={(open) => !open && closeSubmitForm()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Submit Homework</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Upload Solution (PDF)</label>
+              <Input
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setSolutionFile(e.target.files[0])
+                  } else {
+                    setSolutionFile(null)
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">Only PDF files are allowed.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeSubmitForm}>Cancel</Button>
+            <Button
+              onClick={handleSubmitSolution}
+              disabled={!solutionFile || submitMutation.isPending}
+            >
+              {submitMutation.isPending ? 'Submitting...' : 'Submit'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -45,10 +45,21 @@ import { ChangePasswordPage } from './features/admin/accounts/ChangePasswordPage
 import { FeePlansPage } from './features/admin/fee-plans/FeePlansPage'
 import { FeeRecordsPage } from './features/admin/fee-records/FeeRecordsPage'
 import { AdminHomeworkPage } from './features/admin/homework/AdminHomeworkPage'
+import { ExamsPage } from './features/admin/exams/ExamsPage'
 // Route Guards
 import { GuestRoute, ProtectedRoute, RoleRoute, getDashboardPath } from './routes/guards'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes default stale time to avoid repetitive fetches
+      gcTime: 10 * 60 * 1000, // 10 minutes garbage collection time
+    },
+  },
+})
 
 function RootRedirect() {
   const { user, isAuthenticated, isLoading } = useAuth()
@@ -116,6 +127,7 @@ function App() {
               <Route path="finance/fee-plans" element={<FeePlansPage />} />
               <Route path="finance/fee-records" element={<FeeRecordsPage />} />
               <Route path="homework" element={<AdminHomeworkPage />} />
+              <Route path="exams" element={<ExamsPage />} />
             </Route>
 
             {/* Protected Teacher Routes */}

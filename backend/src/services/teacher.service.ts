@@ -16,6 +16,7 @@ import type {
   CreateTeacherAssignmentInput,
   UpdateTeacherAssignmentInput,
 } from '../validators/teacher.validator'
+import { getPaginationMeta, getPaginationSkip } from '../utils/pagination'
 
 // ─── Teacher Select Shape ─────────────────────────────────────
 
@@ -72,7 +73,7 @@ export async function listTeachers(filters: ListTeachersInput) {
     subjectId,
   } = filters
 
-  const skip = (page - 1) * limit
+  const skip = getPaginationSkip(page, limit)
 
   const where = {
     deletedAt: null,
@@ -115,12 +116,7 @@ export async function listTeachers(filters: ListTeachersInput) {
 
   return {
     teachers,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
+    pagination: getPaginationMeta(page, limit, total),
   }
 }
 

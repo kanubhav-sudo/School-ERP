@@ -54,6 +54,8 @@ export function TeacherHomeworkPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editing, setEditing] = useState<HomeworkDto | null>(null)
   const [form, setForm] = useState<CreateHomeworkPayload>(EMPTY_FORM)
+  const [attachment, setAttachment] = useState<File | null>(null)
+  const [retainedAttachment, setRetainedAttachment] = useState<string | null>(null)
   const [filters, setFilters] = useState<FilterState>({ classId: '', sectionId: '', subjectId: '', status: '' })
   const [search, setSearch] = useState('')
 
@@ -81,7 +83,7 @@ export function TeacherHomeworkPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateHomeworkPayload> }) =>
+    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
       updateHomework(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher-homework'] })
@@ -97,6 +99,8 @@ export function TeacherHomeworkPage() {
   function openCreate() {
     setEditing(null)
     setForm(EMPTY_FORM)
+    setAttachment(null)
+    setRetainedAttachment(null)
     setIsFormOpen(true)
   }
 
@@ -114,6 +118,8 @@ export function TeacherHomeworkPage() {
       sectionId: hw.sectionId,
       subjectId: hw.subjectId,
     })
+    setAttachment(null)
+    setRetainedAttachment(hw.attachmentUrl || null)
     setIsFormOpen(true)
   }
 
@@ -121,20 +127,41 @@ export function TeacherHomeworkPage() {
     setIsFormOpen(false)
     setEditing(null)
     setForm(EMPTY_FORM)
+    setAttachment(null)
+    setRetainedAttachment(null)
   }
 
   function handleSubmit() {
     if (!form.title || !form.dueDate || !form.classId || !form.sectionId || !form.subjectId) return
 
+    const formData = new FormData()
+    formData.append('title', form.title)
+    if (form.description) formData.append('description', form.description)
+    formData.append('dueDate', form.dueDate)
+    if (form.marks !== undefined) formData.append('marks', form.marks.toString())
+    formData.append('status', form.status)
+    if (attachment) {
+      formData.append('attachment', attachment)
+    }
+
     if (editing) {
-      updateMutation.mutate({ id: editing.id, data: form })
+      if (retainedAttachment) {
+        formData.append('retainedAttachment', retainedAttachment)
+      }
+      updateMutation.mutate({ id: editing.id, data: formData })
     } else {
       // Derive sessionId from selected class assignment
       const assignment = myClasses.find(
         c => c.classId === form.classId && c.sectionId === form.sectionId
       )
       if (!assignment) return
-      createMutation.mutate({ ...form, sessionId: assignment.sessionId })
+      
+      formData.append('sessionId', assignment.sessionId)
+      formData.append('classId', form.classId)
+      formData.append('sectionId', form.sectionId)
+      formData.append('subjectId', form.subjectId)
+      
+      createMutation.mutate(formData)
     }
   }
 
@@ -278,7 +305,7 @@ export function TeacherHomeworkPage() {
                 </div>
                 {hw.attachmentUrl && (
                   <a
-                    href={hw.attachmentUrl}
+                    href={`http://localhost:3000${hw.attachmentUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:underline"
@@ -399,12 +426,34 @@ export function TeacherHomeworkPage() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Attachment URL (optional)</label>
+              <label className="text-sm font-medium mb-1 block">Attachment PDF (optional)</label>
               <Input
-                placeholder="https://..."
-                value={form.attachmentUrl}
-                onChange={e => setForm(f => ({ ...f, attachmentUrl: e.target.value }))}
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={e => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setAttachment(e.target.files[0])
+                    setRetainedAttachment(null) // Clear retained if new one is selected
+                  } else {
+                    setAttachment(null)
+                  }
+                }}
               />
+              {retainedAttachment && (
+                <div className="mt-2 flex items-center justify-between bg-muted p-2 rounded text-sm">
+                  <a href={`http://localhost:3000${retainedAttachment}`} target="_blank" rel="noreferrer" className="text-primary hover:underline truncate">
+                    {retainedAttachment.split('/').pop()}
+                  </a>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500 hover:text-red-700 h-6 px-2"
+                    onClick={() => setRetainedAttachment(null)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Publish Status</label>

@@ -46,7 +46,9 @@ router.use('/attendance', attendanceRoutes)
 router.use('/notices', noticeRoutes)
 
 import homeworkRoutes from './homework.routes'
+import examRoutes from './exam.routes'
 router.use('/homework', homeworkRoutes)
+router.use('/exams', examRoutes)
 
 // Account Routes
 router.use('/accounts', accountRoutes)

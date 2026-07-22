@@ -25,11 +25,14 @@ export const feeSummarySchema = z.object({
 export type FeeSummaryInput = z.infer<typeof feeSummarySchema>
 
 export const payFeeSchema = z.object({
-  amount: z.coerce.number().positive(),
-  paymentMode: z.enum(['CASH', 'CHEQUE', 'BANK_TRANSFER', 'UPI', 'CARD']),
+  amount: z.coerce.number().positive('Amount must be positive'),
+  receiptNumber: z.string().min(1, 'Receipt number is mandatory'),
+  paymentDate: z.string().optional(),
+  paymentMode: z.enum(['CASH', 'CHEQUE', 'BANK_TRANSFER', 'ONLINE', 'UPI', 'CARD']),
   transactionId: z.string().optional(),
   remarks: z.string().optional()
 })
 
 export type PayFeeInput = z.infer<typeof payFeeSchema>
+
 

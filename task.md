@@ -1,251 +1,73 @@
-# School ERP — Task Checklist
+# School ERP — Task Management
 
-## Milestone 1: Project Initialization & Foundation ✅
-
-### Root Setup
-- [x] Create root README.md
-- [x] Create root .gitignore
-- [x] Create root .editorconfig
-- [x] Create root docker-compose.yml
-- [x] Create root .env.example
-- [x] Create root LICENSE
-
-### Frontend Setup
-- [x] Initialize Vite + React + TypeScript
-- [x] Install dependencies (Tailwind, shadcn/ui, TanStack Query, React Hook Form, Zod, Axios, React Router)
-- [x] Configure Tailwind CSS
-- [x] Configure shadcn/ui
-- [x] Configure path aliases (tsconfig)
-- [x] Configure ESLint + Prettier
-- [x] Create approved folder structure (features, components, hooks, lib, routes, types, assets)
-- [x] Create minimal entry point (App.tsx, main.tsx)
-- [x] Verify frontend builds and starts
-
-### Backend Setup
-- [x] Initialize Node.js + Express + TypeScript
-- [x] Install dependencies (Express, Prisma, cors, dotenv, bcrypt, jsonwebtoken, zod, etc.)
-- [x] Configure TypeScript
-- [x] Configure ESLint + Prettier
-- [x] Initialize Prisma (empty schema, PostgreSQL datasource)
-- [x] Create approved folder structure (controllers, services, middlewares, routes, validators, utils, types, config, jobs)
-- [x] Create minimal entry point (src/index.ts — Express server starts)
-- [x] Verify backend builds and starts
-
-### Docker
-- [x] docker-compose.yml with PostgreSQL service
-- [x] Verify Docker config is valid
-
-### Documentation
-- [x] docs/ROADMAP.md
-- [x] docs/API.md
-- [x] docs/DATABASE.md
-- [x] docs/ARCHITECTURE.md
-- [x] docs/FEATURES.md
-- [x] docs/CHANGELOG.md
-
-### Verification
-- [x] Frontend builds (npm run build)
-- [x] Frontend starts (npm run dev)
-- [x] Backend compiles (tsc)
-- [x] Backend starts (npm run dev)
-- [x] ESLint passes on both
-- [x] All dependencies resolve
+_Last updated: 2026-07-22_
 
 ---
 
-## Milestone 1.5: Engineering Foundation Hardening
+## Completed
 
-### Environment & Configuration
-- [x] Create backend/src/config/env.ts (Zod validation)
-- [x] Create backend/src/config/index.ts (centralized export)
-- [x] Create .env.development, .env.production, .env.test templates
-- [x] Update .env.example with all variables
+### PHASE 1 — Bug Fix: Backend TypeScript Errors
+- `fee-record.service.ts`: fixed TS error (`status` enum casting)
+- `homework.controller.ts`: fixed TS errors (unused imports, nullability)
+- `notice.controller.ts`: fixed TS error (`noticeQuerySchema` parsing)
+- `upload.middleware.ts`: fixed TS warnings (prefixed unused params)
+- `file.util.ts`: fixed TS error (type error signature)
+- `student-portal.controller.ts`: fixed TS error (`req.params.id` string cast)
 
-### Central Database Module
-- [x] Create backend/src/database/prisma.ts (singleton PrismaClient)
-- [x] Remove PrismaClient instantiation from index.ts
+### PHASE 1 — Bug Fixes (Features & Portals)
+- **Bug 6**: Admin Notice Board fixed (`editingNotice` state leak, `keepPreviousData`, query parsing)
+- **Bug 7**: Timetable entries fixed (overrideDate ISO format, active session constraint removed)
+- **Bug 8**: Teacher Announcements fixed (`sessionId: 'dummy'` resolved to active session)
+- **Bug 9**: Teacher Homework fixed (`req.user?.sub` User ID properly resolved to Teacher profile ID)
+- **Bug 10**: Teacher Dashboard fixed (`fetchAnnouncements` object properly parsed as array)
+- **Bug 11**: Teacher Exams page freeze fixed (`examId: 'none'` filtered out before API / Prisma query)
 
-### Core Infrastructure (backend/src/core/)
-- [x] core/logger.ts (Pino-based structured logging)
-- [x] core/errors.ts (AppError hierarchy)
-- [x] core/response.ts (API response envelope helpers)
-- [x] core/constants.ts (shared constants — Roles, Attendance, Fees, etc.)
-- [x] core/time.ts (UTC timestamp utilities)
-
-### Middleware
-- [x] middlewares/requestId.middleware.ts
-- [x] middlewares/requestLogger.middleware.ts
-- [x] middlewares/rateLimiter.middleware.ts (route-specific limiters)
-- [x] middlewares/error.middleware.ts (global error handler)
-
-### API Routing
-- [x] Create backend/src/routes/index.ts (router assembly under /api/v1)
-- [x] Create backend/src/routes/health.routes.ts (upgraded health endpoint)
-- [x] Mount routes in index.ts
-
-### Security Hardening
-- [x] Install and configure Helmet, CORS, Compression
-- [x] Configure express-rate-limit with route-specific limits
-- [x] Set JSON body size limits
-
-### Storage Architecture
-- [x] Create backend/storage/local/ with placeholder directories
-- [x] Create backend/src/core/storage.ts (abstraction interface)
-
-### Database Conventions
-- [x] Create docs/DATABASE_CONVENTIONS.md
-
-### Frontend Constants
-- [x] Create frontend/src/types/constants.ts (matching backend constants)
-
-### Seed Placeholder
-- [x] Create backend/prisma/seed.ts (boilerplate)
-
-### Final Verification
-- [x] Backend builds (npm run build)
-- [x] Backend starts (npm run dev)
-- [x] Frontend builds (npm run build)
-- [x] Frontend starts (npm run dev)
-- [x] ESLint passes on backend
-- [x] ESLint passes on frontend
-- [x] Docker config remains valid
-- [x] Health endpoint works
-- [x] Auth flow works (Login, JWT, Roles)
+### PHASE 2 — Performance & Optimization
+- **Task 2.1**: Global QueryClient configuration (staleTime 5m, retry 1, refetchOnWindowFocus false) ✅
+- **Task 2.2**: Replace `include()` with `select()` across backend services for lean payloads ✅
+- **Task 2.3**: `Promise.all()` for independent database & dashboard queries ✅
+- **Task 2.4**: Prisma query logging in development mode ✅
 
 ---
 
-## Milestone 2: Core Authentication & RBAC ✅
-
-### Database Schema & Seed
-- [x] Create User model in `schema.prisma` with `Role` enum (ADMIN, TEACHER, STUDENT)
-- [x] Generate database migrations and client (`npx prisma migrate dev`)
-- [x] Seed database with initial admin user (`admin` / `Admin@123456`)
-
-### Backend Implementation
-- [x] Implement `AuthService` handling password hashing (bcrypt) and JWT generation
-- [x] Implement `AuthController` handling login, refresh token rotation, and logout
-- [x] Implement Zod input schemas for validation
-- [x] Implement `authenticate` middleware checking Bearer token
-- [x] Implement `authorize` middleware performing role checks
-- [x] Mount auth routes under `/api/v1/auth`
-
-### Frontend Implementation
-- [x] Setup `AuthContext` to manage authentication state
-- [x] Setup Axios client interceptors for automatic silent token refresh on 401
-- [x] Create login view using shadcn/ui and React Hook Form
-- [x] Setup navigation route guards (`ProtectedRoute`, `GuestRoute`, `RoleRoute`)
-
-### Verification
-- [x] Resolve Prisma client setup adapter-pg for Prisma 7 compatibility
-- [x] Resolve Express 5 wildcard path compilation issue
-- [x] Verify successful linting & build on both backend and frontend
-- [x] Verify login and refresh cycle end-to-end via curl and client proxy target (port 8000)
+### PHASE 3 — Exams & Results Module Complete Architecture Redesign
+- **Task 3.1 — Common Entry**: Session → Class navigation across Admin, Teacher, and Student portals. Automatically includes ALL students from every section of the selected class (no section selection required) ✅
+- **Task 3.2 — Admin Portal**: Timetable creation with auto-calculated Day from Date string, student status list with default `Hold`/`Release` based on fee clearance, Admin override, and custom remarks ✅
+- **Task 3.3 — Teacher Portal**: Read-only timetable (Date/Time locked), subject filtering, admit card recommendation (Admin override retained), and Marks management in **Subjects** view (Max Marks at top) & **Students** view (per-subject % and overall %) ✅
+- **Task 3.4 — Student Portal**: Gated access for Admit Cards & Results based on Admin release, teacher recommendation, and fee clearance. Displays exact Hold reasons when withheld, and provides dynamic PDF preview/printing when released ✅
+- **Task 3.5 — Editable Templates**: Created `AdmitCardModal`, `ResultCardModal`, and `ExamTemplateModal` supporting configurable School Name, Logo, Signature, Stamp, and dynamic PDF generation ✅
 
 ---
 
-## Milestone 3.1: Academic Structure ✅
-
-### Backend
-- [x] Create Session, Class, Section, and Subject models in Prisma schema
-- [x] Implement backend services and controllers
-- [x] Implement API routes
-
-### Frontend
-- [x] Create API services
-- [x] Implement AcademicSessionsPage, ClassesPage, SectionsPage, SubjectsPage
-- [x] Implement forms for all academic entities
-- [x] Add navigation to Admin sidebar
+### PHASE 4 — Complete Homework Management
+- **Task 4.1**: Fix Teacher Homework Creation (Teacher profile ID resolution & upload) ✅
+- **Task 4.2**: Add Edit, Delete, Publish, and Draft controls for Teacher Homework ✅
+- **Task 4.3**: PDF upload / replace / download functionality for attachments ✅
+- **Task 4.4**: Student Homework View & Submission Flow ✅
 
 ---
 
-## Milestone 3.2: People Management ✅
-
-### Checkpoint 3.2.1: Teacher Backend
-- [x] Define Teacher & TeacherAssignment schema mapping
-- [x] Implement backend Teacher API (Zod, Service, Controller, Routes)
-- [x] Wire Teacher API in router
-
-### Checkpoint 3.2.2: Teacher Frontend
-- [x] Create Teacher API service
-- [x] Implement TeachersPage with datatable and filters
-- [x] Implement TeacherForm with Zod schema validation
-
-### Checkpoint 3.2.3: Student Backend
-- [x] Define Student schema mapping
-- [x] Implement backend Student API (Zod, Service, Controller, Routes)
-- [x] Wire Student API in router
-
-### Checkpoint 3.2.4: Student Frontend
-- [x] Create Student API service
-- [x] Implement StudentsPage with datatable and filters
-- [x] Implement StudentForm with Zod schema validation
-- [x] Map UI components in AdminLayout sidebar navigation
-- [x] Verify frontend builds, linting, and routing
+### PHASE 5 & 6 — Fee Module Architecture Redesign
+- **Task 6.1 — Class Filter & Auto Monthly Fee**: Class-only filter (no section filter) listing all students, calculating current total fee strictly up to the current month in the academic year ✅
+- **Task 6.2 — Timeline & May Vacation**: 12-month academic timeline (Apr–Mar) displaying May as `Vacation (No Fee)`, paid months with `✓`, and pending months as blank ✅
+- **Task 6.3 — Mandatory Unique Receipt Number & Balance**: Enforced mandatory and unique `receiptNumber` validation with duplicate conflict error. Allocated payments to earliest pending month and saved remaining overpayment to `advanceBalance` ✅
+- **Task 6.4 — Fee Profile**: Detailed modal with fee structure, current total fee, paid, pending, advance balance, timeline, payment history, and receipt history ✅
 
 ---
 
-## Milestone 4: Operations & Portals (In Progress)
+## In Progress
 
-### Checkpoint 4.1: Timetable Management ✅
-- [x] Create Timetable Prisma model and handle double-booking constraints
-- [x] Implement backend CRUD APIs for Timetable
-- [x] Implement frontend Timetable API
-- [x] Create frontend `TimetablePage` with grid visualization
-- [x] Create frontend `TimetableForm` with conflict validation handling
-- [x] Add sidebar navigation
-- [x] Verify backend and frontend builds and linting
-
-### Checkpoint 4.2: Attendance Management ✅
-- [x] Create Attendance Prisma model and enum
-- [x] Implement backend CRUD APIs for Attendance
-- [x] Implement frontend Attendance API
-- [x] Create frontend `AttendancePage` with class/section selectors
-- [x] Create frontend `AttendanceGrid` for tracking daily student attendance
-- [x] Add sidebar navigation
-- [x] Verify backend and frontend builds and linting
+- All requested workflow redesigns completed & verified. Continuous stability & regression testing.
 
 ---
 
-## Milestone 5: Finance & Fee Management ✅
+## Architecture Decisions
 
-### Database Schema & Seed
-- [x] Create FeePlan, FeeRecord models in `schema.prisma`
-- [x] Update Student model for fee_plan_id and sibling_student_id
-- [x] Generate database migrations
-
-### Backend Implementation
-- [x] Implement FeePlan CRUD
-- [x] Implement FeeRecord CRUD and calculations (netAmount)
-- [x] Implement Dashboard Stats
-
-### Frontend Implementation
-- [x] Implement Fee Plans Page
-- [x] Implement Student Fee Assignment UI
-- [x] Implement Fee Records UI
-- [x] Implement Admin Dashboard Finance Widget
-
----
-
-## Milestone 6: Teacher Management System (In Progress)
-
-### Checkpoint 6.1: Core Enhancements (MC-1 & MC-2) ✅
-- [x] Enhance Teacher schema (designation, bloodGroup, emergencyContact, photoUrl)
-- [x] Session-scoped TeacherAssignment (sessionId, isClassTeacher)
-- [x] Update Backend Validators and Service Logic
-- [x] Verify Backend and Frontend Build/Lint
-
-### Checkpoint 6.2: APIs & Frontend Shared Types (MC-3 & MC-4) ✅
-- [x] Implement new endpoints (stats, timetable, sections)
-- [x] Update frontend Types and API client
-
-### Checkpoint 6.3: UI Enhancements (MC-5, MC-6, MC-7) ✅
-- [x] Update Teacher List UI (Summary cards, remove Blood Group filter)
-- [x] Update Teacher Detail Page (Timetable prioritized, Workload Summary, Subject Codes)
-- [x] Integration with Assignment Logic
-
-### Checkpoint 6.4: Bug Fix (MC-8) ✅
-- [x] Fix teacher creation 400 errors — empty strings for optional fields (dateOfBirth, photoUrl, bloodGroup)
-- [x] Add optionalDate, optionalUrl, optionalBloodGroup Zod helper schemas
-- [x] Apply fix to both createTeacherSchema and updateTeacherSchema
-- [x] Live API validation: teacher created successfully with auto-generated credentials
-- [x] Backend ESLint + Frontend TSC: zero errors
+| Decision | Rationale |
+|----------|-----------|
+| All monetary values stored in paise | Avoids floating-point precision issues |
+| Soft delete pattern (isDeleted + deletedAt) | Preserves audit trail; allows recovery |
+| Class selection includes all sections | Matches school administrative workflow for exams and fees |
+| Admin retains final release authority | Teachers manage marks & recommendations; Admin controls official release |
+| Dynamic PDF generation from DB templates | Avoids static file storage overhead; allows dynamic template updates |
+| Mandatory unique receipt numbers | Ensures audit compliance and prevents double-entry of payments |

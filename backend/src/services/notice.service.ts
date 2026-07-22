@@ -57,17 +57,34 @@ export class NoticeService {
       })
     }
 
-    const notices = await prisma.notice.findMany({
-      where: { AND: andConditions },
-      orderBy: [{ priority: 'desc' }, { publishedAt: 'desc' }],
-      include: {
-        author: {
-          select: { id: true, username: true, email: true },
-        },
-      },
-    })
+    const page = query.page ?? 1
+    const limit = query.limit ?? 20
+    const skip = (page - 1) * limit
 
-    return notices
+    const [notices, total] = await Promise.all([
+      prisma.notice.findMany({
+        where: { AND: andConditions },
+        orderBy: [{ priority: 'desc' }, { publishedAt: 'desc' }],
+        skip,
+        take: limit,
+        include: {
+          author: {
+            select: { id: true, username: true, email: true },
+          },
+        },
+      }),
+      prisma.notice.count({ where: { AND: andConditions } }),
+    ])
+
+    return {
+      notices,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      }
+    }
   }
 
   /**

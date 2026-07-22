@@ -169,6 +169,18 @@ export function AdminLayout() {
           >
             Homework
           </NavLink>
+          <NavLink
+            to="/admin/exams"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            Exams & Results
+          </NavLink>
           <div className="pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Finance
           </div>

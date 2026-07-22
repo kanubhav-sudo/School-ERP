@@ -147,7 +147,9 @@ export async function getNotices(req: Request, res: Response, next: NextFunction
 
 export async function getAnnouncements(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await TeacherPortalService.getAnnouncements(requireUser(req))
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20))
+    const data = await TeacherPortalService.getAnnouncements(requireUser(req), page, limit)
     res.json({ success: true, data })
   } catch (error) {
     next(error)
@@ -156,7 +158,20 @@ export async function getAnnouncements(req: Request, res: Response, next: NextFu
 
 export async function createAnnouncement(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await TeacherPortalService.createAnnouncement(requireUser(req), req.body)
+    const files = req.files as Express.Multer.File[]
+    let attachments: string[] = []
+    
+    if (files && files.length > 0) {
+      attachments = files.map(file => `/uploads/${file.filename}`)
+    }
+
+    const payload = {
+      ...req.body,
+      isPinned: req.body.isPinned === 'true' || req.body.isPinned === true,
+      attachments
+    }
+    
+    const data = await TeacherPortalService.createAnnouncement(requireUser(req), payload)
     res.status(201).json({ success: true, data })
   } catch (error) {
     next(error)
@@ -165,7 +180,30 @@ export async function createAnnouncement(req: Request, res: Response, next: Next
 
 export async function updateAnnouncement(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await TeacherPortalService.updateAnnouncement(requireUser(req), req.params.id as string, req.body)
+    const files = req.files as Express.Multer.File[]
+    let newAttachments: string[] = []
+    
+    if (files && files.length > 0) {
+      newAttachments = files.map(file => `/uploads/${file.filename}`)
+    }
+
+    // Retained attachments could be a single string or an array of strings
+    let retainedAttachments: string[] = []
+    if (req.body.retainedAttachments) {
+      if (Array.isArray(req.body.retainedAttachments)) {
+        retainedAttachments = req.body.retainedAttachments
+      } else {
+        retainedAttachments = [req.body.retainedAttachments]
+      }
+    }
+
+    const payload = {
+      ...req.body,
+      isPinned: req.body.isPinned === 'true' || req.body.isPinned === true,
+      attachments: [...retainedAttachments, ...newAttachments]
+    }
+
+    const data = await TeacherPortalService.updateAnnouncement(requireUser(req), req.params.id as string, payload)
     res.json({ success: true, data })
   } catch (error) {
     next(error)

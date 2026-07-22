@@ -62,3 +62,37 @@ export async function processPayment(
   }
 }
 
+export async function getStudentFeeList(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const sessionId = req.query.sessionId as string | undefined
+    const classId = req.query.classId as string | undefined
+    const search = req.query.search as string | undefined
+    const page = req.query.page ? parseInt(req.query.page as string) : 1
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 20
+
+    const result = await FeeRecordService.getStudentFeeList({ sessionId, classId, search, page, limit })
+    ApiResponse.success(res, result, 'Student fee list retrieved')
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getStudentFeeProfile(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const studentId = req.params.studentId as string
+    const sessionId = req.query.sessionId as string | undefined
+    const result = await FeeRecordService.getStudentFeeProfile(studentId, sessionId)
+    ApiResponse.success(res, result, 'Student fee profile retrieved')
+  } catch (err) {
+    next(err)
+  }
+}
+

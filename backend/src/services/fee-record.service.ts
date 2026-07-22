@@ -1,22 +1,25 @@
 import prisma from '../database/prisma'
 import type { ListFeeRecordsInput, FeeSummaryInput } from '../validators/fee-record.validator'
-import { ConflictError } from '../core/errors'
-import { Prisma } from '../generated/prisma'
+import { ConflictError, NotFoundError } from '../core/errors'
+import { Prisma, FeeRecordStatus } from '../generated/prisma'
 
-// Academic year fee months (Excluding May/5)
-export const FEE_MONTHS = [
-  { month: 4, label: 'April' },
-  { month: 6, label: 'June' },
-  { month: 7, label: 'July' },
-  { month: 8, label: 'August' },
-  { month: 9, label: 'September' },
-  { month: 10, label: 'October' },
-  { month: 11, label: 'November' },
-  { month: 12, label: 'December' },
-  { month: 1, label: 'January' },
-  { month: 2, label: 'February' },
-  { month: 3, label: 'March' },
+// Full Academic year fee months (April to March)
+export const ALL_ACADEMIC_MONTHS = [
+  { month: 4, label: 'April', isVacation: false },
+  { month: 5, label: 'May', isVacation: true }, // May: Vacation (No Fee)
+  { month: 6, label: 'June', isVacation: false },
+  { month: 7, label: 'July', isVacation: false },
+  { month: 8, label: 'August', isVacation: false },
+  { month: 9, label: 'September', isVacation: false },
+  { month: 10, label: 'October', isVacation: false },
+  { month: 11, label: 'November', isVacation: false },
+  { month: 12, label: 'December', isVacation: false },
+  { month: 1, label: 'January', isVacation: false },
+  { month: 2, label: 'February', isVacation: false },
+  { month: 3, label: 'March', isVacation: false },
 ]
+
+export const FEE_MONTHS = ALL_ACADEMIC_MONTHS.filter((m) => !m.isVacation)
 
 const feeRecordSelect = {
   id: true,
@@ -58,7 +61,6 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
     ...(studentId ? { studentId } : {}),
   }
 
-  // Handle section filtering through relation
   if (sectionId) {
     where.student = { ...where.student, sectionId }
   }
@@ -71,10 +73,10 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
             { firstName: { contains: search, mode: 'insensitive' } },
             { lastName: { contains: search, mode: 'insensitive' } },
             { admissionNumber: { contains: search, mode: 'insensitive' } },
-          ]
-        }
+          ],
+        },
       },
-      { receiptNumber: { contains: search, mode: 'insensitive' } }
+      { receiptNumber: { contains: search, mode: 'insensitive' } },
     ]
   }
 
@@ -107,13 +109,174 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
   }
 }
 
+/**
+  Redesigned Student Fee List (Class-only filter, no section filter required)
+ */
+export async function getStudentFeeList(filters: {
+  sessionId?: string
+  classId?: string
+  search?: string
+  page?: number
+  limit?: number
+}) {
+  const page = filters.page || 1
+  const limit = filters.limit || 20
+  const skip = (page - 1) * limit
+
+  const where: any = {
+    isActive: true,
+    deletedAt: null,
+    ...(filters.classId ? { classId: filters.classId } : {}),
+    ...(filters.sessionId ? { sessionId: filters.sessionId } : {}),
+  }
+
+  if (filters.search) {
+    where.OR = [
+      { firstName: { contains: filters.search, mode: 'insensitive' } },
+      { lastName: { contains: filters.search, mode: 'insensitive' } },
+      { admissionNumber: { contains: filters.search, mode: 'insensitive' } },
+    ]
+  }
+
+  const [students, total] = await Promise.all([
+    prisma.student.findMany({
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        admissionNumber: true,
+        feeCategory: true,
+        siblingFeeAmount: true,
+        advanceBalance: true,
+        sessionId: true,
+        classId: true,
+        class: { select: { id: true, name: true } },
+        section: { select: { id: true, name: true } },
+        feePlan: {
+          select: {
+            id: true,
+            name: true,
+            monthlyAmount: true,
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: [{ firstName: 'asc' }],
+    }),
+    prisma.student.count({ where }),
+  ])
+
+  const currentDate = new Date()
+  const currentMonthNum = currentDate.getMonth() + 1
+  const currentAcademicSeq = currentMonthNum >= 4 ? currentMonthNum - 3 : currentMonthNum + 9
+
+  const studentRows = []
+
+  for (const s of students) {
+    if (s.id) {
+      await generateFeeRecordsForStudent(s.id)
+    }
+
+    const records = await prisma.feeRecord.findMany({
+      where: {
+        studentId: s.id,
+        ...(filters.sessionId ? { sessionId: filters.sessionId } : {}),
+      },
+      orderBy: [{ year: 'asc' }, { month: 'asc' }],
+    })
+
+    const feeCat = s.feeCategory as string
+    let monthlyFee = s.feePlan?.monthlyAmount || 0
+    if (feeCat === 'SIBLING' && s.siblingFeeAmount !== null) {
+      monthlyFee = s.siblingFeeAmount * 100
+    } else if (feeCat === 'RTE' || feeCat === 'STAFF_CHILD') {
+      monthlyFee = 0
+    }
+
+    let totalFeeUpToCurrent = 0
+    let paidAmount = 0
+    let pendingAmount = 0
+    let firstPendingLabel: string | null = null
+
+    const timeline = ALL_ACADEMIC_MONTHS.map((mInfo) => {
+      if (mInfo.isVacation) {
+        return {
+          month: mInfo.month,
+          label: mInfo.label,
+          status: 'VACATION',
+          displayText: 'Vacation (No Fee)',
+        }
+      }
+
+      const record = records.find((r) => r.month === mInfo.month)
+      const acadSeq = mInfo.month >= 4 ? mInfo.month - 3 : mInfo.month + 9
+
+      if (acadSeq <= currentAcademicSeq && record) {
+        totalFeeUpToCurrent += record.netAmount
+      }
+
+      if (record) {
+        paidAmount += record.paidAmount
+        if (acadSeq <= currentAcademicSeq) {
+          pendingAmount += record.balanceAmount
+        }
+
+        if (record.balanceAmount > 0 && !firstPendingLabel && acadSeq <= currentAcademicSeq) {
+          firstPendingLabel = `${mInfo.label} ${record.year}`
+        }
+
+        let statusText = 'BLANK'
+        if (record.status === 'PAID') statusText = 'PAID'
+        else if (record.status === 'PARTIAL') statusText = 'PARTIAL'
+
+        return {
+          month: mInfo.month,
+          label: mInfo.label,
+          status: statusText,
+          displayText: statusText === 'PAID' ? '✓' : statusText === 'PARTIAL' ? 'Partial' : '',
+        }
+      }
+
+      return {
+        month: mInfo.month,
+        label: mInfo.label,
+        status: 'BLANK',
+        displayText: '',
+      }
+    })
+
+    studentRows.push({
+      studentId: s.id,
+      studentName: `${s.firstName} ${s.lastName}`,
+      admissionNumber: s.admissionNumber,
+      className: s.class?.name || '',
+      sectionName: s.section?.name || '',
+      feeCategory: s.feeCategory || 'STANDARD',
+      monthlyFee,
+      currentTotalFee: totalFeeUpToCurrent,
+      paidAmount,
+      pendingAmount: Math.max(0, pendingAmount - (s.advanceBalance || 0)),
+      advanceBalance: s.advanceBalance || 0,
+      pendingFrom: firstPendingLabel || 'Cleared',
+      timeline,
+    })
+  }
+
+  return {
+    students: studentRows,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  }
+}
+
 export async function getFeeSummary(filters: FeeSummaryInput) {
   const { sessionId, month } = filters
-
-  // Summary logic:
-  // 1. Calculate pending fees: all records where month <= selected month AND status != 'PAID'
-  // 2. Calculate paid fees: all records where month <= selected month, sum of paidAmount
-
   const where = {
     sessionId,
     month: { lte: month },
@@ -128,7 +291,6 @@ export async function getFeeSummary(filters: FeeSummaryInput) {
     },
   })
 
-  // Alternatively, we can calculate based on current active year, but assuming session filters year implicitly
   return {
     totalPending: result._sum.balanceAmount || 0,
     totalPaid: result._sum.paidAmount || 0,
@@ -140,108 +302,116 @@ export async function generateFeeRecordsForStudent(studentId: string, tx: Prisma
     where: { id: studentId },
     include: {
       session: true,
-      feePlan: true
-    }
+      feePlan: true,
+    },
   })
 
   if (!student || !student.feePlanId || !student.feePlan || !student.session || !student.sessionId || !student.classId) return
 
-  // Basic assumption: session name is like "2026-27"
   const startYear = parseInt(student.session.name.substring(0, 4))
   if (isNaN(startYear)) return
 
+  const existingRecords = await tx.feeRecord.findMany({
+    where: {
+      studentId,
+      sessionId: student.sessionId,
+    },
+    select: { month: true, year: true },
+  })
+
+  const existingSet = new Set(existingRecords.map((r) => `${r.month}-${r.year}`))
+  const newRecordsData = []
+
+  let monthlyAmount = student.feePlan.monthlyAmount
+  const category = student.feeCategory as string
+  if (category === 'SIBLING' && student.siblingFeeAmount !== null) {
+    monthlyAmount = student.siblingFeeAmount * 100
+  } else if (category === 'RTE' || category === 'STAFF_CHILD') {
+    monthlyAmount = 0
+  }
+
   for (const { month } of FEE_MONTHS) {
     const year = month >= 4 ? startYear : startYear + 1
-    
-    // Check if record already exists
-    const existing = await tx.feeRecord.findFirst({
-      where: {
+
+    if (!existingSet.has(`${month}-${year}`)) {
+      newRecordsData.push({
         studentId,
+        feePlanId: student.feePlanId,
         sessionId: student.sessionId,
+        classId: student.classId,
         month,
-        year
-      }
-    })
-
-    if (!existing) {
-      let monthlyAmount = student.feePlan.monthlyAmount
-      const category = student.feeCategory as string
-      if (category === 'SIBLING' && student.siblingFeeAmount !== null) {
-        monthlyAmount = student.siblingFeeAmount * 100 // convert to paise
-      } else if (category === 'RTE' || category === 'STAFF_CHILD') {
-        monthlyAmount = 0
-      }
-
-      await tx.feeRecord.create({
-        data: {
-          studentId,
-          feePlanId: student.feePlanId,
-          sessionId: student.sessionId,
-          classId: student.classId,
-          month,
-          year,
-          monthlyAmount,
-          netAmount: monthlyAmount,
-          balanceAmount: monthlyAmount,
-          status: monthlyAmount === 0 ? 'PAID' : 'PENDING'
-        }
+        year,
+        monthlyAmount,
+        netAmount: monthlyAmount,
+        balanceAmount: monthlyAmount,
+        status: monthlyAmount === 0 ? FeeRecordStatus.PAID : FeeRecordStatus.PENDING,
       })
     }
   }
+
+  if (newRecordsData.length > 0) {
+    await tx.feeRecord.createMany({
+      data: newRecordsData,
+      skipDuplicates: true,
+    })
+  }
 }
 
-export async function addFeePayment(studentId: string, data: { amount: number, paymentMode: any, remarks?: string, transactionId?: string }, actorId: string) {
-  // Amount in paise
-  let remainingAmount = data.amount * 100
+export async function addFeePayment(
+  studentId: string,
+  data: {
+    amount: number
+    receiptNumber: string
+    paymentDate?: string
+    paymentMode: any
+    remarks?: string
+    transactionId?: string
+  },
+  actorId: string
+) {
+  let remainingAmount = Math.round(data.amount * 100)
 
   if (remainingAmount <= 0) {
-    throw new ConflictError("Payment amount must be greater than 0")
+    throw new ConflictError('Payment amount must be greater than 0')
+  }
+
+  if (!data.receiptNumber || !data.receiptNumber.trim()) {
+    throw new ConflictError('Receipt number is mandatory')
   }
 
   return await prisma.$transaction(async (tx) => {
-    // 1. Find all unpaid fee records for this student, ordered by year, then month
-    // But since Academic year goes April to March, standard sorting by year and month doesn't perfectly align to academic order if we just sort by year asc, month asc. 
-    // Wait, year ascending is correct because 2026 comes before 2027. So if we sort by year ASC, month ASC, April 2026 comes before Jan 2027. Yes, it perfectly aligns!
-    
+    // Unique receipt number validation
+    const existingPayment = await tx.feePayment.findUnique({
+      where: { receiptNumber: data.receiptNumber.trim() },
+    })
+    if (existingPayment) {
+      throw new ConflictError('Receipt number already exists')
+    }
+
     const unpaidRecords = await tx.feeRecord.findMany({
       where: {
         studentId,
-        status: { in: ['PENDING', 'PARTIAL'] },
-        balanceAmount: { gt: 0 }
+        status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
+        balanceAmount: { gt: 0 },
       },
-      orderBy: [
-        { year: 'asc' },
-        { month: 'asc' }
-      ]
+      orderBy: [{ year: 'asc' }, { month: 'asc' }],
     })
 
-    if (unpaidRecords.length === 0) {
-      throw new ConflictError("No pending fee records found for this student.")
+    const paymentDateObj = data.paymentDate ? new Date(data.paymentDate) : new Date()
+
+    let primaryFeeRecordId = unpaidRecords[0]?.id
+    if (!primaryFeeRecordId) {
+      const anyRecord = await tx.feeRecord.findFirst({ where: { studentId } })
+      if (!anyRecord) {
+        throw new NotFoundError('No fee record found for this student.')
+      }
+      primaryFeeRecordId = anyRecord.id
     }
 
-    // Need a receipt number
-    const receiptNumber = `RCPT-${Date.now()}-${Math.floor(Math.random() * 1000)}`
-
-    // Generate a single FeePayment record
-    const feePayment = await tx.feePayment.create({
-      data: {
-        feeRecordId: unpaidRecords[0].id, // Link to the oldest record as primary
-        amount: remainingAmount,
-        paymentDate: new Date(),
-        paymentMode: data.paymentMode,
-        transactionId: data.transactionId,
-        receiptNumber,
-        remarks: data.remarks,
-        processedById: actorId
-      }
-    })
-
-    // 2. Distribute amount across records
     for (const record of unpaidRecords) {
       if (remainingAmount <= 0) break
 
       const amountToPay = Math.min(record.balanceAmount, remainingAmount)
-      
       const newPaidAmount = record.paidAmount + amountToPay
       const newBalanceAmount = record.balanceAmount - amountToPay
       const newStatus = newBalanceAmount === 0 ? 'PAID' : 'PARTIAL'
@@ -252,15 +422,169 @@ export async function addFeePayment(studentId: string, data: { amount: number, p
           paidAmount: newPaidAmount,
           balanceAmount: newBalanceAmount,
           status: newStatus,
-          lastPaymentDate: new Date(),
+          lastPaymentDate: paymentDateObj,
           lastPaymentMode: data.paymentMode,
-          receiptNumber
-        }
+          receiptNumber: data.receiptNumber.trim(),
+        },
       })
 
       remainingAmount -= amountToPay
     }
 
+    // Overpayment credit saved to advance balance
+    if (remainingAmount > 0) {
+      await tx.student.update({
+        where: { id: studentId },
+        data: { advanceBalance: { increment: remainingAmount } },
+      })
+    }
+
+    const feePayment = await tx.feePayment.create({
+      data: {
+        feeRecordId: primaryFeeRecordId,
+        studentId,
+        amount: Math.round(data.amount * 100),
+        paymentDate: paymentDateObj,
+        paymentMode: data.paymentMode === 'ONLINE' || data.paymentMode === 'UPI' || data.paymentMode === 'CARD' ? 'ONLINE' : data.paymentMode,
+        receiptNumber: data.receiptNumber.trim(),
+        remarks: data.remarks || null,
+        transactionRef: data.transactionId || null,
+        collectedById: actorId,
+      },
+    })
+
     return feePayment
   })
+}
+
+export async function getStudentFeeProfile(studentId: string, sessionId?: string) {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: {
+      session: true,
+      class: true,
+      section: true,
+      feePlan: true,
+    },
+  })
+
+  if (!student) throw new ConflictError('Student not found')
+
+  const effectiveSessionId = sessionId || student.sessionId
+  if (!effectiveSessionId) {
+    return {
+      student,
+      records: [],
+      payments: [],
+      summary: { totalFees: 0, paidAmount: 0, pendingAmount: 0, pendingFrom: null },
+    }
+  }
+
+  await generateFeeRecordsForStudent(studentId)
+
+  const records = await prisma.feeRecord.findMany({
+    where: { studentId, sessionId: effectiveSessionId },
+    include: {
+      payments: {
+        orderBy: { createdAt: 'desc' },
+      },
+      feePlan: { select: { id: true, name: true } },
+    },
+    orderBy: [{ year: 'asc' }, { month: 'asc' }],
+  })
+
+  const allPayments = records
+    .flatMap((r) =>
+      r.payments.map((p) => ({
+        ...p,
+        month: r.month,
+        year: r.year,
+        monthLabel: ALL_ACADEMIC_MONTHS.find((m) => m.month === r.month)?.label || `Month ${r.month}`,
+      }))
+    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  const currentDate = new Date()
+  const currentMonthNum = currentDate.getMonth() + 1
+  const currentAcademicSeq = currentMonthNum >= 4 ? currentMonthNum - 3 : currentMonthNum + 9
+
+  let totalFeesUpToCurrent = 0
+  let paidAmount = 0
+  let pendingAmount = 0
+  let firstPendingLabel: string | null = null
+
+  records.forEach((r) => {
+    const acadSeq = r.month >= 4 ? r.month - 3 : r.month + 9
+    paidAmount += r.paidAmount
+    if (acadSeq <= currentAcademicSeq) {
+      totalFeesUpToCurrent += r.netAmount
+      pendingAmount += r.balanceAmount
+      if (r.balanceAmount > 0 && !firstPendingLabel) {
+        firstPendingLabel = `${ALL_ACADEMIC_MONTHS.find((m) => m.month === r.month)?.label} ${r.year}`
+      }
+    }
+  })
+
+  const timeline = ALL_ACADEMIC_MONTHS.map((mInfo) => {
+    if (mInfo.isVacation) {
+      return {
+        month: mInfo.month,
+        label: mInfo.label,
+        status: 'VACATION',
+        displayText: 'Vacation (No Fee)',
+      }
+    }
+    const r = records.find((rec) => rec.month === mInfo.month)
+    return {
+      month: mInfo.month,
+      label: mInfo.label,
+      status: r ? r.status : 'BLANK',
+      displayText: r ? (r.status === 'PAID' ? '✓' : r.status === 'PARTIAL' ? 'Partial' : '') : '',
+    }
+  })
+
+  return {
+    student: {
+      id: student.id,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      admissionNumber: student.admissionNumber,
+      rollNumber: student.rollNumber,
+      className: student.class?.name || null,
+      sectionName: student.section?.name || null,
+      sessionName: student.session?.name || null,
+      feeCategory: student.feeCategory,
+      advanceBalance: student.advanceBalance || 0,
+      feePlan: student.feePlan
+        ? {
+            id: student.feePlan.id,
+            name: student.feePlan.name,
+            monthlyAmount: student.feePlan.monthlyAmount,
+          }
+        : null,
+    },
+    records: records.map((r) => ({
+      id: r.id,
+      month: r.month,
+      year: r.year,
+      monthLabel: ALL_ACADEMIC_MONTHS.find((m) => m.month === r.month)?.label || `Month ${r.month}`,
+      monthlyAmount: r.monthlyAmount,
+      netAmount: r.netAmount,
+      paidAmount: r.paidAmount,
+      balanceAmount: r.balanceAmount,
+      status: r.status,
+      lastPaymentDate: r.lastPaymentDate,
+      lastPaymentMode: r.lastPaymentMode,
+      receiptNumber: r.receiptNumber,
+    })),
+    payments: allPayments,
+    timeline,
+    summary: {
+      totalFees: totalFeesUpToCurrent,
+      paidAmount,
+      pendingAmount: Math.max(0, pendingAmount - (student.advanceBalance || 0)),
+      advanceBalance: student.advanceBalance || 0,
+      pendingFrom: firstPendingLabel,
+    },
+  }
 }

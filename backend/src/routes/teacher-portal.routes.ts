@@ -26,10 +26,12 @@ router.get('/timetable', TeacherPortalController.getTeacherTimetable)
 // Notices
 router.get('/notices', TeacherPortalController.getNotices)
 
+import { upload } from '../middlewares/upload.middleware'
+
 // Announcements
 router.get('/announcements', TeacherPortalController.getAnnouncements)
-router.post('/announcements', TeacherPortalController.createAnnouncement)
-router.put('/announcements/:id', TeacherPortalController.updateAnnouncement)
+router.post('/announcements', upload.array('attachments', 5), TeacherPortalController.createAnnouncement)
+router.put('/announcements/:id', upload.array('attachments', 5), TeacherPortalController.updateAnnouncement)
 router.delete('/announcements/:id', TeacherPortalController.deleteAnnouncement)
 
 // Exams & Report/Admit Cards
@@ -41,8 +43,8 @@ router.post('/report-cards', TeacherPortalController.uploadReportCard)
 // Homework
 import { HomeworkController } from '../controllers/homework.controller'
 router.get('/homework', HomeworkController.getTeacherHomeworks)
-router.post('/homework', HomeworkController.createHomework)
-router.put('/homework/:id', HomeworkController.updateHomework)
+router.post('/homework', upload.single('attachment'), HomeworkController.createHomework)
+router.put('/homework/:id', upload.single('attachment'), HomeworkController.updateHomework)
 router.delete('/homework/:id', HomeworkController.deleteHomework)
 
 export default router

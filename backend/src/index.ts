@@ -10,7 +10,12 @@ import { requestLoggerMiddleware } from './middlewares/requestLogger.middleware'
 import { errorHandler } from './middlewares/error.middleware'
 import apiRoutes from './routes'
 
+import path from 'path'
+
 const app = express()
+
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
 // 1. Request Tracing & Logging
 app.use(requestIdMiddleware)
