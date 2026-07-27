@@ -13,28 +13,18 @@ import * as AcademicSessionController from '../controllers/academic-session.cont
 
 const router = Router()
 
-// All academic session routes require authentication + ADMIN role
-router.use(authenticate, authorize('ADMIN'))
+router.use(authenticate)
 
-// GET /api/v1/academic-sessions
-router.get('/', AcademicSessionController.listAcademicSessions)
+// GET endpoints are readable by all authenticated roles (ADMIN, TEACHER, STUDENT)
+router.get('/', authorize('ADMIN', 'TEACHER', 'STUDENT'), AcademicSessionController.listAcademicSessions)
+router.get('/active', authorize('ADMIN', 'TEACHER', 'STUDENT'), AcademicSessionController.getActiveAcademicSession)
+router.get('/:id', authorize('ADMIN', 'TEACHER', 'STUDENT'), AcademicSessionController.getAcademicSession)
 
-// GET /api/v1/academic-sessions/active
-router.get('/active', AcademicSessionController.getActiveAcademicSession)
+// Write routes require ADMIN role
+router.post('/', authorize('ADMIN'), AcademicSessionController.createAcademicSession)
+router.patch('/:id', authorize('ADMIN'), AcademicSessionController.updateAcademicSession)
+router.patch('/:id/set-active', authorize('ADMIN'), AcademicSessionController.setActiveAcademicSession)
+router.delete('/:id', authorize('ADMIN'), AcademicSessionController.deleteAcademicSession)
 
-// GET /api/v1/academic-sessions/:id
-router.get('/:id', AcademicSessionController.getAcademicSession)
-
-// POST /api/v1/academic-sessions
-router.post('/', AcademicSessionController.createAcademicSession)
-
-// PATCH /api/v1/academic-sessions/:id
-router.patch('/:id', AcademicSessionController.updateAcademicSession)
-
-// PATCH /api/v1/academic-sessions/:id/set-active
-router.patch('/:id/set-active', AcademicSessionController.setActiveAcademicSession)
-
-// DELETE /api/v1/academic-sessions/:id
-router.delete('/:id', AcademicSessionController.deleteAcademicSession)
 
 export default router

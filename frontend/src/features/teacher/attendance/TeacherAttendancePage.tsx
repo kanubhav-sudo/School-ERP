@@ -16,6 +16,7 @@ import {
   type MarkAttendanceRecord,
 } from '../teacher-portal.api'
 import { AttendanceGrid, type StudentRow } from '../../admin/attendance/components/AttendanceGrid'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -137,11 +138,12 @@ export function TeacherAttendancePage() {
         {/* Date */}
         <div className="flex-1 min-w-[160px] max-w-xs space-y-1.5">
           <label className="text-sm font-medium">Date</label>
-          <input
-            type="date"
+          <DatePickerInput
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            onChange={(v) => setSelectedDate(v)}
+            fromYear={new Date().getFullYear() - 1}
+            toYear={new Date().getFullYear() + 1}
+            className="w-full"
           />
         </div>
 

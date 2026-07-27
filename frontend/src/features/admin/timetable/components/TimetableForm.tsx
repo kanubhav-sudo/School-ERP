@@ -1,4 +1,4 @@
-import { useForm, type SubmitHandler } from 'react-hook-form'
+import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useEffect } from 'react'
@@ -6,6 +6,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 import {
   Select,
   SelectContent,
@@ -62,6 +63,7 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
     handleSubmit,
     setValue,
     watch,
+    control,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -286,10 +288,18 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
               {isOverride && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Override Date</label>
-                  <Input
-                    type="date"
-                    {...register('overrideDate')}
-                    className={errors.overrideDate ? 'border-destructive' : ''}
+                  <Controller
+                    control={control}
+                    name="overrideDate"
+                    render={({ field }) => (
+                      <DatePickerInput
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        className="w-full"
+                        fromYear={new Date().getFullYear() - 5}
+                        toYear={new Date().getFullYear() + 5}
+                      />
+                    )}
                   />
                   {errors.overrideDate && (
                     <p className="text-xs text-destructive">{errors.overrideDate.message}</p>

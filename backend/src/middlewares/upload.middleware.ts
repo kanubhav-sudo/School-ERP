@@ -23,7 +23,7 @@ const storage = multer.diskStorage({
 })
 
 // Optional: Add file filter for basic security (deny .exe, .sh, etc.)
-const fileFilter = (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const ext = path.extname(file.originalname).toLowerCase()
   const forbiddenExts = ['.exe', '.sh', '.bat', '.cmd', '.js', '.ts']
   

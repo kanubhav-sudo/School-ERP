@@ -20,6 +20,7 @@ import type {
   UpdateTimetableInput,
   ListTimetableInput,
 } from '../validators/timetable.validator'
+import type { Prisma } from '../generated/prisma'
 
 // ─── Select Shape ─────────────────────────────────────────────
 
@@ -50,22 +51,25 @@ const timetableSelect = {
 /**
  * Attaches startTime and endTime from PeriodMaster to timetable entries.
  */
-async function withPeriodTimes(entries: any | any[]) {
+/** Minimal shape required by `withPeriodTimes` — any timetable entry must have these fields. */
+type TimetableEntryBase = { sessionId: string; periodNumber: number } & Record<string, unknown>
+
+async function withPeriodTimes(entries: TimetableEntryBase | TimetableEntryBase[]) {
   const isArray = Array.isArray(entries)
   const arr = isArray ? entries : [entries]
   if (arr.length === 0) return isArray ? [] : null
 
-  const sessionIds = [...new Set(arr.map((e: any) => e.sessionId))]
+  const sessionIds = [...new Set(arr.map((e: TimetableEntryBase) => e.sessionId))]
   const periodMasters = await prisma.periodMaster.findMany({
     where: { sessionId: { in: sessionIds } },
   })
 
-  const periodMap = new Map<string, any>()
+  const periodMap = new Map<string, Prisma.PeriodMasterGetPayload<Record<string, never>>>()
   periodMasters.forEach((pm) => {
     periodMap.set(`${pm.sessionId}-${pm.periodNumber}`, pm)
   })
 
-  const mapped = arr.map((entry: any) => {
+  const mapped = arr.map((entry: TimetableEntryBase) => {
     const pm = periodMap.get(`${entry.sessionId}-${entry.periodNumber}`)
     return {
       ...entry,

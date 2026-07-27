@@ -5,12 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
-  FileText,
   Lock,
-  Download,
-  Calendar,
   Award,
-  AlertCircle,
   Printer,
   CheckCircle2,
 } from 'lucide-react'
@@ -23,10 +19,13 @@ export function StudentExamsPage() {
   const [admitCardModalOpen, setAdmitCardModalOpen] = useState(false)
   const [resultCardModalOpen, setResultCardModalOpen] = useState(false)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['student-exams'],
     queryFn: studentPortalApi.getExams,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   })
+
 
   if (isLoading) {
     return (
@@ -149,7 +148,7 @@ export function StudentExamsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {currentExam.schedules.map((s: any) => {
+                  {currentExam.schedules.map((s: { id?: string; examDate?: string; startTime?: string; endTime?: string; subject?: { name: string } }) => {
                     const dateStr = s.examDate ? s.examDate.slice(0, 10) : ''
                     const dayStr = dateStr
                       ? new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long' })
@@ -253,7 +252,7 @@ export function StudentExamsPage() {
             sessionName: latestAdmitCard.student?.session?.name || '',
           }}
           examName={latestAdmitCard.exam?.name || 'Examination'}
-          timetable={(currentExam?.schedules || []).map((s: any) => ({
+          timetable={(currentExam?.schedules || []).map((s: { examDate?: string; startTime?: string; endTime?: string; subject?: { name: string }; room?: string }) => ({
             date: s.examDate ? s.examDate.slice(0, 10) : '',
             day: s.examDate ? new Date(s.examDate.slice(0, 10)).toLocaleDateString('en-US', { weekday: 'long' }) : '',
             time: `${s.startTime} - ${s.endTime}`,

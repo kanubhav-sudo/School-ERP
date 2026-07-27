@@ -159,3 +159,42 @@
   - Rewrote the `/admin-dashboard/stats` backend service to provide graceful failure containment. Individual widget aggregation queries now catch their own exceptions (e.g., fee calculation errors when there is no active session) and return 0 instead of crashing the entire page.
   - Added robust UI error state handling to `AdminDashboard.tsx`, introducing an error message block and a "Retry" button. This resolved the infinite skeleton loading issue.
   - Identified and killed the hung `tsx watch` process, restarting the development server to guarantee file recompilation and data accuracy.
+
+## Critical Synchronization & Data Integrity Fixes (Production Priority)
+- **Status**: Implemented
+- **Date**: 2026-07-27
+- **Points Addressed**:
+
+### 1. Attendance Synchronization (CRITICAL)
+- **Backend** (`student-portal.service.ts`): `getDashboardData` and `getAttendance` now filter `isDeleted: false` attendance records. `getAttendance` returns `total`, `present`, `absent`, `late`, `halfDay`, and overall `percentage` fields.
+- **Frontend** (`StudentAttendancePage.tsx`): Added Late and Half Day status badges with proper color coding. Fixed absent count calculation to use `data?.summary?.absent` with safe fallback.
+
+### 2. UUIDs Visible in Dropdowns
+- **Frontend** (`ExamsPage.tsx`, `TeacherExamsPage.tsx`): All dropdowns display Session Name, Class Name, Subject Name with Code — no raw UUIDs.
+
+### 3. Student Cannot See Released Admit Card
+- **Backend** (`student-portal.service.ts` `getExams`): When `ac.isReleased === true`, `isBlocked` is set to `false` regardless of fee status or teacher status. Admin's `isReleased` is the final authority.
+
+### 4. Teacher Exam Module — Class & Section Selection
+- **Frontend** (`TeacherExamsPage.tsx`): Completely rewritten to use `fetchMyClasses` from `/teacher-portal/my-classes`. Dropdowns now show only teacher-assigned sessions and classes. Session change resets class if it's no longer valid.
+
+### 5. Period Master Data Loss (CRITICAL)
+- **Frontend** (`PeriodMasterPage.tsx`): Removed conflicting `useEffect` that called `reset({ periods: [] })` on `selectedSessionId` change, which was clearing the form during async data fetch.
+
+### 6. Student Fees Due Calculation
+- **Backend** (`student-portal.service.ts` `getDashboardData`): `pendingFeeAmount` calculated strictly for elapsed academic months only (April–current, excluding May vacation) minus `advanceBalance`.
+
+### 7. Student Fee Page Layout
+- **Frontend** (`StudentFeesPage.tsx`): Rebuilt to match Admin `StudentFeeProfileDrawer.tsx` layout with Summary Cards, 12-Month Academic Timeline, and Receipt History.
+
+### 8. Admin Fee Records Column
+- **Backend** (`fee-record.service.ts`): `getStudentFeeList` now returns `totalYearlyFee` and `yearlyPendingAmount` (Total Session Fee − Total Paid).
+- **Frontend** (`FeeRecordsPage.tsx`, `api.ts`): Added `Total Yearly Fee Pending` column.
+
+### 9. Admin Dashboard Fee Logic
+- **Backend** (`admin-dashboard.service.ts`): `totalPendingFees` calculates pending only for elapsed months in the active session using `getElapsedAcademicMonths`.
+
+### 10. ExamsPage.tsx TypeScript Fixes
+- Fixed null-safe `onValueChange` handlers in Session/Class selects.
+- Added missing `sessionId` to `updateResultStatus` mutation call.
+- Added optional `role` field to `updateAdmitCardStatus` API payload type.

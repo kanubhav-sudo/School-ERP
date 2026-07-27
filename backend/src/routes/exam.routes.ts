@@ -17,12 +17,13 @@ router.use(authenticate)
 router.get('/', ExamController.listExams)
 router.get('/admit-card/students', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.getAdmitCardStudents)
 router.post('/admit-card/status', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.updateAdmitCardStatus)
-router.get('/result/students', authorize('SUPERADMIN', 'ADMIN'), ExamController.getResultStudents)
-router.post('/result/status', authorize('SUPERADMIN', 'ADMIN'), ExamController.updateResultStatus)
+router.get('/result/students', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.getResultStudents)
+router.post('/result/status', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.updateResultStatus)
 
-// Templates (Admin)
-router.get('/templates/:type', authorize('SUPERADMIN', 'ADMIN'), ExamController.getExamTemplate)
+// Templates (Admin, Teacher)
+router.get('/templates/:type', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.getExamTemplate)
 router.post('/templates/:type', authorize('SUPERADMIN', 'ADMIN'), ExamController.saveExamTemplate)
+
 
 // Exam CRUD & Timetables
 router.get('/:id', ExamController.getExamById)

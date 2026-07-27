@@ -107,13 +107,13 @@ export function PeriodMasterPage() {
     }
   }, [existingPeriods, reset])
 
-  // Also reset when session changes
+  // Clear success/error states when session changes
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    reset({ periods: [] })
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaveSuccess(false)
     setServerError(null)
-  }, [selectedSessionId, reset])
+  }, [selectedSessionId])
+
 
   const mutation = useMutation({
     mutationFn: (data: FormValues) =>
@@ -134,8 +134,9 @@ export function PeriodMasterPage() {
       setServerError(null)
       setTimeout(() => setSaveSuccess(false), 4000)
     },
-    onError: (error: any) => {
-      setServerError(error?.response?.data?.error?.message || 'Failed to save period master')
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string }
+      alert(err.response?.data?.error?.message || err.message || 'Operation failed')
     },
   })
 

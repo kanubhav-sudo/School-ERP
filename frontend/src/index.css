@@ -128,3 +128,77 @@
     @apply font-sans;
   }
 }
+
+/* ── react-day-picker portal popup overrides ──────────────────────────── */
+/* Scoped to our portal class so we don't globally override rdp */
+.rdp-portal-popup {
+  --rdp-cell-size: 36px;
+  --rdp-caption-font-size: 13px;
+  --rdp-accent-color: var(--primary);
+  --rdp-background-color: var(--accent);
+  --rdp-accent-color-dark: var(--primary);
+  --rdp-background-color-dark: var(--accent);
+  --rdp-outline: 2px solid var(--ring);
+  --rdp-outline-selected: 2px solid var(--primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--foreground);
+  background: var(--popover);
+}
+
+.rdp-portal-popup .rdp-day_selected,
+.rdp-portal-popup .rdp-day_selected:focus-visible,
+.rdp-portal-popup .rdp-day_selected:hover {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 6px;
+}
+
+.rdp-portal-popup .rdp-day_today:not(.rdp-day_selected) {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+.rdp-portal-popup .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+  border-radius: 6px;
+}
+
+.rdp-portal-popup .rdp-nav_button {
+  color: var(--foreground);
+  border-radius: 6px;
+}
+
+.rdp-portal-popup .rdp-nav_button:hover {
+  background-color: var(--accent);
+}
+
+.rdp-portal-popup .rdp-caption_dropdowns select {
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.rdp-portal-popup .rdp-caption_dropdowns select:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.rdp-portal-popup .rdp-head_cell {
+  color: var(--muted-foreground);
+  font-weight: 400;
+  font-size: 11px;
+}
+
+.rdp-portal-popup .rdp-day_outside {
+  opacity: 0.35;
+}
+

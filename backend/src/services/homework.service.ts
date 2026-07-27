@@ -28,20 +28,25 @@ export interface UpdateHomeworkInput {
 }
 
 export class HomeworkService {
+  static async resolveTeacherIds(idOrUserId: string): Promise<string[]> {
+    const teacher = await prisma.teacher.findFirst({
+      where: {
+        OR: [{ id: idOrUserId }, { userId: idOrUserId }],
+      },
+      select: { id: true, userId: true },
+    })
+    if (teacher) {
+      return Array.from(new Set([teacher.id, teacher.userId, idOrUserId].filter((x): x is string => Boolean(x))))
+    }
+    return [idOrUserId]
+  }
+
   static async createHomework(data: CreateHomeworkInput) {
     const section = await prisma.section.findUnique({ where: { id: data.sectionId } })
     if (!section) throw new NotFoundError('Section not found')
 
-    let teacherId = data.teacherId
-    const teacher = await prisma.teacher.findFirst({
-      where: {
-        OR: [{ id: teacherId }, { userId: teacherId }],
-      },
-      select: { id: true },
-    })
-    if (teacher) {
-      teacherId = teacher.id
-    }
+    const teacherIds = await HomeworkService.resolveTeacherIds(data.teacherId)
+    const teacherId = teacherIds[0]
 
     return await prisma.homework.create({
       data: {
@@ -69,8 +74,11 @@ export class HomeworkService {
     const homework = await prisma.homework.findUnique({ where: { id } })
     if (!homework) throw new NotFoundError('Homework not found')
     
-    if (teacherId && homework.teacherId !== teacherId) {
-      throw new AppError('You do not have permission to edit this homework', 403)
+    if (teacherId) {
+      const allowedIds = await HomeworkService.resolveTeacherIds(teacherId)
+      if (!allowedIds.includes(homework.teacherId)) {
+        throw new AppError('You do not have permission to edit this homework', 403)
+      }
     }
 
     // Delete old attachment if it's being replaced or deleted
@@ -99,8 +107,11 @@ export class HomeworkService {
     const homework = await prisma.homework.findUnique({ where: { id } })
     if (!homework) throw new NotFoundError('Homework not found')
 
-    if (teacherId && homework.teacherId !== teacherId) {
-      throw new AppError('You do not have permission to delete this homework', 403)
+    if (teacherId) {
+      const allowedIds = await HomeworkService.resolveTeacherIds(teacherId)
+      if (!allowedIds.includes(homework.teacherId)) {
+        throw new AppError('You do not have permission to delete this homework', 403)
+      }
     }
 
     if (homework.attachmentUrl) {
@@ -118,9 +129,10 @@ export class HomeworkService {
   }
 
   static async getHomeworkForTeacher(teacherId: string, filters?: { classId?: string, sectionId?: string, subjectId?: string, status?: PublishStatus }) {
+    const allowedIds = await HomeworkService.resolveTeacherIds(teacherId)
     return await prisma.homework.findMany({
       where: {
-        teacherId,
+        teacherId: { in: allowedIds },
         ...(filters?.classId && { classId: filters.classId }),
         ...(filters?.sectionId && { sectionId: filters.sectionId }),
         ...(filters?.subjectId && { subjectId: filters.subjectId }),
@@ -139,9 +151,10 @@ export class HomeworkService {
   }
 
   static async getAllHomework(filters?: { teacherId?: string, classId?: string, sectionId?: string, subjectId?: string, status?: PublishStatus }) {
+    const allowedIds = filters?.teacherId ? await HomeworkService.resolveTeacherIds(filters.teacherId) : undefined
     return await prisma.homework.findMany({
       where: {
-        ...(filters?.teacherId && { teacherId: filters.teacherId }),
+        ...(allowedIds && { teacherId: { in: allowedIds } }),
         ...(filters?.classId && { classId: filters.classId }),
         ...(filters?.sectionId && { sectionId: filters.sectionId }),
         ...(filters?.subjectId && { subjectId: filters.subjectId }),

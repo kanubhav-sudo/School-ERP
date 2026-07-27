@@ -66,7 +66,7 @@ export function StudentDashboard() {
           <h3 className="text-lg font-semibold mb-4">Today's Timetable</h3>
           {dashboard?.todayTimetable?.length ? (
             <div className="space-y-3">
-              {dashboard.todayTimetable.map((t: any, i: number) => (
+              {dashboard.todayTimetable.map((t: { periodNumber: number; subjectName: string; teacherName: string }, i: number) => (
                 <div key={i} className="flex justify-between items-center p-3 border rounded-lg">
                   <div>
                     <div className="font-medium text-sm">Period {t.periodNumber}</div>

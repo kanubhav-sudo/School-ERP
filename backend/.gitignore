@@ -3,3 +3,14 @@ node_modules
 .env
 
 /src/generated/prisma
+
+# Temporary debug / test scripts (should never be committed)
+check-*.js
+check-*.ts
+check_*.ts
+debug*.ts
+fix-*.js
+query-*.js
+test-*.js
+test-*.ts
+lint.txt

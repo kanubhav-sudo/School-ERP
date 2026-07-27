@@ -1,7 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { studentPortalApi } from '../api/student-portal.api'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+
+interface AttendanceRecordItem {
+  id: string
+  status: string
+  remarks?: string
+  attendance: { date: string }
+}
 
 export function StudentAttendancePage() {
   const { data, isLoading } = useQuery({
@@ -9,7 +16,9 @@ export function StudentAttendancePage() {
     queryFn: studentPortalApi.getAttendance,
   })
 
-  if (isLoading) return <div>Loading attendance...</div>
+  if (isLoading) return <div>Loading attendance records...</div>
+
+  const records = (data?.records || []) as AttendanceRecordItem[]
 
   return (
     <div className="space-y-6">
@@ -24,12 +33,12 @@ export function StudentAttendancePage() {
         </div>
         <div className="p-6 bg-card rounded-xl border shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground">Total Present</h3>
-          <div className="text-3xl font-bold mt-2 text-green-600">{data?.summary?.present}</div>
+          <div className="text-3xl font-bold mt-2 text-green-600">{data?.summary?.present ?? 0}</div>
         </div>
         <div className="p-6 bg-card rounded-xl border shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground">Total Absent</h3>
           <div className="text-3xl font-bold mt-2 text-red-500">
-            {data?.summary?.total - data?.summary?.present}
+            {data?.summary?.absent ?? ((data?.summary?.total || 0) - (data?.summary?.present || 0))}
           </div>
         </div>
       </div>
@@ -45,14 +54,14 @@ export function StudentAttendancePage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data?.records?.length === 0 ? (
+            {records.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                   No attendance records found
                 </TableCell>
               </TableRow>
             ) : (
-              data?.records?.map((record: any) => (
+              records.map((record) => (
                 <TableRow key={record.id}>
                   <TableCell className="font-medium">
                     {new Date(record.attendance.date).toLocaleDateString()}
@@ -62,6 +71,16 @@ export function StudentAttendancePage() {
                       <span className="flex items-center text-green-600 text-sm font-medium">
                         <CheckCircle2 className="w-4 h-4 mr-1" />
                         Present
+                      </span>
+                    ) : record.status === 'LATE' ? (
+                      <span className="flex items-center text-amber-600 text-sm font-medium">
+                        <Clock className="w-4 h-4 mr-1" />
+                        Late
+                      </span>
+                    ) : record.status === 'HALF_DAY' ? (
+                      <span className="flex items-center text-blue-600 text-sm font-medium">
+                        <Clock className="w-4 h-4 mr-1" />
+                        Half Day
                       </span>
                     ) : (
                       <span className="flex items-center text-red-500 text-sm font-medium">

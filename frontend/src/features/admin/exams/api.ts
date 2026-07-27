@@ -74,7 +74,7 @@ export async function saveExamSchedules({
 }: {
   examId: string
   schedules: ExamScheduleDto[]
-}): Promise<any> {
+}): Promise<unknown> {
   const { data } = await api.post(`/exams/${examId}/schedules`, { schedules })
   return data.data
 }
@@ -92,6 +92,7 @@ export async function updateAdmitCardStatus(payload: {
   studentId: string
   status: 'RELEASED' | 'HOLD'
   remark?: string
+  role?: 'TEACHER' | 'ADMIN'
 }) {
   const { data } = await api.post('/exams/admit-card/status', payload)
   return data.data
@@ -105,6 +106,7 @@ export async function fetchResultStudents(sessionId: string, classId: string, ex
 }
 
 export async function updateResultStatus(payload: {
+  sessionId: string
   examId: string
   studentId: string
   status: 'RELEASED' | 'HOLD'
@@ -115,7 +117,7 @@ export async function updateResultStatus(payload: {
 }
 
 export async function fetchSubjectMarks(examId: string, subjectId: string) {
-  const { data } = await api.get(`/exams/${examId}/marks/subject/${subjectId}`)
+  const { data } = await api.get(`/exams/${examId}/subjects/${subjectId}/marks`)
   return data.data
 }
 
@@ -127,23 +129,21 @@ export async function saveSubjectMarks(
     marks: Array<{ studentId: string; obtainedMarks: number; remarks?: string }>
   }
 ) {
-  const { data } = await api.post(`/exams/${examId}/marks/subject/${subjectId}`, payload)
+  const { data } = await api.post(`/exams/${examId}/subjects/${subjectId}/marks`, payload)
   return data.data
 }
 
 export async function fetchStudentMarks(examId: string, studentId: string) {
-  const { data } = await api.get(`/exams/${examId}/marks/student/${studentId}`)
+  const { data } = await api.get(`/exams/${examId}/students/${studentId}/marks`)
   return data.data
 }
 
 export async function saveStudentMarks(
   examId: string,
   studentId: string,
-  payload: {
-    marks: Array<{ subjectId: string; maxMarks: number; obtainedMarks: number; remarks?: string }>
-  }
+  marks: Array<{ subjectId: string; obtainedMarks: number; remarks?: string }>
 ) {
-  const { data } = await api.post(`/exams/${examId}/marks/student/${studentId}`, payload)
+  const { data } = await api.post(`/exams/${examId}/students/${studentId}/marks`, { marks })
   return data.data
 }
 
@@ -152,7 +152,7 @@ export async function fetchExamTemplate(type: 'ADMIT_CARD' | 'RESULT') {
   return data.data
 }
 
-export async function saveExamTemplate(type: 'ADMIT_CARD' | 'RESULT', payload: any) {
+export async function saveExamTemplate(type: 'ADMIT_CARD' | 'RESULT', payload: Record<string, unknown>) {
   const { data } = await api.post(`/exams/templates/${type}`, payload)
   return data.data
 }

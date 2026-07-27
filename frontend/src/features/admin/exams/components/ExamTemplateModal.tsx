@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchExamTemplate, saveExamTemplate } from '../api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -28,7 +28,9 @@ export function ExamTemplateModal({ type, open, onOpenChange }: Props) {
     enabled: open,
   })
 
-  useEffect(() => {
+  const [prevTemplate, setPrevTemplate] = useState(template)
+  if (template !== prevTemplate) {
+    setPrevTemplate(template)
     if (template) {
       setSchoolName(template.schoolName || '')
       setLogoUrl(template.logoUrl || '')
@@ -37,10 +39,10 @@ export function ExamTemplateModal({ type, open, onOpenChange }: Props) {
       setPrincipalSignatureUrl(template.principalSignatureUrl || '')
       setSchoolStampUrl(template.schoolStampUrl || '')
     }
-  }, [template])
+  }
 
   const saveMutation = useMutation({
-    mutationFn: (payload: any) => saveExamTemplate(type, payload),
+    mutationFn: (payload: Record<string, unknown>) => saveExamTemplate(type, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exam-template', type] })
       onOpenChange(false)

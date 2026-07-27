@@ -10,8 +10,6 @@ import {
   updateResultStatus,
   fetchStudentMarks,
   fetchExamTemplate,
-  type ExamDto,
-  type ExamScheduleDto,
 } from './api'
 import { fetchSessions } from '../academic-sessions/api'
 import { fetchClasses } from '../classes/api'
@@ -20,7 +18,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -28,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 import {
   Calendar,
   Eye,
@@ -35,11 +33,7 @@ import {
   Trash2,
   Save,
   Settings,
-  Lock,
-  Unlock,
   FileCheck,
-  CheckCircle2,
-  AlertCircle,
 } from 'lucide-react'
 import { AdmitCardModal } from './components/AdmitCardModal'
 import { ResultCardModal } from './components/ResultCardModal'
@@ -104,39 +98,28 @@ export function ExamsPage() {
     queryFn: fetchSubjects,
   })
 
-  // Set active default session
-  useEffect(() => {
-    if (sessions.length > 0 && !selectedSessionId) {
-      const active = sessions.find((s) => s.isActive) || sessions[0]
-      setSelectedSessionId(active.id)
-    }
-  }, [sessions, selectedSessionId])
-
-  // Set default class
-  useEffect(() => {
-    if (classes.length > 0 && !selectedClassId) {
-      setSelectedClassId(classes[0].id)
-    }
-  }, [classes, selectedClassId])
+  // Auto-select active/first session — derived so no cascading setState
+  const effectiveSessionId = selectedSessionId || (sessions.find((s) => s.isActive) || sessions[0])?.id || ''
+  const effectiveClassId = selectedClassId || classes[0]?.id || ''
 
   // Fetch current exams for selected Session & Class
   const { data: exams = [] } = useQuery({
-    queryKey: ['exams', selectedSessionId, selectedClassId],
+    queryKey: ['exams', effectiveSessionId, effectiveClassId],
     queryFn: () =>
       fetchExams({
-        sessionId: selectedSessionId || undefined,
-        classId: selectedClassId || undefined,
+        sessionId: effectiveSessionId || undefined,
+        classId: effectiveClassId || undefined,
       }),
-    enabled: !!selectedSessionId && !!selectedClassId,
+    enabled: !!effectiveSessionId && !!effectiveClassId,
   })
 
   const currentExam = exams.find((e) => e.name === examName) || exams[0] || null
 
-  // Populate schedule rows when exam changes
+  // Sync scheduleRows when currentExam changes
   useEffect(() => {
     if (currentExam?.schedules) {
       setScheduleRows(
-        currentExam.schedules.map((s) => ({
+        currentExam.schedules.map((s: any) => ({
           subjectId: s.subjectId,
           examDate: s.examDate ? s.examDate.slice(0, 10) : '',
           startTime: s.startTime || '09:00 AM',
@@ -144,24 +127,27 @@ export function ExamsPage() {
           room: s.room || 'Main Hall',
         }))
       )
-      setExamName(currentExam.name)
+    } else {
+      setScheduleRows([])
     }
-  }, [currentExam])
+  }, [currentExam?.id, currentExam?.schedules?.length])
 
   // Admit Card Students Query
   const { data: admitCardStudents = [], refetch: refetchAdmitCardStudents } = useQuery({
-    queryKey: ['admit-card-students', selectedSessionId, selectedClassId, currentExam?.id],
+    queryKey: ['admit-card-students', effectiveSessionId, effectiveClassId, currentExam?.id],
     queryFn: () =>
-      fetchAdmitCardStudents(selectedSessionId, selectedClassId, currentExam?.id),
-    enabled: !!selectedSessionId && !!selectedClassId && mainModule === 'ADMIT_CARD' && admitCardTab === 'STUDENTS',
+      fetchAdmitCardStudents(effectiveSessionId, effectiveClassId, currentExam?.id),
+    enabled: !!effectiveSessionId && !!effectiveClassId && mainModule === 'ADMIT_CARD' && admitCardTab === 'STUDENTS',
+    staleTime: 0,
   })
 
   // Result Students Query
   const { data: resultStudents = [], refetch: refetchResultStudents } = useQuery({
-    queryKey: ['result-students', selectedSessionId, selectedClassId, currentExam?.id],
+    queryKey: ['result-students', effectiveSessionId, effectiveClassId, currentExam?.id],
     queryFn: () =>
-      fetchResultStudents(selectedSessionId, selectedClassId, currentExam?.id || ''),
-    enabled: !!selectedSessionId && !!selectedClassId && !!currentExam?.id && mainModule === 'RESULT',
+      fetchResultStudents(effectiveSessionId, effectiveClassId, currentExam?.id || ''),
+    enabled: !!effectiveSessionId && !!effectiveClassId && !!currentExam?.id && mainModule === 'RESULT',
+    staleTime: 0,
   })
 
   // Admit Card Template Query
@@ -182,8 +168,8 @@ export function ExamsPage() {
       let targetExam = currentExam
       if (!targetExam) {
         targetExam = await createExam({
-          sessionId: selectedSessionId,
-          classId: selectedClassId,
+          sessionId: effectiveSessionId,
+          classId: effectiveClassId,
           name: examName,
           status: 'PUBLISHED',
         })
@@ -204,6 +190,7 @@ export function ExamsPage() {
     mutationFn: updateAdmitCardStatus,
     onSuccess: () => {
       refetchAdmitCardStudents()
+      queryClient.invalidateQueries({ queryKey: ['admit-card-students'] })
     },
   })
 
@@ -212,10 +199,10 @@ export function ExamsPage() {
     mutationFn: updateResultStatus,
     onSuccess: () => {
       refetchResultStudents()
+      queryClient.invalidateQueries({ queryKey: ['result-students'] })
     },
   })
 
-  // Add new timetable row
   const addScheduleRow = () => {
     setScheduleRows([
       ...scheduleRows,
@@ -278,7 +265,7 @@ export function ExamsPage() {
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Academic Session
           </Label>
-          <Select value={selectedSessionId} onValueChange={(v) => setSelectedSessionId(v)}>
+          <Select value={selectedSessionId} onValueChange={(v) => setSelectedSessionId(v ?? '')}>
             <SelectTrigger className="h-10">
               <SelectValue placeholder="Select Session" />
             </SelectTrigger>
@@ -296,7 +283,7 @@ export function ExamsPage() {
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Class (Includes ALL Students Across All Sections)
           </Label>
-          <Select value={selectedClassId} onValueChange={(v) => setSelectedClassId(v)}>
+          <Select value={selectedClassId} onValueChange={(v) => setSelectedClassId(v ?? '')}>
             <SelectTrigger className="h-10">
               <SelectValue placeholder="Select Class" />
             </SelectTrigger>
@@ -411,15 +398,15 @@ export function ExamsPage() {
                       scheduleRows.map((row, index) => (
                         <tr key={index} className="hover:bg-muted/40 transition-colors">
                           <td className="px-4 py-3">
-                            <Input
-                              type="date"
-                              className="h-9 w-40 font-mono text-xs"
+                            <DatePickerInput
                               value={row.examDate}
-                              onChange={(e) => {
+                              onChange={(dateStr) => {
                                 const updated = [...scheduleRows]
-                                updated[index].examDate = e.target.value
+                                updated[index].examDate = dateStr
                                 setScheduleRows(updated)
                               }}
+                              fromYear={new Date().getFullYear() - 2}
+                              toYear={new Date().getFullYear() + 5}
                             />
                           </td>
                           <td className="px-4 py-3 font-semibold text-primary">
@@ -538,10 +525,11 @@ export function ExamsPage() {
                             onChange={(e) => {
                               const newStatus = e.target.value as 'RELEASED' | 'HOLD'
                               updateAdmitCardStatusMutation.mutate({
-                                sessionId: selectedSessionId,
+                                sessionId: effectiveSessionId,
                                 examId: currentExam?.id,
                                 studentId: st.studentId,
                                 status: newStatus,
+                                role: 'ADMIN',
                               })
                             }}
                           >
@@ -561,9 +549,9 @@ export function ExamsPage() {
                                 name: `${st.firstName} ${st.lastName}`,
                                 admissionNumber: st.admissionNumber,
                                 rollNumber: st.rollNumber,
-                                className: classes.find((c) => c.id === selectedClassId)?.name || '',
+                                className: classes.find((c) => c.id === effectiveClassId)?.name || '',
                                 sectionName: st.sectionName,
-                                sessionName: sessions.find((s) => s.id === selectedSessionId)?.name,
+                                sessionName: sessions.find((s) => s.id === effectiveSessionId)?.name,
                               })
                             }
                           >
@@ -640,6 +628,7 @@ export function ExamsPage() {
                           onChange={(e) => {
                             const newStatus = e.target.value as 'RELEASED' | 'HOLD'
                             updateResultStatusMutation.mutate({
+                              sessionId: effectiveSessionId,
                               examId: currentExam?.id || '',
                               studentId: st.studentId,
                               status: newStatus,
@@ -663,9 +652,9 @@ export function ExamsPage() {
                               name: `${st.firstName} ${st.lastName}`,
                               admissionNumber: st.admissionNumber,
                               rollNumber: st.rollNumber,
-                              className: classes.find((c) => c.id === selectedClassId)?.name || '',
+                              className: classes.find((c) => c.id === effectiveClassId)?.name || '',
                               sectionName: st.sectionName,
-                              sessionName: sessions.find((s) => s.id === selectedSessionId)?.name,
+                              sessionName: sessions.find((s) => s.id === effectiveSessionId)?.name,
                             })
                           }
                         >

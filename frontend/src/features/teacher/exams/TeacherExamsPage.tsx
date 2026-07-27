@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useMemo } from 'react'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   fetchExams,
   fetchAdmitCardStudents,
@@ -9,9 +10,7 @@ import {
   fetchStudentMarks,
   saveStudentMarks,
 } from '@/features/admin/exams/api'
-import { fetchSessions } from '@/features/admin/academic-sessions/api'
-import { fetchClasses } from '@/features/admin/classes/api'
-import { fetchTeacherSections } from '../teacher-portal.api'
+import { fetchMyClasses } from '@/features/teacher/teacher-portal.api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Calendar, Save, CheckCircle2, AlertCircle, FileCheck, Edit3, UserCheck } from 'lucide-react'
+import { Calendar, Save, FileCheck, Edit3, UserCheck } from 'lucide-react'
 
 function getDayFromDateString(dateStr: string): string {
   if (!dateStr) return ''
@@ -33,11 +32,10 @@ function getDayFromDateString(dateStr: string): string {
 }
 
 export function TeacherExamsPage() {
-  const queryClient = useQueryClient()
-
   // Common Entry State
   const [selectedSessionId, setSelectedSessionId] = useState<string>('')
   const [selectedClassId, setSelectedClassId] = useState<string>('')
+  const [selectedSectionId, setSelectedSectionId] = useState<string>('')
 
   // Main Module Toggle: Admit Card | Result
   const [mainModule, setMainModule] = useState<'ADMIT_CARD' | 'RESULT'>('ADMIT_CARD')
@@ -66,76 +64,148 @@ export function TeacherExamsPage() {
   const [selectedStudentId, setSelectedStudentId] = useState<string>('')
   const [singleStudentMarks, setSingleStudentMarks] = useState<any>(null)
 
-  // Fetch Master Data
-  const { data: sessions = [] } = useQuery({
-    queryKey: ['academic-sessions'],
-    queryFn: fetchSessions,
+  // Fetch Teacher's Assigned Classes directly from backend API
+  const { data: myClasses = [] } = useQuery({
+    queryKey: ['teacher-my-classes'],
+    queryFn: fetchMyClasses,
   })
 
-  const { data: teacherSections = [] } = useQuery({
-    queryKey: ['teacher-sections'],
-    queryFn: fetchTeacherSections,
-  })
+  // ── Derive assigned Sessions, Classes, Sections, and Subjects ──────────────
 
-  const { data: classes = [] } = useQuery({
-    queryKey: ['classes'],
-    queryFn: fetchClasses,
-  })
+  // Derive unique sessions assigned to teacher directly from myClasses (No admin API needed)
+  const assignedSessions = useMemo(() => {
+    const map = new Map<string, { id: string; name: string }>()
+    myClasses.forEach((mc) => {
+      if (mc.sessionId && mc.sessionName && !map.has(mc.sessionId)) {
+        map.set(mc.sessionId, { id: mc.sessionId, name: mc.sessionName })
+      }
+    })
+    return Array.from(map.values())
+  }, [myClasses])
 
-  // Auto select session
-  useEffect(() => {
-    if (sessions.length > 0 && !selectedSessionId) {
-      const active = sessions.find((s) => s.isActive) || sessions[0]
-      setSelectedSessionId(active.id)
-    }
-  }, [sessions, selectedSessionId])
+  const effectiveSessionId = selectedSessionId || assignedSessions[0]?.id || ''
 
-  // Auto select class
-  useEffect(() => {
-    if (classes.length > 0 && !selectedClassId) {
-      setSelectedClassId(classes[0].id)
-    }
-  }, [classes, selectedClassId])
+  // Derive unique classes assigned for the effective session
+  const uniqueClasses = useMemo(() => {
+    const map = new Map<string, { classId: string; className: string }>()
+    myClasses
+      .filter((mc) => mc.sessionId === effectiveSessionId)
+      .forEach((mc) => {
+        if (!map.has(mc.classId)) {
+          map.set(mc.classId, { classId: mc.classId, className: mc.className })
+        }
+      })
+    return Array.from(map.values())
+  }, [myClasses, effectiveSessionId])
+
+  const effectiveClassId = selectedClassId || uniqueClasses[0]?.classId || ''
+
+  // Derive unique sections assigned for the effective session & class
+  const uniqueSections = useMemo(() => {
+    const map = new Map<string, { sectionId: string; sectionName: string }>()
+    myClasses
+      .filter((mc) => mc.sessionId === effectiveSessionId && mc.classId === effectiveClassId)
+      .forEach((mc) => {
+        if (!map.has(mc.sectionId)) {
+          map.set(mc.sectionId, { sectionId: mc.sectionId, sectionName: mc.sectionName })
+        }
+      })
+    return Array.from(map.values())
+  }, [myClasses, effectiveSessionId, effectiveClassId])
+
+  const effectiveSectionId = selectedSectionId || uniqueSections[0]?.sectionId || ''
+
+  // Derive assigned subjects for effective session, class, and section
+  const assignedSubjects = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; code: string }>()
+    myClasses
+      .filter(
+        (mc) =>
+          mc.sessionId === effectiveSessionId &&
+          mc.classId === effectiveClassId &&
+          (!effectiveSectionId || mc.sectionId === effectiveSectionId)
+      )
+      .forEach((mc) => {
+        mc.subjects?.forEach((sub) => {
+          if (!map.has(sub.id)) {
+            map.set(sub.id, sub)
+          }
+        })
+      })
+    return Array.from(map.values())
+  }, [myClasses, effectiveSessionId, effectiveClassId, effectiveSectionId])
+
+  // Handlers for cascading dropdown resets
+  const handleSessionChange = (sessionId: string | null) => {
+    if (!sessionId) return
+    setSelectedSessionId(sessionId)
+    setSelectedClassId('')
+    setSelectedSectionId('')
+    setSelectedSubjectId('')
+  }
+
+  const handleClassChange = (classId: string | null) => {
+    if (!classId) return
+    setSelectedClassId(classId)
+    setSelectedSectionId('')
+    setSelectedSubjectId('')
+  }
+
+  const handleSectionChange = (sectionId: string | null) => {
+    if (!sectionId) return
+    setSelectedSectionId(sectionId)
+    setSelectedSubjectId('')
+  }
+
+  // ── Queries ──────────────────────────────────────────────────────────────────
 
   // Fetch Exams for selected Session & Class
   const { data: exams = [] } = useQuery({
-    queryKey: ['teacher-exams', selectedSessionId, selectedClassId],
+    queryKey: ['teacher-exams', effectiveSessionId, effectiveClassId],
     queryFn: () =>
       fetchExams({
-        sessionId: selectedSessionId || undefined,
-        classId: selectedClassId || undefined,
+        sessionId: effectiveSessionId || undefined,
+        classId: effectiveClassId || undefined,
       }),
-    enabled: !!selectedSessionId && !!selectedClassId,
+    enabled: !!effectiveSessionId && !!effectiveClassId,
   })
 
   const currentExam = exams[0] || null
 
-  // Fetch Admit Card Students
-  const { data: admitCardStudents = [], refetch: refetchAdmitCardStudents } = useQuery({
-    queryKey: ['teacher-admit-card-students', selectedSessionId, selectedClassId, currentExam?.id],
+  // Fetch Admit Card Students (filtered by section if selected)
+  const { data: rawAdmitCardStudents = [], refetch: refetchAdmitCardStudents } = useQuery({
+    queryKey: ['teacher-admit-card-students', effectiveSessionId, effectiveClassId, currentExam?.id],
     queryFn: () =>
-      fetchAdmitCardStudents(selectedSessionId, selectedClassId, currentExam?.id),
-    enabled: !!selectedSessionId && !!selectedClassId && mainModule === 'ADMIT_CARD' && admitCardTab === 'STUDENTS',
+      fetchAdmitCardStudents(effectiveSessionId, effectiveClassId, currentExam?.id),
+    enabled: !!effectiveSessionId && !!effectiveClassId,
   })
+
+  const admitCardStudents = useMemo(() => {
+    if (!effectiveSectionId) return rawAdmitCardStudents
+    return rawAdmitCardStudents.filter((st: any) => st.sectionId === effectiveSectionId || !st.sectionId)
+  }, [rawAdmitCardStudents, effectiveSectionId])
 
   // Fetch Subject Marks
+  const effectiveSubjectId = selectedSubjectId || assignedSubjects[0]?.id || ''
   const { data: subjectMarksData, refetch: refetchSubjectMarks } = useQuery({
-    queryKey: ['subject-marks', currentExam?.id, selectedSubjectId],
-    queryFn: () => fetchSubjectMarks(currentExam!.id, selectedSubjectId),
-    enabled: !!currentExam?.id && !!selectedSubjectId && mainModule === 'RESULT' && resultTab === 'SUBJECTS',
+    queryKey: ['subject-marks', currentExam?.id, effectiveSubjectId],
+    queryFn: () => fetchSubjectMarks(currentExam!.id, effectiveSubjectId),
+    enabled: !!currentExam?.id && !!effectiveSubjectId && mainModule === 'RESULT' && resultTab === 'SUBJECTS',
   })
 
-  useEffect(() => {
+  const [prevSubjectMarksData, setPrevSubjectMarksData] = useState(subjectMarksData)
+  if (subjectMarksData !== prevSubjectMarksData) {
+    setPrevSubjectMarksData(subjectMarksData)
     if (subjectMarksData) {
       setMaxMarks(subjectMarksData.maxMarks || 100)
       setStudentMarksRows(subjectMarksData.students || [])
     }
-  }, [subjectMarksData])
+  }
 
   // Save Subject Marks Mutation
   const saveSubjectMarksMutation = useMutation({
     mutationFn: () =>
-      saveSubjectMarks(currentExam!.id, selectedSubjectId, {
+      saveSubjectMarks(currentExam!.id, effectiveSubjectId, {
         maxMarks,
         marks: studentMarksRows.map((r) => ({
           studentId: r.studentId,
@@ -160,14 +230,12 @@ export function TeacherExamsPage() {
   // Save Single Student Marks Mutation
   const saveStudentMarksMutation = useMutation({
     mutationFn: () =>
-      saveStudentMarks(currentExam!.id, selectedStudentId, {
-        marks: singleStudentMarks.subjects.map((s: any) => ({
-          subjectId: s.subjectId,
-          maxMarks: Number(s.maxMarks) || 100,
-          obtainedMarks: Number(s.obtainedMarks) || 0,
-          remarks: s.remarks,
-        })),
-      }),
+      saveStudentMarks(currentExam!.id, selectedStudentId, singleStudentMarks.subjects.map((s: any) => ({
+        subjectId: s.subjectId,
+        maxMarks: Number(s.maxMarks) || 100,
+        obtainedMarks: Number(s.obtainedMarks) || 0,
+        remarks: s.remarks,
+      }))),
     onSuccess: () => {
       alert('Student marks updated successfully!')
       handleOpenStudentMarks(selectedStudentId)
@@ -186,46 +254,85 @@ export function TeacherExamsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Exams & Marks Entry</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Exams &amp; Marks Entry</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Teacher evaluation interface: View timetables, recommend admit cards, and enter subject marks.
         </p>
       </div>
 
-      {/* COMMON ENTRY: Session → Class */}
-      <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-wrap items-center gap-6">
-        <div className="space-y-1.5 flex-1 min-w-[220px]">
+      {/* COMMON ENTRY: Session → Class → Section (Teacher's assigned only) */}
+      <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-wrap items-center gap-4">
+        {/* 1. Academic Session */}
+        <div className="space-y-1.5 flex-1 min-w-[200px]">
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Academic Session
           </Label>
-          <Select value={selectedSessionId} onValueChange={(v) => setSelectedSessionId(v)}>
+          <Select value={effectiveSessionId} onValueChange={handleSessionChange}>
             <SelectTrigger className="h-10">
               <SelectValue placeholder="Select Session" />
             </SelectTrigger>
             <SelectContent>
-              {sessions.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name} {s.isActive ? '(Active)' : ''}
+              {assignedSessions.length > 0 ? (
+                assignedSessions.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>
+                  No sessions assigned
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="space-y-1.5 flex-1 min-w-[220px]">
+        {/* 2. Class */}
+        <div className="space-y-1.5 flex-1 min-w-[200px]">
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Class (Includes ALL Students Across All Sections)
+            Class
           </Label>
-          <Select value={selectedClassId} onValueChange={(v) => setSelectedClassId(v)}>
+          <Select value={effectiveClassId} onValueChange={handleClassChange}>
             <SelectTrigger className="h-10">
               <SelectValue placeholder="Select Class" />
             </SelectTrigger>
             <SelectContent>
-              {classes.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
+              {uniqueClasses.length > 0 ? (
+                uniqueClasses.map((c) => (
+                  <SelectItem key={c.classId} value={c.classId}>
+                    Class {c.className}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>
+                  No classes assigned
                 </SelectItem>
-              ))}
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* 3. Section */}
+        <div className="space-y-1.5 flex-1 min-w-[180px]">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Section
+          </Label>
+          <Select value={effectiveSectionId} onValueChange={handleSectionChange}>
+            <SelectTrigger className="h-10">
+              <SelectValue placeholder="Select Section" />
+            </SelectTrigger>
+            <SelectContent>
+              {uniqueSections.length > 0 ? (
+                uniqueSections.map((sec) => (
+                  <SelectItem key={sec.sectionId} value={sec.sectionId}>
+                    Section {sec.sectionName}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>
+                  No sections assigned
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -283,6 +390,13 @@ export function TeacherExamsPage() {
               <div className="p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground border border-border">
                 Note: Date and Time are set by Admin and cannot be modified by Teachers.
               </div>
+
+              {currentExam && (
+                <div className="flex items-center gap-3 text-sm font-semibold text-muted-foreground bg-muted/40 px-4 py-2 rounded-lg border border-border">
+                  <span>Exam:</span>
+                  <span className="text-foreground">{currentExam.name}</span>
+                </div>
+              )}
 
               <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
                 <table className="w-full text-sm text-left">
@@ -351,7 +465,7 @@ export function TeacherExamsPage() {
                     {admitCardStudents.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                          No students found in selected Class.
+                          No students found in selected Section.
                         </td>
                       </tr>
                     ) : (
@@ -375,12 +489,12 @@ export function TeacherExamsPage() {
                           </td>
                           <td className="px-4 py-3">
                             <select
-                              className="h-8 rounded-md border text-xs font-semibold px-2 bg-background"
+                              className="h-8 rounded-md border text-xs font-semibold px-2 bg-background cursor-pointer"
                               value={st.teacherStatus === 'HOLD' ? 'HOLD' : 'RELEASED'}
                               onChange={(e) => {
                                 const newStatus = e.target.value as 'RELEASED' | 'HOLD'
                                 recommendAdmitCardMutation.mutate({
-                                  sessionId: selectedSessionId,
+                                  sessionId: effectiveSessionId,
                                   examId: currentExam?.id,
                                   studentId: st.studentId,
                                   status: newStatus,
@@ -439,33 +553,42 @@ export function TeacherExamsPage() {
               <div className="flex flex-wrap items-center justify-between gap-4 bg-muted/40 p-4 rounded-xl border border-border">
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Select Subject</Label>
-                    <select
-                      className="h-9 min-w-[200px] rounded-md border border-input bg-background px-3 text-xs"
-                      value={selectedSubjectId}
-                      onChange={(e) => setSelectedSubjectId(e.target.value)}
+                    <Label className="text-xs font-semibold">Select Assigned Subject</Label>
+                    <Select
+                      value={effectiveSubjectId}
+                      onValueChange={(val) => setSelectedSubjectId(val ?? '')}
                     >
-                      <option value="">-- Select Subject --</option>
-                      {currentExam?.schedules?.map((sched: any) => (
-                        <option key={sched.subjectId} value={sched.subjectId}>
-                          {sched.subject?.name} ({sched.subject?.code})
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="h-9 min-w-[220px]">
+                        <SelectValue placeholder="Select Subject" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {assignedSubjects.length > 0 ? (
+                          assignedSubjects.map((sub) => (
+                            <SelectItem key={sub.id} value={sub.id}>
+                              {sub.name} ({sub.code})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="none" disabled>
+                            No subjects assigned
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Maximum Marks (Single Input)</Label>
+                    <Label className="text-xs font-semibold">Maximum Marks</Label>
                     <Input
                       type="number"
-                      className="h-9 w-32 font-bold"
+                      className="h-9 w-32 font-bold font-mono"
                       value={maxMarks}
                       onChange={(e) => setMaxMarks(Number(e.target.value) || 0)}
                     />
                   </div>
                 </div>
 
-                {selectedSubjectId && (
+                {effectiveSubjectId && (
                   <Button
                     size="sm"
                     onClick={() => saveSubjectMarksMutation.mutate()}
@@ -476,7 +599,7 @@ export function TeacherExamsPage() {
                 )}
               </div>
 
-              {selectedSubjectId ? (
+              {effectiveSubjectId ? (
                 <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
                   <table className="w-full text-sm text-left">
                     <thead className="text-xs text-muted-foreground uppercase bg-muted/60 border-b">
@@ -548,6 +671,45 @@ export function TeacherExamsPage() {
           {/* STUDENTS VIEW (TEACHER SINGLE STUDENT MARKS EVALUATION) */}
           {resultTab === 'STUDENTS' && (
             <div className="space-y-4">
+              {/* Student Selector */}
+              {!singleStudentMarks && (
+                <div className="p-4 bg-muted/40 rounded-xl border border-border">
+                  <p className="text-xs text-muted-foreground mb-3 font-semibold">Select a student to view / edit their marks:</p>
+                  <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-muted-foreground uppercase bg-muted/60 border-b">
+                        <tr>
+                          <th className="px-4 py-3 font-semibold">Student Name</th>
+                          <th className="px-4 py-3 font-semibold">Admission No</th>
+                          <th className="px-4 py-3 font-semibold text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {admitCardStudents.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
+                              No students found in selected section.
+                            </td>
+                          </tr>
+                        ) : (
+                          admitCardStudents.map((st: any) => (
+                            <tr key={st.studentId} className="hover:bg-muted/40">
+                              <td className="px-4 py-3 font-semibold">{st.firstName} {st.lastName}</td>
+                              <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{st.admissionNumber}</td>
+                              <td className="px-4 py-3 text-right">
+                                <Button size="sm" variant="outline" onClick={() => handleOpenStudentMarks(st.studentId)}>
+                                  <Edit3 className="h-3.5 w-3.5 mr-1" /> Edit Marks
+                                </Button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {singleStudentMarks ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between bg-card p-4 rounded-xl border border-border shadow-sm">
@@ -564,6 +726,13 @@ export function TeacherExamsPage() {
                           {singleStudentMarks.overallPercentage}%
                         </div>
                       </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSingleStudentMarks(null)}
+                      >
+                        ← Back
+                      </Button>
                       <Button
                         size="sm"
                         onClick={() => saveStudentMarksMutation.mutate()}
@@ -621,11 +790,7 @@ export function TeacherExamsPage() {
                     </table>
                   </div>
                 </div>
-              ) : (
-                <div className="p-12 text-center text-muted-foreground border rounded-xl border-dashed">
-                  Select a student from the admit card list or subjects tab to edit their marks profile.
-                </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>

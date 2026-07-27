@@ -40,6 +40,10 @@ export function FeePaymentDialog({
 
   const mutation = useMutation({
     mutationFn: (data: AddFeePaymentParams) => addFeePayment(data),
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string }
+      alert(err.response?.data?.error?.message || err.message || 'Payment failed')
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fee-records'] })
       queryClient.invalidateQueries({ queryKey: ['fee-summary'] })
@@ -89,7 +93,7 @@ export function FeePaymentDialog({
             <Label htmlFor="paymentMode">Payment Mode</Label>
             <Select
               value={paymentMode}
-              onValueChange={(val: any) => setPaymentMode(val)}
+              onValueChange={(val: AddFeePaymentParams['paymentMode']) => setPaymentMode(val)}
             >
               <SelectTrigger id="paymentMode">
                 <SelectValue />

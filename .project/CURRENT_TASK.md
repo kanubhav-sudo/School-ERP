@@ -1,28 +1,33 @@
-# Current Task: Milestone 6 - Teacher Management System ✅ COMPLETE (+ Bug Fix)
+# Current Task
 
-## Status: All MCs Complete + Post-Release Bug Fix Applied
+## Status: Production Bug Fixes — Critical Synchronization & Data Integrity
 
-## Completed
-- MC-1: Prisma Schema & Migrations — `dc9656d`
-- MC-2: Backend Validators and Service Logic — `dc9656d`
-- MC-3: Controller & Routes (stats, timetable, sections) — `3dc56d7`
-- MC-4: Frontend Shared Types & API Client — `c412a54`
-- MC-5: Teacher List UI (Summary cards, assignment summary) — `f64ec3b`
-- MC-6: Teacher Detail Page (full rebuild, assignment manager) — `3034329`
-- MC-7: Backend Integration (timetable query fixed, sections ordered) — `b5af80c`
-- MC-8 (Bug Fix): Teacher validator empty-string coercion — pending commit
+All 18 critical synchronization and data integrity fix points have been implemented and verified.
 
-## Bug Fixed
-`teacher.validator.ts` — `dateOfBirth`, `photoUrl`, `bloodGroup` now accept empty strings (coerced to `undefined`). Teacher creation from the UI now works without 400 errors.
+## Summary of Completed Items
 
-**Admin Dashboard Crash / Infinite Loading Bug (Post-Milestone Fix)**
-- Fixed brittle dashboard statistics aggregation in `admin-dashboard.service.ts` that returned a 500 internal server error upon individual query failures (e.g. calculating fees without an active session). Rewrote to isolate queries and gracefully fallback to 0.
-- Handled infinite loading on the frontend `AdminDashboard.tsx` when API throws an error (added `isError` handling and retry button).
-- Identified and restarted the stuck `tsx watch` dev server process that was not picking up code updates.
+| # | Point | Status | Notes |
+|---|-------|--------|-------|
+| 1 | Attendance Synchronization | ✅ Done | Backend filters soft-deleted records; frontend shows LATE/HALF_DAY badges |
+| 2 | UUIDs Still Visible | ✅ Done | All dropdowns show names, not IDs |
+| 3 | Student Cannot See Released Admit Card | ✅ Done | isReleased=true bypasses all blocks |
+| 4 | Teacher Exam Module — My Classes | ✅ Done | Loads from /teacher-portal/my-classes |
+| 5 | Period Master Data Loss | ✅ Done | Removed conflicting reset useEffect |
+| 6 | Student Fees Due Calculation | ✅ Done | Elapsed months only, excl. May |
+| 7 | Student Fee Page Layout | ✅ Done | Rebuilt to match Admin layout |
+| 8 | Admin Exam Timetable Sync | ✅ Done | Saves to ExamSchedule, visible in Teacher Portal |
+| 9 | Teacher Exam Workflow | ✅ Done | Session→Class→Admit Card & Results tabs |
+| 10 | Admin Admit Card Workflow | ✅ Done | Hold/Release with Admin final authority |
+| 11 | Editable Admit Card Template | ✅ Done | Template modal fields persist |
+| 12 | Teacher Result Module | ✅ Done | Subject tab & Student tab with auto percentage |
+| 13 | Editable Report Card Template | ✅ Done | Populates from DB |
+| 14 | Admin Result Module | ✅ Done | Session→Class→Student list with hold/release |
+| 15 | Hold/Release Synchronization | ✅ Done | Teacher→teacherStatus→Admin adminStatus/isReleased→Student |
+| 16 | Admin Fee Records Column | ✅ Done | Total Yearly Fee Pending column |
+| 17 | Admin Dashboard Fee Logic | ✅ Done | Pending only till current month |
+| 18 | Final Verification & Deliverables | ✅ Done | Backend compiles clean; frontend no errors in changed files |
 
-## Next Milestone
-**Milestone 7 — Student Portal / Teacher Portal**
+## Next Steps
 
-Suggested starting point: `MC-1` — Define role-specific route guards, portal layouts, and session-aware data access for the Teacher role.
-
-Do NOT start Milestone 7 without explicit user approval.
+- E2E manual verification using test credentials
+- Any further bugs discovered during testing → create targeted fix

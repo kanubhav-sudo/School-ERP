@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { useState, useMemo, useEffect } from 'react'
 
 const studentSchema = z.object({
@@ -112,6 +113,7 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<StudentFormValues>({
     resolver: zodResolver(studentSchema),
@@ -296,7 +298,19 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                <Input id="dateOfBirth" type="date" {...register('dateOfBirth')} />
+                <Controller
+                  control={control}
+                  name="dateOfBirth"
+                  render={({ field }) => (
+                    <DatePickerInput
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      className="w-full"
+                      fromYear={2000}
+                      toYear={new Date().getFullYear()}
+                    />
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bloodGroup">Blood Group</Label>
@@ -395,7 +409,19 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="admissionDate">Admission Date *</Label>
-                <Input id="admissionDate" type="date" {...register('admissionDate')} />
+                <Controller
+                  control={control}
+                  name="admissionDate"
+                  render={({ field }) => (
+                    <DatePickerInput
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      className="w-full"
+                      fromYear={2010}
+                      toYear={new Date().getFullYear() + 2}
+                    />
+                  )}
+                />
                 {errors.admissionDate && (
                   <p className="text-sm text-red-500">{errors.admissionDate.message}</p>
                 )}
@@ -598,7 +624,10 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
 
           {mutation.isError && (
             <p className="text-sm text-red-500">
-              {mutation.error instanceof Error ? mutation.error.message : 'An error occurred'}
+              {(() => {
+                const err = mutation.error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+                return err.response?.data?.error?.message || err.message || 'An error occurred';
+              })()}
             </p>
           )}
 

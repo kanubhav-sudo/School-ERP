@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { Badge } from '@/components/ui/badge'
 import {
   Select,
@@ -20,14 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  IndianRupee,
-  CheckCircle2,
   AlertCircle,
   CreditCard,
-  X,
   Receipt,
-  FileText,
-  Calendar,
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -64,8 +60,9 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
       setPayDialogOpen(false)
       resetPayForm()
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message || err?.message || 'Payment processing failed'
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } }; message?: string }
+      const msg = e?.response?.data?.message || e?.message || 'Payment processing failed'
       setErrorMessage(msg)
     },
   })
@@ -108,9 +105,8 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
 
   const summary = data?.summary
   const student = data?.student
-  const records: any[] = data?.records || []
-  const payments: any[] = data?.payments || []
-  const timeline: any[] = data?.timeline || []
+  const payments = (data?.payments || []) as Array<{ id: string; receiptNumber: string; amount: number; paymentDate: string; paymentMode: string }>
+  const timeline = (data?.timeline || []) as Array<{ month: number; label: string; status: string; netAmount: number; paidAmount: number; balanceAmount: number }>
 
   return (
     <>
@@ -242,7 +238,7 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {payments.map((p: any) => (
+                    {payments.map((p) => (
                       <div
                         key={p.id}
                         className="flex flex-wrap items-center justify-between p-3 bg-card border rounded-lg text-sm gap-2"
@@ -338,11 +334,10 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
                 <Label htmlFor="pay-date" className="text-xs font-semibold">
                   Payment Date
                 </Label>
-                <Input
-                  id="pay-date"
-                  type="date"
+                <DatePickerInput
                   value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
+                  onChange={(dateStr) => setPaymentDate(dateStr)}
+                  className="w-full"
                 />
               </div>
 
@@ -350,7 +345,7 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
                 <Label htmlFor="pay-mode" className="text-xs font-semibold">
                   Payment Mode
                 </Label>
-                <Select value={payMode} onValueChange={(v: any) => setPayMode(v)}>
+                <Select value={payMode} onValueChange={(v: 'CASH' | 'CHEQUE' | 'BANK_TRANSFER' | 'ONLINE' | 'UPI' | 'CARD') => setPayMode(v)}>
                   <SelectTrigger id="pay-mode">
                     <SelectValue />
                   </SelectTrigger>

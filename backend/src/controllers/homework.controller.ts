@@ -82,9 +82,17 @@ export class HomeworkController {
       // We'll let the service handle disk deletion or we can do it here if we fetch the old record first.
       // But we need the old record to know what to delete. Let's do it in the service.
 
-      const { retainedAttachment, ...payload } = parsed.data
+      // Build payload with only UpdateHomeworkInput fields (strips retainedAttachment used above)
+      const payload = {
+        title: parsed.data.title,
+        description: parsed.data.description,
+        dueDate: parsed.data.dueDate,
+        marks: parsed.data.marks,
+        status: parsed.data.status,
+        attachmentUrl,
+      }
 
-      const homework = await HomeworkService.updateHomework(id, { ...payload, attachmentUrl }, teacherId)
+      const homework = await HomeworkService.updateHomework(id, payload, teacherId)
       ApiResponse.success(res, homework, 'Homework updated successfully')
     } catch (error) {
       if (req.file) deleteFile(req.file.path)

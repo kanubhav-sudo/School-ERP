@@ -327,7 +327,16 @@ export async function getAnnouncements(userId: string, page = 1, limit = 20) {
   }
 }
 
-export async function createAnnouncement(userId: string, data: any) {
+export async function createAnnouncement(userId: string, data: {
+  title: string
+  content: string
+  sectionId: string
+  classId?: string
+  sessionId?: string
+  isPinned?: boolean
+  expiresAt?: string
+  attachments?: string[]
+}) {
   const teacherId = await getTeacherIdForUser(userId)
   await verifySectionOwnership(teacherId, data.sectionId)
 
@@ -351,7 +360,7 @@ export async function createAnnouncement(userId: string, data: any) {
       expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       attachments: data.attachments || [],
       sessionId,
-      classId: data.classId,
+      classId: data.classId ?? '',
       sectionId: data.sectionId,
       authorId: teacherId,
     },
@@ -360,7 +369,13 @@ export async function createAnnouncement(userId: string, data: any) {
 
 import { deleteFiles } from '../utils/file.util'
 
-export async function updateAnnouncement(userId: string, id: string, data: any) {
+export async function updateAnnouncement(userId: string, id: string, data: {
+  title?: string
+  content?: string
+  isPinned?: boolean
+  expiresAt?: string
+  attachments?: string[]
+}) {
   const teacherId = await getTeacherIdForUser(userId)
   
   const announcement = await prisma.announcement.findUnique({ where: { id } })
@@ -369,8 +384,9 @@ export async function updateAnnouncement(userId: string, id: string, data: any) 
 
   // Identify attachments that were removed and delete them from disk
   if (data.attachments) {
+    const newAttachments = data.attachments
     const removedAttachments = announcement.attachments.filter(
-      oldUrl => !data.attachments.includes(oldUrl)
+      (oldUrl) => !newAttachments.includes(oldUrl)
     )
     if (removedAttachments.length > 0) {
       deleteFiles(removedAttachments)

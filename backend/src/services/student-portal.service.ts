@@ -6,6 +6,7 @@
 
 import prisma from '../database/prisma'
 import { NotFoundError } from '../core/errors'
+import { DayOfWeek } from '../generated/prisma'
 
 const MONTH_LABELS: Record<number, string> = {
   1: 'January', 2: 'February', 3: 'March', 4: 'April',
@@ -33,12 +34,16 @@ export async function getStudentByUserId(userId: string) {
   return student
 }
 
+import { getStudentFeeProfile, getElapsedAcademicMonths } from './fee-record.service'
+
 export async function getDashboardData(userId: string) {
   const student = await getStudentByUserId(userId)
   
   const today = new Date().getDay()
   const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']
-  const todayEnum = days[today] as any
+  const todayEnum = days[today] as DayOfWeek
+
+  const elapsedMonths = getElapsedAcademicMonths(new Date())
 
   const [
     totalDays,
@@ -50,14 +55,22 @@ export async function getDashboardData(userId: string) {
     todayTimetable,
     latestNotice
   ] = await Promise.all([
-    prisma.attendanceRecord.count({ where: { studentId: student.id } }),
-    prisma.attendanceRecord.count({ where: { studentId: student.id, status: 'PRESENT' } }),
+    prisma.attendanceRecord.count({ where: { studentId: student.id, attendance: { isDeleted: false } } }),
+    prisma.attendanceRecord.count({ where: { studentId: student.id, status: 'PRESENT', attendance: { isDeleted: false } } }),
     prisma.feeRecord.aggregate({
-      where: { studentId: student.id, status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] } },
+      where: {
+        studentId: student.id,
+        status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
+        month: { in: elapsedMonths },
+      },
       _sum: { balanceAmount: true }
     }),
     prisma.feeRecord.findFirst({
-      where: { studentId: student.id, status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] } },
+      where: {
+        studentId: student.id,
+        status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
+        month: { in: elapsedMonths },
+      },
       orderBy: [ { year: 'asc' }, { month: 'asc' } ],
       select: { month: true, year: true }
     }),
@@ -97,6 +110,8 @@ export async function getDashboardData(userId: string) {
     : 0
   const pendingAssignments = homeworkIds.length - submittedCount
 
+  const pendingFeeVal = Math.max(0, (feesDue._sum.balanceAmount || 0) - (student.advanceBalance || 0))
+
   return {
     student: {
       firstName: student.firstName,
@@ -114,7 +129,7 @@ export async function getDashboardData(userId: string) {
       absentDays: totalDays - presentDays,
       upcomingExams,
       pendingAssignments,
-      pendingFeeAmount: (feesDue._sum.balanceAmount || 0) / 100,
+      pendingFeeAmount: pendingFeeVal / 100,
       pendingFromMonth: nextPendingFee ? `${getMonthLabel(nextPendingFee.month)} ${nextPendingFee.year}` : null
     },
     todayTimetable: todayTimetable.map(t => ({
@@ -135,18 +150,32 @@ export async function getAttendance(userId: string) {
   const student = await getStudentByUserId(userId)
   
   const records = await prisma.attendanceRecord.findMany({
-    where: { studentId: student.id },
-    include: { attendance: true },
+    where: {
+      studentId: student.id,
+      attendance: { isDeleted: false }
+    },
+    include: {
+      attendance: {
+        select: {
+          id: true,
+          date: true,
+          sectionId: true,
+        }
+      }
+    },
     orderBy: { attendance: { date: 'desc' } }
   })
 
   const total = records.length
   const present = records.filter(r => r.status === 'PRESENT').length
-  const percentage = total > 0 ? Math.round((present / total) * 100) : 100
+  const absent = records.filter(r => r.status === 'ABSENT').length
+  const late = records.filter(r => r.status === 'LATE').length
+  const halfDay = records.filter(r => r.status === 'HALF_DAY').length
+  const percentage = total > 0 ? Math.round(((present + late + halfDay) / total) * 100) : 100
 
   return {
     records,
-    summary: { total, present, percentage }
+    summary: { total, present, absent, late, halfDay, percentage }
   }
 }
 
@@ -176,31 +205,7 @@ export async function getTimetable(userId: string) {
 
 export async function getFees(userId: string) {
   const student = await getStudentByUserId(userId)
-
-  const records = await prisma.feeRecord.findMany({
-    where: { studentId: student.id },
-    include: { feePlan: true },
-    orderBy: [ { year: 'asc' }, { month: 'asc' } ]
-  })
-  
-  let totalFees = 0
-  let paidAmount = 0
-  let pendingAmount = 0
-  
-  records.forEach(r => {
-    totalFees += r.netAmount
-    paidAmount += r.paidAmount
-    pendingAmount += r.balanceAmount
-  })
-
-  return {
-    summary: {
-      totalFees: totalFees / 100,
-      paidAmount: paidAmount / 100,
-      pendingAmount: pendingAmount / 100
-    },
-    records
-  }
+  return getStudentFeeProfile(student.id)
 }
 
 export async function getNotices(_userId: string, page = 1, limit = 20) {
@@ -260,12 +265,22 @@ export async function getAnnouncements(userId: string, page = 1, limit = 20) {
 export async function getExams(userId: string) {
   const student = await getStudentByUserId(userId)
   
-  // Check fee status across student fee records
-  const feeRecords = await prisma.feeRecord.findMany({
-    where: { studentId: student.id },
-    select: { status: true },
+  // Check fee status across student fee records for current elapsed months
+  const currentMonth = new Date().getMonth() + 1
+  const currentYear = new Date().getFullYear()
+  const unpaidFeeRecord = await prisma.feeRecord.findFirst({
+    where: {
+      studentId: student.id,
+      status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
+      balanceAmount: { gt: 0 },
+      OR: [
+        { year: { lt: currentYear } },
+        { year: currentYear, month: { lte: currentMonth } },
+      ],
+    },
+    select: { id: true },
   })
-  const hasUnpaidFees = feeRecords.some((f) => f.status !== 'PAID' && f.status !== 'WAIVED')
+  const hasUnpaidFees = !!unpaidFeeRecord
 
   const [exams, rawReportCards, rawAdmitCards] = await Promise.all([
     student.sessionId
@@ -293,9 +308,11 @@ export async function getExams(userId: string) {
         fileUrl: true,
         totalMarks: true,
         obtainedMarks: true,
+        percentage: true,
         grade: true,
         remarks: true,
-        marks: true,
+        adminStatus: true,
+        teacherStatus: true,
         isReleased: true,
         createdAt: true,
         exam: { select: { name: true } },
@@ -307,6 +324,8 @@ export async function getExams(userId: string) {
       select: {
         id: true,
         fileUrl: true,
+        adminStatus: true,
+        teacherStatus: true,
         isReleased: true,
         createdAt: true,
         exam: { select: { name: true } },
@@ -315,70 +334,101 @@ export async function getExams(userId: string) {
     }),
   ])
 
-  // Filter and gate Admit Cards
+  // Fetch per-subject marks for student (for released results)
+  const examMarkRows = await prisma.examMark.findMany({
+    where: { studentId: student.id },
+    select: {
+      examId: true,
+      subjectId: true,
+      maxMarks: true,
+      obtainedMarks: true,
+      remarks: true,
+      subject: { select: { id: true, name: true, code: true } },
+    },
+  })
+  // Build map: examId → marks[]
+  const marksMap = new Map<string, typeof examMarkRows>()
+  for (const m of examMarkRows) {
+    if (!marksMap.has(m.examId)) marksMap.set(m.examId, [])
+    marksMap.get(m.examId)!.push(m)
+  }
+
+  // ── Admit Card gating ──────────────────────────────────────────
+  // Dynamically compute effective release so the portal reflects real-time admin/teacher decisions
   const admitCards = rawAdmitCards.map((ac) => {
+    let effectiveReleased = ac.isReleased
+    // In AUTO mode: re-evaluate based on current fee state and teacher recommendation
+    if (ac.adminStatus === 'AUTO' || ac.adminStatus === null) {
+      effectiveReleased = !hasUnpaidFees && ac.teacherStatus !== 'HOLD'
+    } else if (ac.adminStatus === 'RELEASED') {
+      effectiveReleased = true   // Admin hard-released — always visible
+    } else if (ac.adminStatus === 'HOLD') {
+      effectiveReleased = false  // Admin hard-held — always blocked
+    }
+
+    if (effectiveReleased) {
+      return { ...ac, isBlocked: false, blockReason: null }
+    }
+    if (ac.adminStatus === 'HOLD') {
+      return {
+        id: ac.id, createdAt: ac.createdAt, exam: ac.exam,
+        isBlocked: true, blockReason: 'Admit Card withheld by school administration.', fileUrl: null,
+      }
+    }
     if (hasUnpaidFees) {
       return {
-        id: ac.id,
-        createdAt: ac.createdAt,
-        exam: ac.exam,
-        isBlocked: true,
-        blockReason: 'Admit Card withheld due to pending fee dues.',
-        fileUrl: null,
+        id: ac.id, createdAt: ac.createdAt, exam: ac.exam,
+        isBlocked: true, blockReason: 'Admit Card withheld due to pending fee dues.', fileUrl: null,
       }
     }
-    if (!ac.isReleased) {
-      return {
-        id: ac.id,
-        createdAt: ac.createdAt,
-        exam: ac.exam,
-        isBlocked: true,
-        blockReason: 'Admit Card has not been released by school administration yet.',
-        fileUrl: null,
-      }
+    return {
+      id: ac.id, createdAt: ac.createdAt, exam: ac.exam,
+      isBlocked: true, blockReason: 'Admit Card has not been released by school administration yet.', fileUrl: null,
     }
-    return { ...ac, isBlocked: false, blockReason: null }
   })
 
-  // Filter and gate Report Cards
+  // ── Report Card gating ─────────────────────────────────────────
   const reportCards = rawReportCards.map((rc) => {
+    let effectiveReleased = rc.isReleased
+    // In AUTO mode: released if admin hasn't blocked and fees are clear
+    if (rc.adminStatus === 'AUTO' || rc.adminStatus === null) {
+      effectiveReleased = !hasUnpaidFees && rc.teacherStatus === 'COMPLETED'
+    } else if (rc.adminStatus === 'RELEASED') {
+      effectiveReleased = true
+    } else if (rc.adminStatus === 'HOLD') {
+      effectiveReleased = false
+    }
+
+    const subjectMarks = marksMap.get(rc.examId) || []
+
+    if (effectiveReleased) {
+      return { ...rc, isBlocked: false, blockReason: null, marks: subjectMarks }
+    }
+    if (rc.adminStatus === 'HOLD') {
+      return {
+        id: rc.id, examId: rc.examId, createdAt: rc.createdAt, exam: rc.exam,
+        isBlocked: true, blockReason: 'Result withheld by school administration.',
+        fileUrl: null, totalMarks: null, obtainedMarks: null, percentage: null, grade: null, remarks: null, marks: null,
+      }
+    }
     if (hasUnpaidFees) {
       return {
-        id: rc.id,
-        examId: rc.examId,
-        createdAt: rc.createdAt,
-        exam: rc.exam,
-        isBlocked: true,
-        blockReason: 'Result / Report Card withheld due to pending fee dues.',
-        fileUrl: null,
-        totalMarks: null,
-        obtainedMarks: null,
-        grade: null,
-        remarks: null,
-        marks: null,
+        id: rc.id, examId: rc.examId, createdAt: rc.createdAt, exam: rc.exam,
+        isBlocked: true, blockReason: 'Result / Report Card withheld due to pending fee dues.',
+        fileUrl: null, totalMarks: null, obtainedMarks: null, percentage: null, grade: null, remarks: null, marks: null,
       }
     }
-    if (!rc.isReleased) {
-      return {
-        id: rc.id,
-        examId: rc.examId,
-        createdAt: rc.createdAt,
-        exam: rc.exam,
-        isBlocked: true,
-        blockReason: 'Result has not been released by administration yet.',
-        fileUrl: null,
-        totalMarks: null,
-        obtainedMarks: null,
-        grade: null,
-        remarks: null,
-        marks: null,
-      }
+    return {
+      id: rc.id, examId: rc.examId, createdAt: rc.createdAt, exam: rc.exam,
+      isBlocked: true, blockReason: 'Result / Report Card has not been released by school administration yet.',
+      fileUrl: null, totalMarks: null, obtainedMarks: null, percentage: null, grade: null, remarks: null, marks: null,
     }
-    return { ...rc, isBlocked: false, blockReason: null }
   })
 
   return { exams, reportCards, admitCards, hasUnpaidFees }
 }
+
+
 
 export async function getHomework(userId: string) {
   const student = await getStudentByUserId(userId)

@@ -23,11 +23,11 @@ export const studentPortalApi = {
   },
   getNotices: async ({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
     const { data } = await apiClient.get(`/student-portal/notices?page=${page}&limit=${limit}`)
-    return data.data as { notices: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }
+    return data.data as { notices: Record<string, unknown>[]; pagination: { page: number; limit: number; total: number; totalPages: number } }
   },
   getAnnouncements: async ({ page = 1, limit = 20 }: { page?: number; limit?: number } = {}) => {
     const { data } = await apiClient.get(`/student-portal/announcements?page=${page}&limit=${limit}`)
-    return data.data as { announcements: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }
+    return data.data as { announcements: Record<string, unknown>[]; pagination: { page: number; limit: number; total: number; totalPages: number } }
   },
   getExams: async () => {
     const { data } = await apiClient.get('/student-portal/exams')

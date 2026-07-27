@@ -37,8 +37,9 @@ export function AccountManagementCard({ userId }: AccountManagementCardProps) {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['account', userId] })
 
-  const onError = (error: any) => {
-    alert(error?.response?.data?.error?.message || error?.message || 'An error occurred')
+  const onError = (error: unknown) => {
+    const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string }
+    alert(err?.response?.data?.error?.message || err?.message || 'An error occurred')
   }
 
   const resetPassword = useMutation({

@@ -18,7 +18,20 @@ export function StudentTimetablePage() {
   const tableMap = new Map()
   DAYS.forEach(d => tableMap.set(d, new Map()))
   
-  timetables.forEach((t: any) => {
+  interface TimetableItem {
+    dayOfWeek: string
+    periodNumber: number
+    subject: { name: string }
+    teacher: { firstName: string; lastName: string }
+  }
+
+  interface PeriodItem {
+    periodNumber: number
+    startTime: string
+    endTime: string
+  }
+
+  timetables.forEach((t: TimetableItem) => {
     if (tableMap.has(t.dayOfWeek)) {
       tableMap.get(t.dayOfWeek).set(t.periodNumber, t)
     }
@@ -33,7 +46,7 @@ export function StudentTimetablePage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-24 bg-muted/50 border-r">Day / Period</TableHead>
-              {periods.map((p: any) => (
+              {periods.map((p: PeriodItem) => (
                 <TableHead key={p.periodNumber} className="text-center border-r min-w-[150px]">
                   <div>Period {p.periodNumber}</div>
                   <div className="text-xs font-normal text-muted-foreground">{p.startTime} - {p.endTime}</div>
@@ -45,7 +58,7 @@ export function StudentTimetablePage() {
             {DAYS.map(day => (
               <TableRow key={day}>
                 <TableCell className="font-semibold bg-muted/10 border-r">{day}</TableCell>
-                {periods.map((p: any) => {
+                {periods.map((p: PeriodItem) => {
                   const entry = tableMap.get(day)?.get(p.periodNumber)
                   return (
                     <TableCell key={p.periodNumber} className="text-center border-r align-top">

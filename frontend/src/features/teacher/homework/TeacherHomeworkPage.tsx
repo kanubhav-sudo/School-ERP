@@ -19,6 +19,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Plus,
@@ -408,10 +409,10 @@ export function TeacherHomeworkPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium mb-1 block">Due Date *</label>
-                <Input
-                  type="date"
+                <DatePickerInput
                   value={form.dueDate}
-                  onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
+                  onChange={dateStr => setForm(f => ({ ...f, dueDate: dateStr }))}
+                  className="w-full"
                 />
               </div>
               <div>

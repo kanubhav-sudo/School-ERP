@@ -1,30 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { studentPortalApi } from '../api/student-portal.api'
 import { Badge } from '@/components/ui/badge'
-import { IndianRupee, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
-
-const MONTH_NAMES: Record<number, string> = {
-  1: 'January', 2: 'February', 3: 'March', 4: 'April',
-  6: 'June', 7: 'July', 8: 'August', 9: 'September',
-  10: 'October', 11: 'November', 12: 'December'
-}
-
-function StatusBadge({ status }: { status: string }) {
-  switch (status) {
-    case 'PAID':    return <Badge className="bg-green-500 hover:bg-green-600">Paid</Badge>
-    case 'PARTIAL': return <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">Partial</Badge>
-    case 'PENDING': return <Badge variant="outline" className="text-yellow-600 border-yellow-500">Pending</Badge>
-    case 'OVERDUE': return <Badge variant="destructive">Overdue</Badge>
-    case 'WAIVED':  return <Badge className="bg-blue-500 hover:bg-blue-600">Waived</Badge>
-    default:        return <Badge variant="secondary">{status}</Badge>
-  }
-}
-
-function StatusIcon({ status }: { status: string }) {
-  if (status === 'PAID') return <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-  if (status === 'OVERDUE') return <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
-  return <Clock className="h-4 w-4 text-yellow-500 shrink-0" />
-}
+import { Receipt } from 'lucide-react'
+import { format } from 'date-fns'
 
 export function StudentFeesPage() {
   const { data, isLoading } = useQuery({
@@ -34,100 +12,172 @@ export function StudentFeesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground">
-        Loading fee details...
+      <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
+        Loading student fee profile...
       </div>
     )
   }
 
-  const records: any[] = data?.records || []
-  const summary = data?.summary || { totalFees: 0, paidAmount: 0, pendingAmount: 0 }
+  const fmt = (paise: number) =>
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(
+      (paise || 0) / 100
+    )
 
-  // Find first pending/overdue month for "Pending From" display
-  const firstPending = records.find(r => r.status === 'PENDING' || r.status === 'OVERDUE' || r.status === 'PARTIAL')
+  const summary = data?.summary
+  const student = data?.student
+  const payments = (data?.payments || []) as Array<{
+    id: string
+    receiptNumber: string
+    amount: number
+    paymentDate: string
+    paymentMode: string
+    remarks?: string
+    createdAt: string
+  }>
+  const timeline = (data?.timeline || []) as Array<{
+    month: number
+    label: string
+    status: string
+    displayText: string
+  }>
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Fee Summary</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Your fee records for the current academic session.
-          <span className="ml-2 text-xs text-muted-foreground">(May is a vacation month — no fee charged)</span>
-        </p>
+      {/* Student Details Header */}
+      <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {student?.firstName} {student?.lastName}
+            </h1>
+            <div className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+              {student?.admissionNumber && (
+                <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">
+                  {student.admissionNumber}
+                </span>
+              )}
+              {student?.className && <span>{student.className}</span>}
+              {student?.sectionName && <span>({student.sectionName})</span>}
+              {student?.sessionName && <span>· {student.sessionName}</span>}
+            </div>
+          </div>
+          {student?.feePlan && (
+            <div className="p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground flex flex-wrap gap-4 items-center border border-border">
+              <div>
+                Fee Plan: <span className="font-semibold text-foreground">{student.feePlan.name}</span>
+              </div>
+              <div>
+                Monthly Fee:{' '}
+                <span className="font-semibold text-foreground">
+                  {fmt(student.feePlan.monthlyAmount)}
+                </span>
+              </div>
+              <div>
+                Fee Category:{' '}
+                <Badge variant="outline" className="text-[11px] font-normal">
+                  {student?.feeCategory || 'STANDARD'}
+                </Badge>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="p-6 bg-card rounded-xl border shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">Total Fees</h3>
-          <div className="text-3xl font-bold mt-2 flex items-center gap-1">
-            <IndianRupee className="h-6 w-6" />{summary.totalFees.toLocaleString('en-IN')}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">For entire session (11 months)</p>
+      {/* Financial Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="p-4 bg-card rounded-xl border border-border text-center shadow-sm">
+          <p className="text-xs text-muted-foreground font-medium">Total Fee (Current)</p>
+          <p className="text-xl font-bold mt-1 text-foreground">{fmt(summary?.totalFees || 0)}</p>
         </div>
-        <div className="p-6 bg-card rounded-xl border shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">Amount Paid</h3>
-          <div className="text-3xl font-bold mt-2 text-green-600 flex items-center gap-1">
-            <IndianRupee className="h-6 w-6" />{summary.paidAmount.toLocaleString('en-IN')}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {records.filter(r => r.status === 'PAID').length} month(s) fully paid
+        <div className="p-4 bg-card rounded-xl border border-border text-center shadow-sm">
+          <p className="text-xs text-muted-foreground font-medium">Paid Amount</p>
+          <p className="text-xl font-bold mt-1 text-emerald-600">{fmt(summary?.paidAmount || 0)}</p>
+        </div>
+        <div className="p-4 bg-card rounded-xl border border-border text-center shadow-sm">
+          <p className="text-xs text-muted-foreground font-medium">Pending Amount</p>
+          <p
+            className={`text-xl font-bold mt-1 ${
+              (summary?.pendingAmount || 0) > 0 ? 'text-rose-600' : 'text-emerald-600'
+            }`}
+          >
+            {fmt(summary?.pendingAmount || 0)}
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {summary?.pendingFrom ? `From ${summary.pendingFrom}` : 'Cleared'}
           </p>
         </div>
-        <div className="p-6 bg-card rounded-xl border shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">Pending Amount</h3>
-          <div className={`text-3xl font-bold mt-2 flex items-center gap-1 ${summary.pendingAmount > 0 ? 'text-red-500' : 'text-green-600'}`}>
-            <IndianRupee className="h-6 w-6" />{summary.pendingAmount.toLocaleString('en-IN')}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {firstPending
-              ? `Pending from ${MONTH_NAMES[firstPending.month] || firstPending.month} ${firstPending.year}`
-              : 'All clear'}
+        <div className="p-4 bg-card rounded-xl border border-border text-center shadow-sm">
+          <p className="text-xs text-muted-foreground font-medium">Advance Balance</p>
+          <p className="text-xl font-bold mt-1 text-blue-600">
+            {fmt(summary?.advanceBalance || 0)}
           </p>
         </div>
       </div>
 
-      {/* Monthly Timeline */}
-      <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b bg-muted/50">
-          <h2 className="font-semibold">Monthly Fee Timeline</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">April → March (May excluded)</p>
+      {/* 12-Month Academic Timeline */}
+      <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <h3 className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
+          Monthly Timeline (Apr → Mar)
+        </h3>
+        <div className="grid grid-cols-6 sm:grid-cols-12 gap-2">
+          {timeline.map((m) => (
+            <div
+              key={m.month}
+              className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center text-xs ${
+                m.status === 'VACATION'
+                  ? 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300'
+                  : m.status === 'PAID'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300 font-bold'
+                    : m.status === 'PARTIAL'
+                      ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-300'
+                      : 'bg-card border-border text-muted-foreground'
+              }`}
+            >
+              <span className="text-[10px] font-semibold">{m.label?.slice(0, 3)}</span>
+              <span className="text-xs mt-1 font-bold">
+                {m.status === 'VACATION' ? 'Vacation' : m.displayText || '—'}
+              </span>
+            </div>
+          ))}
         </div>
+      </div>
 
-        {records.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">No fee records found.</div>
+      {/* Payment History & Receipts */}
+      <div className="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <h3 className="text-xs font-semibold mb-4 text-muted-foreground uppercase tracking-wider">
+          Payment History & Receipt History
+        </h3>
+        {payments.length === 0 ? (
+          <div className="p-8 text-center text-xs text-muted-foreground bg-muted/30 rounded-xl border border-dashed">
+            No fee payment receipts found for this session.
+          </div>
         ) : (
-          <div className="divide-y">
-            {records.map((record: any) => (
-              <div key={record.id} className="flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
+          <div className="space-y-3">
+            {payments.map((p) => (
+              <div
+                key={p.id}
+                className="flex flex-wrap items-center justify-between p-4 bg-muted/20 border rounded-lg text-sm gap-2"
+              >
                 <div className="flex items-center gap-3">
-                  <StatusIcon status={record.status} />
+                  <div className="p-2.5 rounded-lg bg-muted">
+                    <Receipt className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <div>
-                    <p className="font-medium text-sm">
-                      {MONTH_NAMES[record.month] || `Month ${record.month}`} {record.year}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {record.feePlan?.name || 'Standard Plan'}
-                    </p>
+                    <div className="font-bold text-base">{fmt(p.amount)}</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                      <span>Receipt #{p.receiptNumber}</span>
+                      <span>·</span>
+                      <span>{p.paymentMode?.replace('_', ' ')}</span>
+                    </div>
+                    {p.remarks && (
+                      <p className="text-xs text-muted-foreground italic mt-0.5">
+                        {p.remarks}
+                      </p>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-xs text-muted-foreground">Total</p>
-                    <p className="font-medium">₹{(record.netAmount / 100).toLocaleString('en-IN')}</p>
-                  </div>
-                  <div className="text-right hidden sm:block">
-                    <p className="text-xs text-muted-foreground">Paid</p>
-                    <p className="font-medium text-green-600">₹{(record.paidAmount / 100).toLocaleString('en-IN')}</p>
-                  </div>
-                  {record.balanceAmount > 0 && (
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Balance</p>
-                      <p className="font-medium text-red-500">₹{(record.balanceAmount / 100).toLocaleString('en-IN')}</p>
-                    </div>
-                  )}
-                  <StatusBadge status={record.status} />
+                <div className="text-right text-xs text-muted-foreground font-medium">
+                  {format(new Date(p.paymentDate || p.createdAt), 'dd MMM yyyy')}
                 </div>
               </div>
             ))}

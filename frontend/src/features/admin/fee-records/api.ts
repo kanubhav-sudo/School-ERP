@@ -52,8 +52,10 @@ export interface StudentFeeRow {
   feeCategory: string
   monthlyFee: number
   currentTotalFee: number
+  totalYearlyFee?: number
   paidAmount: number
   pendingAmount: number
+  yearlyPendingAmount?: number
   advanceBalance: number
   pendingFrom: string
   timeline: Array<{

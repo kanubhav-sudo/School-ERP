@@ -4,6 +4,18 @@ import { studentPortalApi } from '../api/student-portal.api'
 import { Megaphone, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+interface AnnouncementItem {
+  id: string
+  title: string
+  content: string
+  createdAt: string
+  author: {
+    firstName: string
+    lastName: string
+  }
+  attachments?: string[]
+}
+
 export function StudentAnnouncementsPage() {
   const [page, setPage] = useState(1)
 
@@ -12,7 +24,7 @@ export function StudentAnnouncementsPage() {
     queryFn: () => studentPortalApi.getAnnouncements({ page, limit: 20 }),
   })
 
-  const announcements = data?.announcements ?? []
+  const announcements = (data?.announcements ?? []) as AnnouncementItem[]
   const pagination = data?.pagination
 
   if (isLoading) return <div>Loading announcements...</div>
@@ -27,7 +39,7 @@ export function StudentAnnouncementsPage() {
             No announcements for your class.
           </div>
         ) : (
-          announcements.map((announcement: any) => (
+          announcements.map((announcement: AnnouncementItem) => (
             <div key={announcement.id} className="p-6 bg-card rounded-xl border shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="mt-1 p-2 bg-blue-100 text-blue-600 rounded-full">

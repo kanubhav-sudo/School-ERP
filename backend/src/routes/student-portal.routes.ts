@@ -6,7 +6,6 @@ import { Router } from 'express'
 import * as StudentPortalController from '../controllers/student-portal.controller'
 import { authenticate } from '../middlewares/authenticate.middleware'
 import { authorize } from '../middlewares/authorize.middleware'
-import { upload } from '../middlewares/upload.middleware'
 
 const router = Router()
 
@@ -23,6 +22,5 @@ router.get('/notices', StudentPortalController.getNotices)
 router.get('/announcements', StudentPortalController.getAnnouncements)
 router.get('/exams', StudentPortalController.getExams)
 router.get('/homework', StudentPortalController.getHomework)
-router.post('/homework/:id/submit', upload.single('solution'), StudentPortalController.submitHomework)
 
 export default router

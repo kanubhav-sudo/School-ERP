@@ -1,7 +1,7 @@
 import prisma from '../database/prisma'
 import type { ListFeeRecordsInput, FeeSummaryInput } from '../validators/fee-record.validator'
 import { ConflictError, NotFoundError } from '../core/errors'
-import { Prisma, FeeRecordStatus } from '../generated/prisma'
+import { Prisma, FeeRecordStatus, PaymentMode } from '../generated/prisma'
 
 // Full Academic year fee months (April to March)
 export const ALL_ACADEMIC_MONTHS = [
@@ -20,6 +20,22 @@ export const ALL_ACADEMIC_MONTHS = [
 ]
 
 export const FEE_MONTHS = ALL_ACADEMIC_MONTHS.filter((m) => !m.isVacation)
+
+export function getCurrentAcademicSeq(date = new Date()): number {
+  const monthNum = date.getMonth() + 1
+  return monthNum >= 4 ? monthNum - 3 : monthNum + 9
+}
+
+export function getElapsedAcademicMonths(date = new Date()): number[] {
+  const currentSeq = getCurrentAcademicSeq(date)
+  return ALL_ACADEMIC_MONTHS
+    .filter((m) => !m.isVacation)
+    .filter((m) => {
+      const seq = m.month >= 4 ? m.month - 3 : m.month + 9
+      return seq <= currentSeq
+    })
+    .map((m) => m.month)
+}
 
 const feeRecordSelect = {
   id: true,
@@ -53,7 +69,7 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
   const { page, limit, sessionId, classId, sectionId, month, status, studentId, search, sortBy } = filters
   const skip = (page - 1) * limit
 
-  const where: any = {
+  const where: Prisma.FeeRecordWhereInput = {
     ...(sessionId ? { sessionId } : {}),
     ...(classId ? { classId } : {}),
     ...(month ? { month } : {}),
@@ -62,7 +78,7 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
   }
 
   if (sectionId) {
-    where.student = { ...where.student, sectionId }
+    where.student = { ...(where.student as object), sectionId } as Prisma.FeeRecordWhereInput['student']
   }
 
   if (search) {
@@ -80,7 +96,7 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
     ]
   }
 
-  let orderBy: any = [{ year: 'desc' }, { month: 'desc' }]
+  let orderBy: Prisma.FeeRecordOrderByWithRelationInput | Prisma.FeeRecordOrderByWithRelationInput[] = [{ year: 'desc' }, { month: 'desc' }]
   if (sortBy === 'newest') orderBy = [{ year: 'desc' }, { month: 'desc' }]
   if (sortBy === 'oldest') orderBy = [{ year: 'asc' }, { month: 'asc' }]
   if (sortBy === 'highest') orderBy = { netAmount: 'desc' }
@@ -123,7 +139,7 @@ export async function getStudentFeeList(filters: {
   const limit = filters.limit || 20
   const skip = (page - 1) * limit
 
-  const where: any = {
+  const where: Prisma.StudentWhereInput = {
     isActive: true,
     deletedAt: null,
     ...(filters.classId ? { classId: filters.classId } : {}),
@@ -247,6 +263,9 @@ export async function getStudentFeeList(filters: {
       }
     })
 
+    const totalYearlyFee = records.reduce((sum, r) => sum + r.netAmount, 0)
+    const yearlyPendingAmount = Math.max(0, totalYearlyFee - paidAmount - (s.advanceBalance || 0))
+
     studentRows.push({
       studentId: s.id,
       studentName: `${s.firstName} ${s.lastName}`,
@@ -256,8 +275,10 @@ export async function getStudentFeeList(filters: {
       feeCategory: s.feeCategory || 'STANDARD',
       monthlyFee,
       currentTotalFee: totalFeeUpToCurrent,
+      totalYearlyFee,
       paidAmount,
       pendingAmount: Math.max(0, pendingAmount - (s.advanceBalance || 0)),
+      yearlyPendingAmount,
       advanceBalance: s.advanceBalance || 0,
       pendingFrom: firstPendingLabel || 'Cleared',
       timeline,
@@ -363,7 +384,7 @@ export async function addFeePayment(
     amount: number
     receiptNumber: string
     paymentDate?: string
-    paymentMode: any
+    paymentMode: 'CASH' | 'BANK_TRANSFER' | 'CHEQUE' | 'ONLINE' | 'UPI' | 'CARD'
     remarks?: string
     transactionId?: string
   },
@@ -423,7 +444,7 @@ export async function addFeePayment(
           balanceAmount: newBalanceAmount,
           status: newStatus,
           lastPaymentDate: paymentDateObj,
-          lastPaymentMode: data.paymentMode,
+          lastPaymentMode: (data.paymentMode === 'UPI' || data.paymentMode === 'CARD') ? 'ONLINE' : (data.paymentMode as PaymentMode),
           receiptNumber: data.receiptNumber.trim(),
         },
       })
@@ -445,7 +466,7 @@ export async function addFeePayment(
         studentId,
         amount: Math.round(data.amount * 100),
         paymentDate: paymentDateObj,
-        paymentMode: data.paymentMode === 'ONLINE' || data.paymentMode === 'UPI' || data.paymentMode === 'CARD' ? 'ONLINE' : data.paymentMode,
+        paymentMode: (data.paymentMode === 'UPI' || data.paymentMode === 'CARD') ? 'ONLINE' : (data.paymentMode as PaymentMode),
         receiptNumber: data.receiptNumber.trim(),
         remarks: data.remarks || null,
         transactionRef: data.transactionId || null,

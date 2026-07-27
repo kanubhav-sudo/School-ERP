@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { StudentFeeProfileDrawer } from './components/StudentFeeProfileDrawer'
-import { User, Search, IndianRupee } from 'lucide-react'
+import { User, Search } from 'lucide-react'
 
 export function FeeRecordsPage() {
   const [page, setPage] = useState(1)
@@ -119,9 +119,10 @@ export function FeeRecordsPage() {
                 <th className="px-4 py-3 font-semibold">Admission No</th>
                 <th className="px-4 py-3 font-semibold">Fee Category</th>
                 <th className="px-4 py-3 font-semibold">Monthly Fee</th>
-                <th className="px-4 py-3 font-semibold">Current Total Fee</th>
+                <th className="px-4 py-3 font-semibold">Current Fee</th>
                 <th className="px-4 py-3 font-semibold">Paid</th>
-                <th className="px-4 py-3 font-semibold">Pending</th>
+                <th className="px-4 py-3 font-semibold">Current Pending</th>
+                <th className="px-4 py-3 font-semibold">Yearly Pending</th>
                 <th className="px-4 py-3 font-semibold">Balance</th>
                 <th className="px-4 py-3 font-semibold">Pending From</th>
                 <th className="px-4 py-3 font-semibold text-center">Monthly Timeline</th>
@@ -131,13 +132,13 @@ export function FeeRecordsPage() {
             <tbody className="divide-y">
               {isLoading ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={12} className="px-4 py-12 text-center text-muted-foreground">
                     Loading student fee records...
                   </td>
                 </tr>
               ) : studentRows.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={12} className="px-4 py-12 text-center text-muted-foreground">
                     No students found for the selected filters.
                   </td>
                 </tr>
@@ -173,8 +174,11 @@ export function FeeRecordsPage() {
                     <td className="px-4 py-3.5 font-semibold text-emerald-600">
                       {formatINR(row.paidAmount)}
                     </td>
-                    <td className="px-4 py-3.5 font-semibold text-rose-600">
+                    <td className="px-4 py-3.5 font-semibold text-amber-600">
                       {formatINR(row.pendingAmount)}
+                    </td>
+                    <td className="px-4 py-3.5 font-semibold text-rose-600">
+                      {formatINR(row.yearlyPendingAmount ?? row.pendingAmount)}
                     </td>
                     <td className="px-4 py-3.5 font-medium text-blue-600">
                       {row.advanceBalance > 0 ? formatINR(row.advanceBalance) : '₹0'}

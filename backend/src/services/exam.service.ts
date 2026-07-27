@@ -8,7 +8,7 @@
 
 import prisma from '../database/prisma'
 import { NotFoundError, ConflictError } from '../core/errors'
-import { PublishStatus } from '../generated/prisma'
+import { PublishStatus, Prisma } from '../generated/prisma'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -69,7 +69,7 @@ export class ExamService {
    * List exams by Session and/or Class
    */
   static async listExams(filters: { sessionId?: string; classId?: string; status?: PublishStatus }) {
-    return prisma.exam.findMany({
+    const exams = await prisma.exam.findMany({
       where: {
         ...(filters.sessionId && { sessionId: filters.sessionId }),
         ...(filters.classId && { classId: filters.classId }),
@@ -86,12 +86,32 @@ export class ExamService {
         createdAt: true,
         session: { select: { id: true, name: true } },
         class: { select: { id: true, name: true } },
+        schedules: {
+          select: {
+            id: true,
+            subjectId: true,
+            examDate: true,
+            startTime: true,
+            endTime: true,
+            room: true,
+            subject: { select: { id: true, name: true, code: true } },
+          },
+          orderBy: { examDate: 'asc' },
+        },
         _count: {
           select: { schedules: true, reportCards: true, admitCards: true, marks: true },
         },
       },
       orderBy: { createdAt: 'desc' },
     })
+
+    return exams.map((exam) => ({
+      ...exam,
+      schedules: (exam.schedules || []).map((s) => ({
+        ...s,
+        day: getDayFromDate(s.examDate),
+      })),
+    }))
   }
 
   /**
@@ -161,8 +181,8 @@ export class ExamService {
           status: true,
         },
       })
-    } catch (err: any) {
-      if (err?.code === 'P2002') {
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
         throw new ConflictError('An exam with this name already exists for the selected Class')
       }
       throw err
@@ -383,7 +403,7 @@ export class ExamService {
     }
 
     // Determine isReleased flag
-    let isReleased = false
+    let isReleased: boolean
     if (adminStatus === 'RELEASED') {
       isReleased = true
     } else if (adminStatus === 'HOLD') {
@@ -677,8 +697,8 @@ export class ExamService {
       const enteredSubjectsCount = marksCountMap.get(student.id) || 0
       const isMarksComplete = totalSubjects > 0 && enteredSubjectsCount >= totalSubjects
 
-      let defaultStatus = 'HOLD'
-      let defaultRemark = 'Marks Pending'
+      let defaultStatus: string
+      let defaultRemark: string
 
       if (!isMarksComplete) {
         defaultStatus = 'HOLD'
@@ -693,7 +713,7 @@ export class ExamService {
 
       let effectiveStatus = defaultStatus
       let remark = defaultRemark
-      let adminStatus = existingReport?.adminStatus || 'AUTO'
+      const adminStatus = existingReport?.adminStatus || 'AUTO'
 
       if (existingReport) {
         if (existingReport.adminStatus !== 'AUTO') {
@@ -772,7 +792,15 @@ export class ExamService {
     return template
   }
 
-  static async saveExamTemplate(type: 'ADMIT_CARD' | 'RESULT', data: any) {
+  static async saveExamTemplate(type: 'ADMIT_CARD' | 'RESULT', data: {
+    schoolName?: string
+    logoUrl?: string | null
+    headerText?: string | null
+    footerText?: string | null
+    principalSignatureUrl?: string | null
+    schoolStampUrl?: string | null
+    config?: Prisma.InputJsonValue
+  }) {
     return prisma.examTemplate.upsert({
       where: { type },
       create: {
@@ -811,29 +839,26 @@ export class ExamService {
     if (!effectiveSessionId) throw new NotFoundError('Academic session not set')
 
     // Find latest or selected exam
-    let exam = null
-    if (examId) {
-      exam = await prisma.exam.findUnique({
-        where: { id: examId },
-        include: {
-          schedules: {
-            include: { subject: { select: { name: true, code: true } } },
-            orderBy: { examDate: 'asc' },
+    const exam = examId
+      ? await prisma.exam.findUnique({
+          where: { id: examId },
+          include: {
+            schedules: {
+              include: { subject: { select: { name: true, code: true } } },
+              orderBy: { examDate: 'asc' },
+            },
           },
-        },
-      })
-    } else {
-      exam = await prisma.exam.findFirst({
-        where: { sessionId: effectiveSessionId, classId: student.classId, status: 'PUBLISHED' },
-        include: {
-          schedules: {
-            include: { subject: { select: { name: true, code: true } } },
-            orderBy: { examDate: 'asc' },
+        })
+      : await prisma.exam.findFirst({
+          where: { sessionId: effectiveSessionId, classId: student.classId, status: 'PUBLISHED' },
+          include: {
+            schedules: {
+              include: { subject: { select: { name: true, code: true } } },
+              orderBy: { examDate: 'asc' },
+            },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-      })
-    }
+          orderBy: { createdAt: 'desc' },
+        })
 
     if (!exam) return { isReleased: false, holdReason: 'No examination scheduled.' }
 
@@ -901,27 +926,24 @@ export class ExamService {
     const effectiveSessionId = sessionId || student.sessionId
     if (!effectiveSessionId) throw new NotFoundError('Academic session not set')
 
-    let exam = null
-    if (examId) {
-      exam = await prisma.exam.findUnique({
-        where: { id: examId },
-        include: {
-          schedules: {
-            include: { subject: { select: { name: true, code: true } } },
+    const exam = examId
+      ? await prisma.exam.findUnique({
+          where: { id: examId },
+          include: {
+            schedules: {
+              include: { subject: { select: { name: true, code: true } } },
+            },
           },
-        },
-      })
-    } else {
-      exam = await prisma.exam.findFirst({
-        where: { sessionId: effectiveSessionId, classId: student.classId, status: 'PUBLISHED' },
-        include: {
-          schedules: {
-            include: { subject: { select: { name: true, code: true } } },
+        })
+      : await prisma.exam.findFirst({
+          where: { sessionId: effectiveSessionId, classId: student.classId, status: 'PUBLISHED' },
+          include: {
+            schedules: {
+              include: { subject: { select: { name: true, code: true } } },
+            },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-      })
-    }
+          orderBy: { createdAt: 'desc' },
+        })
 
     if (!exam) return { isReleased: false, holdReason: 'No result published.' }
 
@@ -932,7 +954,7 @@ export class ExamService {
 
     const feeCheck = await this.checkStudentFeeClearance(student.id, effectiveSessionId)
 
-    let isReleased = reportCard?.isReleased || reportCard?.adminStatus === 'RELEASED'
+    const isReleased = reportCard?.isReleased || reportCard?.adminStatus === 'RELEASED'
     let holdReason = reportCard?.remarks || 'Result Not Published'
 
     if (!isReleased && reportCard?.adminStatus !== 'RELEASED') {

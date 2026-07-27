@@ -10,7 +10,8 @@ export interface AcademicSession {
 
 export async function fetchSessions(): Promise<AcademicSession[]> {
   const { data } = await apiClient.get('/academic-sessions')
-  return data.data.sessions
+  if (Array.isArray(data.data)) return data.data
+  return data.data?.sessions || []
 }
 
 export async function createSession(payload: Partial<AcademicSession>): Promise<AcademicSession> {

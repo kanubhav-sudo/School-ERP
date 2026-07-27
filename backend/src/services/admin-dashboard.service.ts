@@ -9,6 +9,8 @@
 
 import prisma from '../database/prisma'
 
+import { getElapsedAcademicMonths } from './fee-record.service'
+
 export async function getDashboardStats() {
   // Run each count independently to isolate failures
   const [
@@ -45,12 +47,23 @@ export async function getDashboardStats() {
   if (activeSession) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    const elapsedMonths = getElapsedAcademicMonths(today)
 
-    const [feeStats, attendanceCount] = await Promise.all([
+    const [pendingFeeStats, collectedFeeStats, attendanceCount] = await Promise.all([
       prisma.feeRecord.aggregate({
-        where: { sessionId: activeSession.id },
+        where: {
+          sessionId: activeSession.id,
+          month: { in: elapsedMonths },
+        },
         _sum: {
           balanceAmount: true,
+        },
+      }).catch(() => null),
+      prisma.feeRecord.aggregate({
+        where: {
+          sessionId: activeSession.id,
+        },
+        _sum: {
           paidAmount: true,
         },
       }).catch(() => null),
@@ -62,9 +75,11 @@ export async function getDashboardStats() {
       }).catch(() => 0)
     ])
 
-    if (feeStats?._sum) {
-      totalPendingFees = Number(feeStats._sum.balanceAmount ?? 0)
-      totalCollectedFees = Number(feeStats._sum.paidAmount ?? 0)
+    if (pendingFeeStats?._sum) {
+      totalPendingFees = Number(pendingFeeStats._sum.balanceAmount ?? 0)
+    }
+    if (collectedFeeStats?._sum) {
+      totalCollectedFees = Number(collectedFeeStats._sum.paidAmount ?? 0)
     }
     todaysAttendance = attendanceCount
   }

@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -120,6 +121,7 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<TeacherFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -237,7 +239,19 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input id="dateOfBirth" type="date" {...register('dateOfBirth')} />
+              <Controller
+                control={control}
+                name="dateOfBirth"
+                render={({ field }) => (
+                  <DatePickerInput
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    className="w-full"
+                    fromYear={1950}
+                    toYear={new Date().getFullYear()}
+                  />
+                )}
+              />
             </div>
           </div>
 
@@ -245,7 +259,19 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="joiningDate">Joining Date *</Label>
-              <Input id="joiningDate" type="date" {...register('joiningDate')} />
+              <Controller
+                control={control}
+                name="joiningDate"
+                render={({ field }) => (
+                  <DatePickerInput
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    className="w-full"
+                    fromYear={1990}
+                    toYear={new Date().getFullYear() + 5}
+                  />
+                )}
+              />
               {errors.joiningDate && (
                 <p className="text-sm text-red-500">{errors.joiningDate.message}</p>
               )}
@@ -375,7 +401,7 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
 
           {mutation.isError && (
             <p className="text-sm text-red-500">
-              {(mutation.error as any).response?.data?.error?.message || (mutation.error instanceof Error ? mutation.error.message : 'An error occurred')}
+              {(mutation.error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || (mutation.error instanceof Error ? mutation.error.message : 'An error occurred')}
             </p>
           )}
 

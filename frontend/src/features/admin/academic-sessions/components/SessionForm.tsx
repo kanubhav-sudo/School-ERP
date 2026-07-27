@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DatePickerInput } from '@/components/ui/date-picker-input'
 
 const sessionSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50),
@@ -28,6 +29,7 @@ export function SessionForm({ session, onClose }: Props) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
@@ -73,14 +75,38 @@ export function SessionForm({ session, onClose }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
-              <Input id="startDate" type="date" {...register('startDate')} />
+              <Controller
+                control={control}
+                name="startDate"
+                render={({ field }) => (
+                  <DatePickerInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    className="w-full"
+                    fromYear={new Date().getFullYear() - 10}
+                    toYear={new Date().getFullYear() + 10}
+                  />
+                )}
+              />
               {errors.startDate && (
                 <p className="text-sm text-red-500">{errors.startDate.message}</p>
               )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="endDate">End Date</Label>
-              <Input id="endDate" type="date" {...register('endDate')} />
+              <Controller
+                control={control}
+                name="endDate"
+                render={({ field }) => (
+                  <DatePickerInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    className="w-full"
+                    fromYear={new Date().getFullYear() - 10}
+                    toYear={new Date().getFullYear() + 10}
+                  />
+                )}
+              />
               {errors.endDate && <p className="text-sm text-red-500">{errors.endDate.message}</p>}
             </div>
           </div>
