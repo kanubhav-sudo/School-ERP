@@ -73,6 +73,10 @@ router.use('/student-portal', studentPortalRoutes)
 import documentEngineRoutes from './document-engine.routes'
 router.use('/documents', documentEngineRoutes)
 
+// Subscription & Feature Gating Routes (Phase 4.5)
+import subscriptionRoutes from './subscription.routes'
+router.use('/subscription', subscriptionRoutes)
+
 // Admin Dashboard
 router.use('/admin-dashboard', adminDashboardRoutes)
 

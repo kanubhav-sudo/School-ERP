@@ -5,6 +5,62 @@ All notable changes to the School ERP project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.5.0] — 2026-08-04 — CloudEMS Phase 4.5: Subscription Foundation & Feature Gating
+
+### Added
+
+#### Prisma Schema Changes
+- Updated `Subscription` model: added `currentPlan` (String, default "BASE"), `monthlyPrice` (Int, default 1000), `yearlyPrice` (Int, default 10000); made `planId` optional; made `endDate` optional; changed default `status` from `TRIAL` to `ACTIVE`
+- Added `UpgradeRequest` model: `schoolId`, `currentPlan`, `requestedPlan`, `status` (PENDING/CONTACTED/COMPLETED/REJECTED), `requestedBy`, `notes`, timestamps; indexed on `schoolId` and `status`
+- Added `upgradeRequests UpgradeRequest[]` relation to `School` model
+- Migration: `20260804010000_add_subscription_foundation`
+
+#### Backend — Feature Gating Architecture
+
+- **`feature-resolution.service.ts`**: Centralized feature permission system with `PLAN_FEATURE_CATALOG` constant defining `BASE` and `PREMIUM` plan feature matrices. Methods: `resolveSchoolFeatures(db, schoolId)`, `hasFeature(db, schoolId, featureKey)`, `getPlanCatalog()`. **RULE: Business logic MUST NEVER check `if (plan === "PREMIUM")` — it MUST call `hasFeature()` instead.**
+
+- **`feature-guard.middleware.ts`**: Reusable Express middleware `requireFeature(featureKey)` — protects routes by checking resolved features. Returns `403 Forbidden` with `{ code: 'FEATURE_LOCKED', feature: featureKey }` if feature is not enabled.
+
+- **`subscription.service.ts`**: `getSubscriptionDetails(db, schoolId)` — auto-provisions BASE subscription on first use; `updateSubscription()` — supports custom per-school pricing overrides.
+
+- **`upgrade-request.service.ts`**: `createUpgradeRequest()` — validates no duplicate pending request; logs audit event. `listUpgradeRequests()` — lists requests with school details.
+
+#### Backend — Subscription API (`/api/v1/subscription/*`)
+
+- `GET  /subscription` — Subscription details, plan catalog, resolved features, and pending upgrade request state
+- `GET  /subscription/features` — Resolved feature permission map for current tenant
+- `POST /subscription/upgrade-request` — Submit upgrade request for callback (no payment processing)
+- `PUT  /subscription` — (SUPER_ADMIN) Update per-school custom pricing/plan
+
+#### Plan Catalog (Backend-Configured)
+
+- **BASE Plan**: Attendance, Fees & Finance, Homework, Exams & Marks, Results & Report Cards, Timetable, Noticeboard — ₹1,000/month | ₹10,000/year (save ₹2,000)
+- **PREMIUM Plan**: Base features + Transport Module, AI Remarks, AI Homework Assistant, AI Analytics (all placeholder — modules not built) — ₹2,500/month | ₹25,000/year (save ₹5,000)
+
+#### Frontend — Settings Page (`/admin/settings`)
+
+- **`SettingsPage.tsx`**: Tabbed settings hub with 6 tabs: General, School Profile, Branding, Academic Settings, Subscription, Security. URL-param driven tab state (`?tab=subscription`). Subscription tab shows a live pulsing indicator.
+
+- **`SubscriptionTab.tsx`**: Commercial subscription page:
+  - Active subscription banner (current plan, status badge, school-specific price)
+  - BASE PLAN card: feature list from backend catalog, pricing with annual discount
+  - PREMIUM PLAN card: dynamically rendered premium feature list from backend catalog; placeholder badges for upcoming modules; "More Premium Features Coming Soon"
+  - Upgrade Request Modal: "Upgrade to Premium?" dialog → `POST /subscription/upgrade-request` → success message → button changes to "Upgrade Request Pending"
+
+- Sidebar: Added "⚙️ Settings & Subscription" under System section in AdminLayout
+- Route: `/admin/settings` registered in App.tsx
+
+#### Frontend — Bug Fix
+
+- Fixed `document-engine.api.ts`: corrected import from `api` → `apiClient` from `../../lib/axios`
+
+### Architecture Notes
+
+- Feature gating is future-proof: adding any new premium module just requires adding a feature key to `PLAN_FEATURE_CATALOG.PREMIUM.features` and wrapping the route with `requireFeature('feature_key')`
+- Pricing is per-school, not global: each `Subscription` record stores its own `monthlyPrice` and `yearlyPrice` overridden during provisioning or platform update
+
+---
+
 ## [5.0.0] — 2026-08-04 — CloudEMS Phase 5: Academic Document Engine
 
 ### Added

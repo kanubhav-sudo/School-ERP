@@ -260,6 +260,7 @@ model School {
   homeworkSubmissions HomeworkSubmission[]
   academicDocumentTemplates AcademicDocumentTemplate[]
   generatedDocuments  GeneratedDocument[]
+  upgradeRequests     UpgradeRequest[]
 
   @@index([slug])
   @@index([customDomain])
@@ -342,12 +343,15 @@ model Subscription {
   id              String             @id @default(uuid()) @db.Uuid
   schoolId        String             @map("school_id") @db.Uuid
   school          School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  planId          String             @map("plan_id") @db.Uuid
-  plan            Plan               @relation(fields: [planId], references: [id])
+  planId          String?            @map("plan_id") @db.Uuid
+  plan            Plan?              @relation(fields: [planId], references: [id])
   
-  status          SubscriptionStatus @default(TRIAL)
+  currentPlan     String             @default("BASE") @map("current_plan")
+  monthlyPrice    Int                @default(1000) @map("monthly_price")
+  yearlyPrice     Int                @default(10000) @map("yearly_price")
+  status          SubscriptionStatus @default(ACTIVE)
   startDate       DateTime           @default(now()) @map("start_date")
-  endDate         DateTime           @map("end_date")
+  endDate         DateTime?          @map("end_date")
   gracePeriodDays Int                @default(7) @map("grace_period_days")
   autoRenew       Boolean            @default(true) @map("auto_renew")
 
@@ -357,6 +361,25 @@ model Subscription {
 
   @@index([schoolId])
   @@map("subscriptions")
+}
+
+model UpgradeRequest {
+  id            String   @id @default(uuid()) @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  currentPlan   String   @map("current_plan")
+  requestedPlan String   @default("PREMIUM") @map("requested_plan")
+  status        String   @default("PENDING") // PENDING, CONTACTED, COMPLETED, REJECTED
+  requestedBy   String?  @map("requested_by")
+  notes         String?
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([schoolId])
+  @@index([status])
+  @@map("upgrade_requests")
 }
 
 model SubscriptionInvoice {

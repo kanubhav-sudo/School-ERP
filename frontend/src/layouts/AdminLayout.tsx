@@ -220,6 +220,21 @@ export function AdminLayout() {
           >
             Fee Records
           </NavLink>
+          <div className="pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            System
+          </div>
+          <NavLink
+            to="/admin/settings"
+            className={({ isActive }) =>
+              `block p-2 rounded-md ${
+                isActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted text-muted-foreground'
+              }`
+            }
+          >
+            ⚙️ Settings & Subscription
+          </NavLink>
         </nav>
       </aside>
 

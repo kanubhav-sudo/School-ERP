@@ -50,6 +50,7 @@ import { FeeRecordsPage } from './features/admin/fee-records/FeeRecordsPage'
 import { AdminHomeworkPage } from './features/admin/homework/AdminHomeworkPage'
 import { ExamsPage } from './features/admin/exams/ExamsPage'
 import { DocumentEnginePage } from './features/admin/document-engine/DocumentEnginePage'
+import { SettingsPage } from './features/admin/settings/SettingsPage'
 import { PublicVerifyPage } from './pages/PublicVerifyPage'
 // Route Guards
 import { GuestRoute, ProtectedRoute, RoleRoute, getDashboardPath } from './routes/guards'
@@ -148,6 +149,7 @@ function App() {
               <Route path="homework" element={<AdminHomeworkPage />} />
               <Route path="exams" element={<ExamsPage />} />
               <Route path="documents" element={<DocumentEnginePage />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
 
             {/* Protected Teacher Routes */}

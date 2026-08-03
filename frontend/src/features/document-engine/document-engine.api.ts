@@ -7,7 +7,7 @@
  * @module features/document-engine/api
  */
 
-import { api } from '../../lib/axios'
+import { apiClient } from '../../lib/axios'
 import type {
   DocumentType,
   TemplatePreset,
@@ -22,7 +22,7 @@ export const documentEngineApi = {
    * Fetch active template configuration for document type
    */
   async getTemplate(documentType: DocumentType): Promise<AcademicDocumentTemplateRecord> {
-    const res = await api.get(`/documents/templates/${documentType}`)
+    const res = await apiClient.get(`/documents/templates/${documentType}`)
     return res.data.data
   },
 
@@ -38,7 +38,7 @@ export const documentEngineApi = {
       configuration: DocumentTemplateConfig
     }
   ): Promise<AcademicDocumentTemplateRecord> {
-    const res = await api.post(`/documents/templates/${documentType}`, data)
+    const res = await apiClient.post(`/documents/templates/${documentType}`, data)
     return res.data.data
   },
 
@@ -49,7 +49,7 @@ export const documentEngineApi = {
     documentType: DocumentType,
     preset: TemplatePreset = 'CBSE'
   ): Promise<AcademicDocumentTemplateRecord> {
-    const res = await api.post(`/documents/templates/${documentType}/reset`, { preset })
+    const res = await apiClient.post(`/documents/templates/${documentType}/reset`, { preset })
     return res.data.data
   },
 
@@ -60,7 +60,7 @@ export const documentEngineApi = {
     documentType: DocumentType,
     params?: { studentId?: string; examId?: string }
   ): Promise<CompiledDocumentPayload> {
-    const res = await api.get(`/documents/preview/${documentType}`, { params })
+    const res = await apiClient.get(`/documents/preview/${documentType}`, { params })
     return res.data.data
   },
 
@@ -72,7 +72,7 @@ export const documentEngineApi = {
     studentId: string
     examId?: string
   }): Promise<{ record: Record<string, unknown>; payload: CompiledDocumentPayload }> {
-    const res = await api.post('/documents/generate', data)
+    const res = await apiClient.post('/documents/generate', data)
     return res.data.data
   },
 
@@ -80,7 +80,7 @@ export const documentEngineApi = {
    * Public QR Verification lookup (No auth header required)
    */
   async verifyPublicDocument(verificationId: string): Promise<VerificationResultData> {
-    const res = await api.get(`/documents/public/verify/${verificationId}`)
+    const res = await apiClient.get(`/documents/public/verify/${verificationId}`)
     return res.data.data
   },
 }

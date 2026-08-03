@@ -223,3 +223,61 @@ This file documents the granular checkpoints for each milestone, allowing easy v
 - Migration of all 19+ service/controller files to use `req.db`
 - Row-Level Security policies at the PostgreSQL layer
 
+
+---
+
+## CloudEMS SaaS Migration — Phase 4.5: Subscription Foundation & Feature Gating (100% Complete)
+
+### Checkpoint 4.5.1: Prisma Schema — Subscription Models
+
+- **Objective**: Add `Subscription`, `UpgradeRequest` models; update `School` relations.
+- **Files Involved**: `backend/prisma/schema.prisma`, `backend/prisma/migrations/20260804010000_add_subscription_foundation/`
+- **Status**: ✅ Done
+
+### Checkpoint 4.5.2: Feature Resolution Service
+
+- **Objective**: Implement `PLAN_FEATURE_CATALOG` and `FeatureResolutionService` as the single authoritative source for plan features.
+- **Files Involved**: `backend/src/services/feature-resolution.service.ts`
+- **Architecture Rule**: ALL feature checks use `hasFeature()`. Never compare plan strings directly in business logic.
+- **Status**: ✅ Done
+
+### Checkpoint 4.5.3: Feature Guard Middleware
+
+- **Objective**: Express middleware `requireFeature(featureKey)` for route-level feature gating.
+- **Files Involved**: `backend/src/middlewares/feature-guard.middleware.ts`
+- **Status**: ✅ Done
+
+### Checkpoint 4.5.4: Subscription & Upgrade Request Services
+
+- **Objective**: Auto-provision BASE subscription; handle upgrade request lifecycle with audit logging.
+- **Files Involved**: `backend/src/services/subscription.service.ts`, `backend/src/services/upgrade-request.service.ts`
+- **Status**: ✅ Done
+
+### Checkpoint 4.5.5: Subscription API Routes
+
+- **Objective**: CRUD surface for subscription management and upgrade requests.
+- **Files Involved**: `backend/src/routes/subscription.routes.ts`, `backend/src/controllers/subscription.controller.ts`
+- **Endpoints**: GET `/subscription`, GET `/subscription/features`, POST `/subscription/upgrade-request`, PUT `/subscription`
+- **Status**: ✅ Done
+
+### Checkpoint 4.5.6: Frontend Settings Page & Subscription UI
+
+- **Objective**: 6-tab settings page with live subscription plan comparison and upgrade request flow.
+- **Files Involved**:
+  - `frontend/src/features/admin/settings/SettingsPage.tsx`
+  - `frontend/src/features/admin/settings/components/SubscriptionTab.tsx`
+  - `frontend/src/features/admin/settings/components/GeneralTab.tsx`
+  - `frontend/src/features/admin/settings/components/SchoolProfileTab.tsx`
+- **Status**: ✅ Done
+
+### Phase 4.5 Verification Results
+
+| Check | Result |
+|---|---|
+| Backend `tsc --noEmit` | ✅ Pass |
+| Frontend `tsc -b` | ✅ Pass |
+| Frontend `npm run build` | ✅ Pass (995 modules) |
+| `requireFeature` middleware | ✅ Returns 403 `FEATURE_LOCKED` when not entitled |
+| Subscription auto-provision | ✅ Creates BASE subscription on first `GET /subscription` |
+| Upgrade request dedup | ✅ Rejects if PENDING request already exists |
+| No billing/payment code | ✅ Confirmed — subscription foundation only |

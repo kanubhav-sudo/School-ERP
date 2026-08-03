@@ -128,3 +128,21 @@ This document tracks all system milestones, progress, completed tasks, and depen
   - All business module service/controller migrations — deferred to Phase 3.
 - **Remaining Work**: None for Phase 2 scope.
 - **Next Phase**: Phase 3 — Tenant Scoping & Auto-Isolated Data Access.
+
+## CloudEMS SaaS Migration — Phase 4.5: Subscription Foundation & Feature Gating
+- **Objective**: Build commercial SaaS subscription foundation with feature gating. Prepare CloudEMS for multi-plan deployment. No billing/payments.
+- **Status**: ✅ Completed — 2026-08-04
+- **Progress**: 100%
+- **Completed Work**:
+  - `Subscription` model extended: `currentPlan`, `monthlyPrice`, `yearlyPrice`, `status`. Auto-provisioned as BASE on first use.
+  - `UpgradeRequest` model: full PENDING → CONTACTED → COMPLETED/REJECTED workflow with audit logging.
+  - `FeatureResolutionService`: `PLAN_FEATURE_CATALOG` constant; `hasFeature(db, schoolId, key)` as the authoritative feature gate.
+  - `requireFeature(featureKey)` middleware: protects any route with 403 + `FEATURE_LOCKED` code.
+  - `SubscriptionService`, `UpgradeRequestService`: services with auto-provision logic.
+  - Subscription API: `GET/PUT /subscription`, `GET /subscription/features`, `POST /subscription/upgrade-request`.
+  - Frontend `SettingsPage.tsx`: 6-tab settings hub (General, School Profile, Branding, Academic, Subscription, Security).
+  - Frontend `SubscriptionTab.tsx`: plan comparison cards, live pricing, upgrade request modal.
+  - Sidebar link added under System section.
+  - All `tsc` and `npm run build` checks pass.
+- **Remaining Work**: None.
+- **Next Phase**: Phase 5 — Academic Document Engine (Report Cards, Marksheets, Admit Cards).
