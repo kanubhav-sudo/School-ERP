@@ -30,9 +30,7 @@ export const payFeeSchema = z.object({
   paymentDate: z.string().optional(),
   paymentMode: z.enum(['CASH', 'CHEQUE', 'BANK_TRANSFER', 'ONLINE', 'UPI', 'CARD']),
   transactionId: z.string().optional(),
-  remarks: z.string().optional()
+  remarks: z.string().optional(),
 })
 
 export type PayFeeInput = z.infer<typeof payFeeSchema>
-
-

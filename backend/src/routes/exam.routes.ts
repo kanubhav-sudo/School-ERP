@@ -15,15 +15,34 @@ router.use(authenticate)
 
 // List & view exams (Admin, Teacher, Student)
 router.get('/', ExamController.listExams)
-router.get('/admit-card/students', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.getAdmitCardStudents)
-router.post('/admit-card/status', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.updateAdmitCardStatus)
-router.get('/result/students', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.getResultStudents)
-router.post('/result/status', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.updateResultStatus)
+router.get(
+  '/admit-card/students',
+  authorize('SUPERADMIN', 'ADMIN', 'TEACHER'),
+  ExamController.getAdmitCardStudents
+)
+router.post(
+  '/admit-card/status',
+  authorize('SUPERADMIN', 'ADMIN', 'TEACHER'),
+  ExamController.updateAdmitCardStatus
+)
+router.get(
+  '/result/students',
+  authorize('SUPERADMIN', 'ADMIN', 'TEACHER'),
+  ExamController.getResultStudents
+)
+router.post(
+  '/result/status',
+  authorize('SUPERADMIN', 'ADMIN', 'TEACHER'),
+  ExamController.updateResultStatus
+)
 
 // Templates (Admin, Teacher)
-router.get('/templates/:type', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.getExamTemplate)
+router.get(
+  '/templates/:type',
+  authorize('SUPERADMIN', 'ADMIN', 'TEACHER'),
+  ExamController.getExamTemplate
+)
 router.post('/templates/:type', authorize('SUPERADMIN', 'ADMIN'), ExamController.saveExamTemplate)
-
 
 // Exam CRUD & Timetables
 router.get('/:id', ExamController.getExamById)
@@ -33,9 +52,25 @@ router.delete('/:id', authorize('SUPERADMIN', 'ADMIN'), ExamController.deleteExa
 router.post('/:id/schedules', authorize('SUPERADMIN', 'ADMIN'), ExamController.saveSchedules)
 
 // Teacher & Admin Marks Management
-router.get('/:examId/marks/subject/:subjectId', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.getSubjectMarks)
-router.post('/:examId/marks/subject/:subjectId', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.saveSubjectMarks)
-router.get('/:examId/marks/student/:studentId', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.getStudentMarks)
-router.post('/:examId/marks/student/:studentId', authorize('SUPERADMIN', 'ADMIN', 'TEACHER'), ExamController.saveStudentMarks)
+router.get(
+  '/:examId/marks/subject/:subjectId',
+  authorize('SUPERADMIN', 'ADMIN', 'TEACHER'),
+  ExamController.getSubjectMarks
+)
+router.post(
+  '/:examId/marks/subject/:subjectId',
+  authorize('SUPERADMIN', 'ADMIN', 'TEACHER'),
+  ExamController.saveSubjectMarks
+)
+router.get(
+  '/:examId/marks/student/:studentId',
+  authorize('SUPERADMIN', 'ADMIN', 'TEACHER'),
+  ExamController.getStudentMarks
+)
+router.post(
+  '/:examId/marks/student/:studentId',
+  authorize('SUPERADMIN', 'ADMIN', 'TEACHER'),
+  ExamController.saveStudentMarks
+)
 
 export default router

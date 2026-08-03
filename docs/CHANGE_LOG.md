@@ -5,6 +5,47 @@ All notable changes to the School ERP project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] — 2026-08-04 — CloudEMS Phase 4: Platform Administration Layer
+
+### Added
+
+#### Schema & Migration
+- `SchoolStatus` enum: `ACTIVE | INACTIVE | SUSPENDED | ARCHIVED | PROVISIONING | FAILED`
+- `School` model: Added `status`, `failureReason`, `provisionedAt`, `schoolType`, `contactEmail`, `contactPhone`, `website`, `address`, `city`, `state`, `country`, `pincode` fields
+- `AuditLog` model: Added `module`, `result`, `device` fields for rich platform-wide audit trail
+- Prisma migration `20260803213000_init_saas_platform_v2` updated with full Phase 3 + Phase 4 schema
+
+#### Services
+- `audit.service.ts`: Centralised platform audit logging with `writeAuditLog()`, `auditPlatformEvent()`, `getAuditLogs()` (paginated, filterable)
+- `school-provisioning.service.ts`: Two-phase commit provisioning pipeline — creates School record immediately (status = PROVISIONING), runs all sub-steps in `$transaction`, updates to ACTIVE on success or FAILED with reason on failure. Supports `reprovisionSchool()` for retry.
+- `platform-school.service.ts`: Full school lifecycle management — `listSchools()`, `getSchoolById()`, `updateSchool()`, `updateSchoolSettings()`, `updateSchoolFeatures()`, `changeSchoolStatus()` (with transition guard), `getPlatformDashboardMetrics()`
+- `global-search.service.ts`: Cross-entity search across Schools, Users, Teachers, Students in parallel
+
+#### API Routes (`/api/v1/platform/*`)
+- `GET /platform/dashboard` — Aggregated platform metrics
+- `GET /platform/schools` — Paginated school list with filters
+- `POST /platform/schools` — Provision new school (wizard input → transactional pipeline)
+- `GET /platform/schools/:schoolId` — School detail with settings, features, counts
+- `PATCH /platform/schools/:schoolId` — Update school contact/location info
+- `POST /platform/schools/:schoolId/reprovision` — Retry failed provisioning
+- `PATCH /platform/schools/:schoolId/status` — Status transition with guard
+- `PUT /platform/schools/:schoolId/settings` — Update academic/branding settings
+- `PUT /platform/schools/:schoolId/features` — Toggle feature flags
+- `GET /platform/audit-logs` — Paginated, multi-filter audit log retrieval
+- `GET /platform/search` — Global cross-entity search
+
+#### Security
+- All platform routes protected by `authenticate` + `authorize('SUPER_ADMIN')` middleware
+- `resolveTenantMiddleware` updated to bypass `/platform` routes (no school slug required for SUPER_ADMIN)
+- Valid status transition matrix prevents illegal transitions (e.g. `ARCHIVED → ACTIVE`)
+
+### Changed
+- `resolveTenant.middleware.ts`: Extended bypass list to include `/platform` prefix
+- `routes/index.ts`: Registered `/platform` routes
+- `slugify` package added as dependency for auto-slug generation
+
+---
+
 ## [3.0.0] — 2026-08-03 — CloudEMS Phase 3: Tenant Scoping & Auto-Isolated Data Access
 
 ### Added

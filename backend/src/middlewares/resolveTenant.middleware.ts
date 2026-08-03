@@ -12,12 +12,19 @@ declare global {
   }
 }
 
-export async function resolveTenantMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
+export async function resolveTenantMiddleware(
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     // 1. Skip tenant resolution for Super Admin routes.
-    // Assuming Super Admin routes will be prefixed with /super-admin or similar later.
-    // For now, any route matching /super-admin bypasses tenant checks.
-    if (req.path.startsWith('/super-admin') || req.path.includes('/auth/super-admin')) {
+    // Platform routes and super-admin auth routes bypass the tenant check.
+    const PLATFORM_PATHS = ['/super-admin', '/platform', '/auth/super-admin']
+    const shouldSkip = PLATFORM_PATHS.some(
+      (prefix) => req.path.startsWith(prefix) || req.originalUrl.includes(prefix)
+    )
+    if (shouldSkip) {
       return next()
     }
 

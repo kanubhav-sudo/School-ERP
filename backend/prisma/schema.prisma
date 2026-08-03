@@ -35,6 +35,15 @@ enum Role {
   PARENT
 }
 
+enum SchoolStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  ARCHIVED
+  PROVISIONING
+  FAILED
+}
+
 enum AccountStatus {
   ACTIVE
   INACTIVE
@@ -152,14 +161,31 @@ enum NotificationType {
 // ─── Platform & School Management (CloudEMS SaaS v2) ──────────
 
 model School {
-  id           String   @id @default(uuid()) @db.Uuid
-  name         String
-  slug         String   @unique
-  customDomain String?  @unique @map("custom_domain")
-  logoUrl      String?  @map("logo_url")
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             String       @id @default(uuid()) @db.Uuid
+  name           String
+  slug           String       @unique
+  customDomain   String?      @unique @map("custom_domain")
+  logoUrl        String?      @map("logo_url")
+  status         SchoolStatus @default(PROVISIONING)
+  failureReason  String?      @map("failure_reason")
+  provisionedAt  DateTime?    @map("provisioned_at")
+
+  // School contact & location
+  schoolType     String?      @map("school_type")   // e.g. PRIMARY, SECONDARY, K12
+  contactEmail   String?      @map("contact_email")
+  contactPhone   String?      @map("contact_phone")
+  website        String?
+  address        String?
+  city           String?
+  state          String?
+  country        String       @default("India")
+  pincode        String?
+
+  // Legacy field — kept for backward compatibility, derived from status
+  isActive       Boolean      @default(true) @map("is_active")
+
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
   settings            SchoolSettings?
   features            SchoolFeatures?
@@ -373,18 +399,23 @@ model AuditLog {
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   role       Role
+  module     String?  // e.g. PLATFORM, SCHOOL, AUTH, FEES, EXAM
   action     String
   entity     String
   entityId   String?  @map("entity_id")
+  result     String   @default("SUCCESS")  // SUCCESS | FAILURE
   oldValue   Json?    @map("old_value")
   newValue   Json?    @map("new_value")
   ipAddress  String?  @map("ip_address")
   userAgent  String?  @map("user_agent")
+  device     String?
 
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([schoolId])
   @@index([userId])
+  @@index([module])
+  @@index([result])
   @@map("audit_logs")
 }
 

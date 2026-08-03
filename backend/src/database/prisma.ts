@@ -15,7 +15,7 @@ import { env } from '../config'
 
 const pool = new Pool({ connectionString: env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
-const prisma = new PrismaClient({ 
+const prisma = new PrismaClient({
   adapter,
   log: env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
 })

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import healthRoutes from './health.routes'
 import authRoutes from './auth.routes'
+import platformRoutes from './platform.routes'
 import academicSessionRoutes from './academic-session.routes'
 import classRoutes from './class.routes'
 import sectionRoutes from './section.routes'
@@ -28,6 +29,10 @@ router.use('/health', healthRoutes)
 
 // Auth Routes
 router.use('/auth', authRoutes)
+
+// ── Platform Administration Routes (Phase 4) ─────────────────
+// SUPER_ADMIN only — tenant middleware is bypassed for these routes
+router.use('/platform', platformRoutes)
 
 // Academic Structure Routes (Milestone 3.1)
 router.use('/academic-sessions', academicSessionRoutes)

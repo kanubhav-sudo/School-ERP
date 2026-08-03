@@ -16,4 +16,3 @@ router.get('/student/:studentId', FeeRecordController.getStudentFeeProfile)
 router.post('/student/:studentId/pay', FeeRecordController.processPayment)
 
 export default router
-

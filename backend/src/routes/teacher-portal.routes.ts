@@ -30,8 +30,16 @@ import { upload } from '../middlewares/upload.middleware'
 
 // Announcements
 router.get('/announcements', TeacherPortalController.getAnnouncements)
-router.post('/announcements', upload.array('attachments', 5), TeacherPortalController.createAnnouncement)
-router.put('/announcements/:id', upload.array('attachments', 5), TeacherPortalController.updateAnnouncement)
+router.post(
+  '/announcements',
+  upload.array('attachments', 5),
+  TeacherPortalController.createAnnouncement
+)
+router.put(
+  '/announcements/:id',
+  upload.array('attachments', 5),
+  TeacherPortalController.updateAnnouncement
+)
 router.delete('/announcements/:id', TeacherPortalController.deleteAnnouncement)
 
 // Exams & Report/Admit Cards

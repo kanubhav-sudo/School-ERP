@@ -31,7 +31,9 @@ export interface RefreshTokenPayload {
 
 // ─── Token Utilities ─────────────────────────────────────────
 
-export function signAccessToken(user: Pick<User, 'id' | 'role' | 'refreshTokenVersion' | 'schoolId'>): string {
+export function signAccessToken(
+  user: Pick<User, 'id' | 'role' | 'refreshTokenVersion' | 'schoolId'>
+): string {
   const payload: AccessTokenPayload = {
     sub: user.id,
     role: user.role,
@@ -43,7 +45,9 @@ export function signAccessToken(user: Pick<User, 'id' | 'role' | 'refreshTokenVe
   } as jwt.SignOptions)
 }
 
-export function signRefreshToken(user: Pick<User, 'id' | 'refreshTokenVersion' | 'schoolId'>): string {
+export function signRefreshToken(
+  user: Pick<User, 'id' | 'refreshTokenVersion' | 'schoolId'>
+): string {
   const payload: RefreshTokenPayload = {
     sub: user.id,
     version: user.refreshTokenVersion,
@@ -68,7 +72,11 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
  * Validates credentials and returns the user if valid.
  * Throws UnauthorizedError for any invalid credential.
  */
-export async function validateCredentials(loginId: string, password: string, schoolId?: string): Promise<User> {
+export async function validateCredentials(
+  loginId: string,
+  password: string,
+  schoolId?: string
+): Promise<User> {
   let user: User | null
 
   try {
