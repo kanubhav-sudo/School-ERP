@@ -550,17 +550,32 @@ Phase 7: Custom Domains, Parent Portal & System Hardening
 
 ### Phase 2: Authentication Engine & Identity Redesign
 
+**Status: ✅ COMPLETE — 2026-08-03**
+
 **Objective**: Upgrade auth service, login controller, and validators to support "Login ID" (Phone Number OR Username) scoped by `schoolId`. Extend JWT payload with `schoolId`. Add `PARENT` role support.
 
+**Architectural Decisions Made**:
+- `loginId` field (not `username`, not `phone`) accepted on the login endpoint. Student ID/Admission Number explicitly excluded at the validator level.
+- `SUPER_ADMIN` bypasses `schoolId` requirement — platform-wide authority with no school context.
+- `resolveTenantMiddleware` allows requests without a school slug to pass through — the `authenticate` middleware then enforces `schoolId` presence for non-SUPER_ADMIN JWT holders.
+- `VITE_DEFAULT_SCHOOL_SLUG` env variable used on frontend to avoid hardcoded slugs. Switches school without code changes.
+- Phone field is nullable — existing accounts continue to work via username with zero migration needed.
+
 **Files Affected**:
-- `backend/src/services/auth.service.ts`
-- `backend/src/controllers/auth.controller.ts`
-- `backend/src/validators/auth.validator.ts`
-- `backend/src/middlewares/authenticate.middleware.ts`
-- `backend/src/middlewares/authorize.middleware.ts`
-- `frontend/src/features/auth/components/LoginForm.tsx`
-- `frontend/src/context/AuthContext.tsx`
-- `frontend/src/lib/axios.ts`
+- `backend/src/middlewares/resolveTenant.middleware.ts` ✅ NEW
+- `backend/src/middlewares/authenticate.middleware.ts` ✅ Updated
+- `backend/src/services/auth.service.ts` ✅ Updated
+- `backend/src/controllers/auth.controller.ts` ✅ Updated
+- `backend/src/validators/auth.validator.ts` ✅ Updated
+- `backend/src/index.ts` ✅ Updated
+- `frontend/src/context/TenantContext.tsx` ✅ NEW
+- `frontend/src/context/AuthContext.tsx` ✅ Updated
+- `frontend/src/lib/axios.ts` ✅ Updated
+- `frontend/src/types/auth.types.ts` ✅ Updated
+- `frontend/src/features/auth/components/LoginForm.tsx` ✅ Updated
+- `frontend/src/routes/guards.tsx` ✅ Updated
+- `frontend/src/App.tsx` ✅ Updated
+- `frontend/.env` ✅ NEW
 
 ---
 

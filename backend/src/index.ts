@@ -8,6 +8,7 @@ import { logger, API_PREFIX, NotFoundError } from './core'
 import { requestIdMiddleware } from './middlewares/requestId.middleware'
 import { requestLoggerMiddleware } from './middlewares/requestLogger.middleware'
 import { errorHandler } from './middlewares/error.middleware'
+import { resolveTenantMiddleware } from './middlewares/resolveTenant.middleware'
 import apiRoutes from './routes'
 
 import path from 'path'
@@ -34,7 +35,10 @@ app.use(cookieParser())
 app.use(express.json({ limit: '10kb' })) // Mitigate DoS attacks via payload sizing
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 
-// 3. Mount Routes
+// 3. Global Tenant Resolution
+app.use(resolveTenantMiddleware)
+
+// 4. Mount Routes
 app.use(API_PREFIX, apiRoutes)
 
 // Unmatched routes (404)
@@ -42,7 +46,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   next(new NotFoundError(`Can't find ${req.originalUrl} on this server`))
 })
 
-// 4. Global Error Handling
+// 5. Global Error Handling
 app.use(errorHandler)
 
 // Start Server

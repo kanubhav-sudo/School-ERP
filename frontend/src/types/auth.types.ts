@@ -6,13 +6,14 @@
  * @module types/auth
  */
 
-export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT'
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT'
 
 export interface AuthUser {
   id: string
   username: string
   email: string
   role: UserRole
+  schoolId: string | null
   mustChangePassword: boolean
   lastLoginAt?: string | null
 }
@@ -24,7 +25,7 @@ export interface AuthState {
 }
 
 export interface LoginPayload {
-  username: string
+  loginId: string
   password: string
 }
 

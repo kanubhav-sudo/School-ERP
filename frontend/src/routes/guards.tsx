@@ -67,11 +67,17 @@ export function RoleRoute({ children, roles }: { children: React.ReactNode; role
 // eslint-disable-next-line react-refresh/only-export-components
 export function getDashboardPath(role: UserRole): string {
   switch (role) {
+    case 'SUPER_ADMIN':
+      return '/super-admin/dashboard'
     case 'ADMIN':
       return '/admin/dashboard'
     case 'TEACHER':
       return '/teacher/dashboard'
     case 'STUDENT':
       return '/student/dashboard'
+    case 'PARENT':
+      return '/parent/dashboard'
+    default:
+      return '/login'
   }
 }

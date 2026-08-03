@@ -10,7 +10,14 @@
 import { z } from 'zod'
 
 export const loginSchema = z.object({
-  username: z.string().min(1, 'Username is required').trim(),
+  /**
+   * loginId accepts:
+   * - Username (e.g. "john_doe")
+   * - Phone Number (e.g. "9876543210")
+   *
+   * Student ID / Admission Number MUST NOT be used for authentication.
+   */
+  loginId: z.string().min(1, 'Login ID is required').trim(),
   password: z.string().min(1, 'Password is required'),
 })
 

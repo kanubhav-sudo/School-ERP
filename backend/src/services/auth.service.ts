@@ -20,30 +20,34 @@ export interface AccessTokenPayload {
   sub: string // User ID
   role: string
   version: number // refreshTokenVersion — used to invalidate on logout
+  schoolId?: string
 }
 
 export interface RefreshTokenPayload {
   sub: string
   version: number
+  schoolId?: string
 }
 
 // ─── Token Utilities ─────────────────────────────────────────
 
-export function signAccessToken(user: Pick<User, 'id' | 'role' | 'refreshTokenVersion'>): string {
+export function signAccessToken(user: Pick<User, 'id' | 'role' | 'refreshTokenVersion' | 'schoolId'>): string {
   const payload: AccessTokenPayload = {
     sub: user.id,
     role: user.role,
     version: user.refreshTokenVersion,
+    schoolId: user.schoolId || undefined,
   }
   return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
     expiresIn: env.JWT_ACCESS_EXPIRY as string,
   } as jwt.SignOptions)
 }
 
-export function signRefreshToken(user: Pick<User, 'id' | 'refreshTokenVersion'>): string {
+export function signRefreshToken(user: Pick<User, 'id' | 'refreshTokenVersion' | 'schoolId'>): string {
   const payload: RefreshTokenPayload = {
     sub: user.id,
     version: user.refreshTokenVersion,
+    schoolId: user.schoolId || undefined,
   }
   return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
     expiresIn: env.JWT_REFRESH_EXPIRY as string,
@@ -64,21 +68,30 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
  * Validates credentials and returns the user if valid.
  * Throws UnauthorizedError for any invalid credential.
  */
-export async function validateCredentials(username: string, password: string): Promise<User> {
+export async function validateCredentials(loginId: string, password: string, schoolId?: string): Promise<User> {
   let user: User | null
 
   try {
     user = await prisma.user.findFirst({
       where: {
-        OR: [{ username }, { email: username }],
+        OR: [{ username: loginId }, { phone: loginId }],
       },
     })
   } catch {
     // Log the real error server-side but never expose it to the client
-    throw new UnauthorizedError('Invalid username or password')
+    throw new UnauthorizedError('Invalid login ID or password')
   }
 
-  if (!user) throw new UnauthorizedError('Invalid username or password')
+  if (!user) throw new UnauthorizedError('Invalid login ID or password')
+
+  if (user.role !== 'SUPER_ADMIN') {
+    if (!schoolId) {
+      throw new UnauthorizedError('School context is required for this user')
+    }
+    if (user.schoolId !== schoolId) {
+      throw new UnauthorizedError('Invalid login ID or password')
+    }
+  }
 
   if (user.accountStatus !== 'ACTIVE') {
     throw new ForbiddenError(
@@ -116,7 +129,7 @@ export async function validateCredentials(username: string, password: string): P
       )
     }
 
-    throw new UnauthorizedError('Invalid username or password')
+    throw new UnauthorizedError('Invalid login ID or password')
   }
 
   // Reset failed attempts on success if necessary

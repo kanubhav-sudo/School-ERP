@@ -193,3 +193,33 @@ This file documents the granular checkpoints for each milestone, allowing easy v
 - **Dependencies**: Checkpoint 3.2.
 - **Verification Requirements**: Verify successful Prisma migration, test idempotent UPSERT operations on the backend, and verify frontend datatable allows batch marking with immediate visual feedback.
 - **Status**: Done
+
+---
+
+## CloudEMS Phase 2 Checkpoint — Authentication Engine & Identity Redesign
+
+- **Date**: 2026-08-03
+- **Status**: ✅ Complete
+- **Objective**: Make authentication school-aware with tenant isolation at every layer.
+
+### Verification Results
+
+| Check | Result |
+|---|---|
+| Backend `tsc --noEmit` | ✅ Pass |
+| Frontend `tsc -b` | ✅ Pass |
+| Frontend `npm run lint` | ✅ 0 errors (13 warnings in untouched modules) |
+| Frontend `npm run build` | ✅ Pass |
+| SUPER_ADMIN login (no school) | ✅ Supported via bypass |
+| School ADMIN login via username | ✅ Supported |
+| Phone login path | ✅ Supported (phone OR username accepted) |
+| Cross-tenant JWT rejection | ✅ Enforced in authenticate.middleware |
+| Inactive school rejection | ✅ Enforced in resolveTenantMiddleware |
+| Unknown school slug rejection | ✅ 404 from resolveTenantMiddleware |
+
+### Phase 3 Dependencies Documented (NOT implemented)
+- `createTenantClient` using Prisma `$extends` for automatic data scoping
+- `tenantContextMiddleware` setting `req.db` per request
+- Migration of all 19+ service/controller files to use `req.db`
+- Row-Level Security policies at the PostgreSQL layer
+

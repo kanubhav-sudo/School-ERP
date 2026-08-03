@@ -21,6 +21,7 @@ declare global {
         sub: string
         role: string
         version: number
+        schoolId?: string
       }
     }
   }
@@ -35,6 +36,17 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
 
     const token = authHeader.split(' ')[1]
     const payload = verifyAccessToken(token)
+
+    // Tenant Isolation Check
+    if (payload.role !== 'SUPER_ADMIN') {
+      if (!req.school) {
+        throw new UnauthorizedError('School context is missing for this request')
+      }
+      if (payload.schoolId !== req.school.id) {
+        throw new UnauthorizedError('You do not have access to this school')
+      }
+    }
+
     req.user = payload
     next()
   } catch (err) {

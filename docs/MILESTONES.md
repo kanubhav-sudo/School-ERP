@@ -93,3 +93,38 @@ This document tracks all system milestones, progress, completed tasks, and depen
   - Build audit log table monitoring administrative actions.
 - **Dependencies**: Completed Milestone 4.
 - **Estimated Next Milestone**: Production Release.
+
+---
+
+## CloudEMS SaaS Migration — Phase 1: SaaS Schema Foundation
+- **Objective**: Introduce multi-tenant `School` model, extend `User` with `schoolId`, introduce `Tenant` hierarchy, restructure database to support multiple schools.
+- **Status**: ✅ Completed — 2026-08-03
+- **Progress**: 100%
+- **Completed Work**:
+  - Introduced `School`, `SchoolSettings`, `SchoolFeatures`, `Plan`, `Subscription`, `Parent`, `Notification`, `AuditLog` models in Prisma schema.
+  - Extended `User` model with `schoolId` (nullable, for SUPER_ADMIN).
+  - Created seed with Demo School (`slug: demo`), SUPER_ADMIN, and school ADMIN.
+  - Resolved all frontend TypeScript errors after schema migration.
+  - Restructured repo docs into `docs/` folder.
+
+## CloudEMS SaaS Migration — Phase 2: Authentication Engine & Identity Redesign
+- **Objective**: Upgrade authentication to be school-aware. Extend JWT with `schoolId`. Support login via phone or username. Implement `resolveTenantMiddleware`. Add `TenantContext` on frontend.
+- **Status**: ✅ Completed — 2026-08-03
+- **Progress**: 100%
+- **Completed Work**:
+  - `resolveTenantMiddleware`: Parses school slug from `X-School-Slug` header or subdomain. Rejects inactive/unknown schools. Attaches `req.school`.
+  - JWT payload extended: `schoolId` now embedded in both access and refresh tokens.
+  - `validateCredentials`: Accepts phone or username as `loginId`. Enforces `schoolId` scoping for all non-SUPER_ADMIN roles.
+  - `authenticate.middleware.ts`: Cross-tenant JWT validation — `JWT.schoolId` must match `req.school.id`.
+  - SUPER_ADMIN bypass: Platform-wide access, no `schoolId` required.
+  - Frontend `TenantContext`: Resolves school slug from subdomain or `VITE_DEFAULT_SCHOOL_SLUG`.
+  - Axios interceptor: Injects `X-School-Slug` on every request automatically.
+  - LoginForm: Field renamed to **Login ID** with correct placeholder.
+  - All 5 roles (`SUPER_ADMIN`, `ADMIN`, `TEACHER`, `STUDENT`, `PARENT`) supported in `UserRole`.
+- **Phase 3 Dependencies Documented**:
+  - `createTenantClient` (Prisma `$extends`) — deferred to Phase 3.
+  - `tenantContextMiddleware` injecting Prisma scope — deferred to Phase 3.
+  - Row-Level Security migration — deferred to Phase 3.
+  - All business module service/controller migrations — deferred to Phase 3.
+- **Remaining Work**: None for Phase 2 scope.
+- **Next Phase**: Phase 3 — Tenant Scoping & Auto-Isolated Data Access.

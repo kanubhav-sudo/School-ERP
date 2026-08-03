@@ -24,6 +24,17 @@ export function getAccessToken(): string | null {
   return accessToken
 }
 
+// School slug for tenant resolution — set once on app boot from TenantContext
+let schoolSlug: string | null = null
+
+export function setSchoolSlug(slug: string) {
+  schoolSlug = slug
+}
+
+export function getSchoolSlug(): string | null {
+  return schoolSlug
+}
+
 export const apiClient = axios.create({
   baseURL: API_BASE,
   withCredentials: true, // Required for httpOnly cookie (refresh token)
@@ -32,13 +43,17 @@ export const apiClient = axios.create({
   },
 })
 
-// Request interceptor: attach access token
+// Request interceptor: attach access token and tenant slug
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`
   }
+  if (schoolSlug) {
+    config.headers['X-School-Slug'] = schoolSlug
+  }
   return config
 })
+
 
 // Response interceptor: handle 401 by refreshing the token
 let isRefreshing = false

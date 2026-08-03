@@ -33,6 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const restore = async () => {
       try {
+        // Axios interceptor already injects X-School-Slug automatically.
+        // Using the base axios instance here because the session refresh
+        // does not require an access token (it uses the httpOnly cookie).
         const { data } = await axios.post('/api/v1/auth/refresh', {}, { withCredentials: true })
         setAccessToken(data.data.accessToken)
         setUser(data.data.user)

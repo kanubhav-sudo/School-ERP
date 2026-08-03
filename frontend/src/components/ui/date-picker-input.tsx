@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * DatePickerInput — production-grade date picker for School ERP
  *

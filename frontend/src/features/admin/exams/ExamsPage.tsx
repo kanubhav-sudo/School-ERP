@@ -117,19 +117,17 @@ export function ExamsPage() {
 
   // Sync scheduleRows when currentExam changes
   useEffect(() => {
-    if (currentExam?.schedules) {
-      setScheduleRows(
-        currentExam.schedules.map((s: any) => ({
+    const rows = currentExam?.schedules
+      ? currentExam.schedules.map((s: any) => ({
           subjectId: s.subjectId,
           examDate: s.examDate ? s.examDate.slice(0, 10) : '',
           startTime: s.startTime || '09:00 AM',
           endTime: s.endTime || '12:00 PM',
           room: s.room || 'Main Hall',
         }))
-      )
-    } else {
-      setScheduleRows([])
-    }
+      : []
+    const t = setTimeout(() => setScheduleRows(rows), 0)
+    return () => clearTimeout(t)
   }, [currentExam?.id, currentExam?.schedules?.length])
 
   // Admit Card Students Query

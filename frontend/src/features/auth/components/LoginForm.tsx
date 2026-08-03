@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  loginId: z.string().min(1, 'Login ID is required'),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -36,7 +36,7 @@ export function LoginForm() {
       // AuthContext and GuestRoute will handle redirect automatically on success
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid username or password. Please try again.')
+      setError(err.response?.data?.error || 'Invalid credentials. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -45,7 +45,7 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-xl shadow-lg border border-border">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-primary">School ERP</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-primary">CloudEMS</h1>
         <p className="text-muted-foreground text-sm">
           Enter your credentials to access your portal
         </p>
@@ -59,15 +59,15 @@ export function LoginForm() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="username">Username or Email</Label>
+          <Label htmlFor="loginId">Login ID</Label>
           <Input
-            id="username"
+            id="loginId"
             type="text"
-            placeholder="admin"
-            {...register('username')}
+            placeholder="Enter phone number or username"
+            {...register('loginId')}
             disabled={isLoading}
           />
-          {errors.username && <p className="text-sm text-destructive">{errors.username.message}</p>}
+          {errors.loginId && <p className="text-sm text-destructive">{errors.loginId.message}</p>}
         </div>
 
         <div className="space-y-2">

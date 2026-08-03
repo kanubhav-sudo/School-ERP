@@ -42,8 +42,8 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
       return
     }
 
-    const { username, password } = parsed.data
-    const user = await validateCredentials(username, password)
+    const { loginId, password } = parsed.data
+    const user = await validateCredentials(loginId, password, req.school?.id)
 
     await recordLogin(user.id)
 
@@ -61,6 +61,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
           username: user.username,
           email: user.email,
           role: user.role,
+          schoolId: user.schoolId ?? null,
           mustChangePassword: user.mustChangePassword,
         },
       },
@@ -102,6 +103,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
           username: updatedUser.username,
           email: updatedUser.email,
           role: updatedUser.role,
+          schoolId: updatedUser.schoolId ?? null,
           mustChangePassword: updatedUser.mustChangePassword,
         },
       },
@@ -155,6 +157,7 @@ export async function me(req: Request, res: Response, next: NextFunction): Promi
         username: user.username,
         email: user.email,
         role: user.role,
+        schoolId: user.schoolId ?? null,
         mustChangePassword: user.mustChangePassword,
         lastLoginAt: user.lastLoginAt,
       },

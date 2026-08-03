@@ -67,7 +67,10 @@ export function PeriodMasterPage() {
   useEffect(() => {
     if (sessions && !selectedSessionId) {
       const active = sessions.find((s) => s.isActive) || sessions[0]
-      if (active) setSelectedSessionId(active.id)
+      if (active) {
+        const t = setTimeout(() => setSelectedSessionId(active.id), 0)
+        return () => clearTimeout(t)
+      }
     }
   }, [sessions, selectedSessionId])
 
@@ -106,10 +109,14 @@ export function PeriodMasterPage() {
     }
   }, [existingPeriods, reset])
 
-  // Clear success/error states when session changes
+  // Clear success/error states when session changes using a transition to avoid
+  // synchronous setState directly in the effect body.
   useEffect(() => {
-    setSaveSuccess(false)
-    setServerError(null)
+    const t = setTimeout(() => {
+      setSaveSuccess(false)
+      setServerError(null)
+    }, 0)
+    return () => clearTimeout(t)
   }, [selectedSessionId])
 
 

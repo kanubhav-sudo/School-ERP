@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { TenantProvider, useTenant } from './context/TenantContext'
+import { useEffect } from 'react'
+import { setSchoolSlug } from './lib/axios'
 
 // Pages & Layouts
 import { LoginPage } from './features/auth/pages/LoginPage'
@@ -61,6 +64,18 @@ const queryClient = new QueryClient({
   },
 })
 
+/**
+ * Syncs the resolved school slug from TenantContext into the axios interceptor.
+ * Runs once on mount — slug is stable for the lifetime of the page.
+ */
+function TenantSlugSyncer() {
+  const { schoolSlug } = useTenant()
+  useEffect(() => {
+    setSchoolSlug(schoolSlug)
+  }, [schoolSlug])
+  return null
+}
+
 function RootRedirect() {
   const { user, isAuthenticated, isLoading } = useAuth()
   if (isLoading) return null // Let the AuthLoader inside ProtectedRoute handle loading UX
@@ -73,7 +88,9 @@ function RootRedirect() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <TenantProvider>
+        <TenantSlugSyncer />
+        <AuthProvider>
         <BrowserRouter>
           <Routes>
             {/* Base Redirect */}
@@ -181,7 +198,8 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </TenantProvider>
     </QueryClientProvider>
   )
 }
