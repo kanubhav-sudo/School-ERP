@@ -69,6 +69,10 @@ router.use('/teacher-portal', teacherPortalRoutes)
 import studentPortalRoutes from './student-portal.routes'
 router.use('/student-portal', studentPortalRoutes)
 
+// Document Engine Routes (Phase 5)
+import documentEngineRoutes from './document-engine.routes'
+router.use('/documents', documentEngineRoutes)
+
 // Admin Dashboard
 router.use('/admin-dashboard', adminDashboardRoutes)
 

@@ -8,6 +8,7 @@
 
 import { NotFoundError, ConflictError } from '../core/errors'
 import { PublishStatus, Prisma } from '../generated/prisma'
+import { DocumentEngineService } from './document-engine/document-engine.service'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -905,11 +906,15 @@ export class ExamService {
       return { isReleased: false, holdReason }
     }
 
-    const template = await ExamService.getExamTemplate(db, 'ADMIT_CARD')
+    const documentPayload = await DocumentEngineService.compileDocumentPayload(db, {
+      documentType: 'ADMIT_CARD',
+      studentId: student.id,
+      examId: exam.id,
+    })
 
     return {
       isReleased: true,
-      template,
+      documentPayload,
       student: {
         name: `${student.firstName} ${student.lastName}`,
         admissionNumber: student.admissionNumber,
@@ -981,13 +986,15 @@ export class ExamService {
       return { isReleased: false, holdReason }
     }
 
-    // Fetch student marks
-    const marksData = await ExamService.getStudentMarks(db, exam.id, student.id)
-    const template = await ExamService.getExamTemplate(db, 'RESULT')
+    const documentPayload = await DocumentEngineService.compileDocumentPayload(db, {
+      documentType: 'REPORT_CARD',
+      studentId: student.id,
+      examId: exam.id,
+    })
 
     return {
       isReleased: true,
-      template,
+      documentPayload,
       student: {
         name: `${student.firstName} ${student.lastName}`,
         admissionNumber: student.admissionNumber,
@@ -997,10 +1004,10 @@ export class ExamService {
         sessionName: student.session?.name || '',
       },
       examName: exam.name,
-      subjects: marksData.subjects,
-      totalMaxMarks: marksData.totalMaxMarks,
-      totalObtainedMarks: marksData.totalObtainedMarks,
-      overallPercentage: marksData.overallPercentage,
+      subjects: documentPayload.marksSummary?.subjects || [],
+      totalMaxMarks: documentPayload.marksSummary?.totalMaxMarks || 0,
+      totalObtainedMarks: documentPayload.marksSummary?.totalObtainedMarks || 0,
+      overallPercentage: documentPayload.marksSummary?.overallPercentage || 0,
     }
   }
 }

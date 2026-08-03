@@ -158,6 +158,41 @@ enum NotificationType {
   CIRCULAR
 }
 
+// ─── Academic Document Engine Enums (Phase 5) ─────────────
+
+enum DocumentType {
+  ADMIT_CARD
+  REPORT_CARD
+  FEE_RECEIPT
+  TRANSFER_CERTIFICATE
+  BONAFIDE_CERTIFICATE
+  CHARACTER_CERTIFICATE
+  STUDENT_ID_CARD
+  TEACHER_ID_CARD
+  SALARY_SLIP
+  EXPERIENCE_CERTIFICATE
+  LEAVING_CERTIFICATE
+  MIGRATION_CERTIFICATE
+}
+
+enum TemplatePreset {
+  CBSE
+  ICSE
+  STATE_BOARD
+  CUSTOM
+}
+
+enum GeneratedDocumentStatus {
+  DRAFT
+  GENERATED
+  PUBLISHED
+  REVOKED
+  ARCHIVED
+  QUEUED
+  PROCESSING
+  FAILED
+}
+
 // ─── Platform & School Management (CloudEMS SaaS v2) ──────────
 
 model School {
@@ -223,6 +258,8 @@ model School {
   examTemplates       ExamTemplate[]
   homework            Homework[]
   homeworkSubmissions HomeworkSubmission[]
+  academicDocumentTemplates AcademicDocumentTemplate[]
+  generatedDocuments  GeneratedDocument[]
 
   @@index([slug])
   @@index([customDomain])
@@ -618,11 +655,12 @@ model Teacher {
   createdAt        DateTime            @default(now()) @map("created_at")
   updatedAt        DateTime            @updatedAt @map("updated_at")
 
-  user          User?               @relation(fields: [userId], references: [id])
-  assignments   TeacherAssignment[]
-  timetables    Timetable[]
-  announcements Announcement[]
-  homework      Homework[]
+  user               User?               @relation(fields: [userId], references: [id])
+  assignments        TeacherAssignment[]
+  timetables         Timetable[]
+  announcements      Announcement[]
+  homework           Homework[]
+  generatedDocuments GeneratedDocument[]
 
   @@unique([schoolId, employeeId])
   @@unique([schoolId, email])
@@ -735,6 +773,7 @@ model Student {
   examMarks           ExamMark[]
   homeworkSubmissions HomeworkSubmission[]
   parents             StudentParent[]
+  generatedDocuments  GeneratedDocument[]
 
   @@unique([schoolId, admissionNumber])
   @@index([schoolId])
@@ -1142,7 +1181,8 @@ model Exam {
   schedules   ExamSchedule[]
   reportCards ReportCard[]
   admitCards  AdmitCard[]
-  marks       ExamMark[]
+  marks              ExamMark[]
+  generatedDocuments GeneratedDocument[]
 
   @@unique([schoolId, sessionId, classId, sectionId, name])
   @@index([schoolId])
@@ -1282,6 +1322,62 @@ model ExamTemplate {
   @@unique([schoolId, type])
   @@index([schoolId])
   @@map("exam_templates")
+}
+
+// ─── Academic Document Engine Models (Phase 5) ────────────
+
+model AcademicDocumentTemplate {
+  id            String         @id @default(uuid()) @db.Uuid
+  schoolId      String         @map("school_id") @db.Uuid
+  school        School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  documentType  DocumentType   @map("document_type")
+  preset        TemplatePreset @default(CBSE)
+  version       Int            @default(1)
+  isActive      Boolean        @default(true) @map("is_active")
+  title         String         @default("Official Document Template")
+  description   String?
+  configuration Json           @map("configuration")
+  createdBy     String?        @map("created_by")
+
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  generatedDocuments GeneratedDocument[]
+
+  @@unique([schoolId, documentType, version])
+  @@index([schoolId, documentType])
+  @@map("academic_document_templates")
+}
+
+model GeneratedDocument {
+  id              String                   @id @default(uuid()) @db.Uuid
+  schoolId        String                   @map("school_id") @db.Uuid
+  school          School                   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  documentType    DocumentType             @map("document_type")
+  templateId      String                   @map("template_id") @db.Uuid
+  template        AcademicDocumentTemplate @relation(fields: [templateId], references: [id])
+  templateVersion Int                      @map("template_version")
+  verificationId  String                   @unique @map("verification_id")
+  studentId       String?                  @map("student_id") @db.Uuid
+  student         Student?                 @relation(fields: [studentId], references: [id])
+  teacherId       String?                  @map("teacher_id") @db.Uuid
+  teacher         Teacher?                 @relation(fields: [teacherId], references: [id])
+  examId          String?                  @map("exam_id") @db.Uuid
+  exam            Exam?                    @relation(fields: [examId], references: [id])
+  title           String
+  generatedBy     String?                  @map("generated_by")
+  generatedAt     DateTime                 @default(now()) @map("generated_at")
+  status          GeneratedDocumentStatus  @default(GENERATED)
+  checksum        String
+  metadata        Json
+  futurePdfUrl    String?                  @map("future_pdf_url")
+
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  @@index([schoolId])
+  @@index([verificationId])
+  @@map("generated_documents")
 }
 
 // ─── Homework & Assignments ───────────────────────────────────

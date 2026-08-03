@@ -38,6 +38,11 @@ import {
 import { AdmitCardModal } from './components/AdmitCardModal'
 import { ResultCardModal } from './components/ResultCardModal'
 import { ExamTemplateModal } from './components/ExamTemplateModal'
+import { AdmitCardRenderer } from '../../document-engine/components/AdmitCardRenderer'
+import { ReportCardRenderer } from '../../document-engine/components/ReportCardRenderer'
+import { documentEngineApi } from '../../document-engine/document-engine.api'
+import type { CompiledDocumentPayload } from '../../document-engine/document-engine.types'
+import { Link } from 'react-router-dom'
 
 function getDayFromDateString(dateStr: string): string {
   if (!dateStr) return ''
@@ -73,7 +78,7 @@ export function ExamsPage() {
 
   // Modal States
   const [templateModalOpen, setTemplateModalOpen] = useState(false)
-  const [templateType, setTemplateType] = useState<'ADMIT_CARD' | 'RESULT'>('ADMIT_CARD')
+  const templateType: 'ADMIT_CARD' | 'RESULT' = mainModule === 'ADMIT_CARD' ? 'ADMIT_CARD' : 'RESULT'
 
   const [admitCardModalOpen, setAdmitCardModalOpen] = useState(false)
   const [selectedAdmitCardStudent, setSelectedAdmitCardStudent] = useState<any>(null)
@@ -81,6 +86,15 @@ export function ExamsPage() {
   const [resultCardModalOpen, setResultCardModalOpen] = useState(false)
   const [selectedResultStudent, setSelectedResultStudent] = useState<any>(null)
   const [selectedResultMarksData, setSelectedResultMarksData] = useState<any>(null)
+
+  // Document Engine — Powered Modal States
+  const [engineAdmitOpen, setEngineAdmitOpen] = useState(false)
+  const [engineAdmitPayload, setEngineAdmitPayload] = useState<CompiledDocumentPayload | null>(null)
+  const [engineAdmitLoading, setEngineAdmitLoading] = useState(false)
+
+  const [engineResultOpen, setEngineResultOpen] = useState(false)
+  const [engineResultPayload, setEngineResultPayload] = useState<CompiledDocumentPayload | null>(null)
+  const [engineResultLoading, setEngineResultLoading] = useState(false)
 
   // Fetch Master Data
   const { data: sessions = [] } = useQuery({
@@ -219,19 +233,55 @@ export function ExamsPage() {
     setScheduleRows(scheduleRows.filter((_, idx) => idx !== index))
   }
 
-  // Handle open student admit card preview
-  const handleViewAdmitCard = (student: any) => {
-    setSelectedAdmitCardStudent(student)
-    setAdmitCardModalOpen(true)
+  // Handle open student admit card preview — Document Engine powered
+  const handleViewAdmitCard = async (student: any) => {
+    if (!currentExam?.id) {
+      // Fallback to legacy modal if no exam exists
+      setSelectedAdmitCardStudent(student)
+      setAdmitCardModalOpen(true)
+      return
+    }
+    setEngineAdmitOpen(true)
+    setEngineAdmitLoading(true)
+    setEngineAdmitPayload(null)
+    try {
+      const payload = await documentEngineApi.getLivePreview('ADMIT_CARD', {
+        studentId: student.studentId,
+        examId: currentExam.id,
+      })
+      setEngineAdmitPayload(payload)
+    } catch {
+      // Fallback to legacy modal on error
+      setEngineAdmitOpen(false)
+      setSelectedAdmitCardStudent(student)
+      setAdmitCardModalOpen(true)
+    } finally {
+      setEngineAdmitLoading(false)
+    }
   }
 
-  // Handle open student result card preview
+  // Handle open student result card preview — Document Engine powered
   const handleViewResult = async (student: any) => {
     if (!currentExam?.id) return
-    const marksData = await fetchStudentMarks(currentExam.id, student.studentId)
-    setSelectedResultStudent(student)
-    setSelectedResultMarksData(marksData)
-    setResultCardModalOpen(true)
+    setEngineResultOpen(true)
+    setEngineResultLoading(true)
+    setEngineResultPayload(null)
+    try {
+      const payload = await documentEngineApi.getLivePreview('REPORT_CARD', {
+        studentId: student.studentId,
+        examId: currentExam.id,
+      })
+      setEngineResultPayload(payload)
+    } catch {
+      // Fallback to legacy result card
+      setEngineResultOpen(false)
+      const marksData = await fetchStudentMarks(currentExam.id, student.studentId)
+      setSelectedResultStudent(student)
+      setSelectedResultMarksData(marksData)
+      setResultCardModalOpen(true)
+    } finally {
+      setEngineResultLoading(false)
+    }
   }
 
   return (
@@ -244,17 +294,13 @@ export function ExamsPage() {
             Common examination workflow across Admin, Teacher, and Student portals
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setTemplateType(mainModule)
-            setTemplateModalOpen(true)
-          }}
+        <Link
+          to="/admin/documents"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-muted transition-colors text-muted-foreground"
         >
-          <Settings className="h-4 w-4 mr-1.5" />
-          Edit {mainModule === 'ADMIT_CARD' ? 'Admit Card' : 'Result'} Template
-        </Button>
+          <Settings className="h-4 w-4" />
+          Document Engine Settings
+        </Link>
       </div>
 
       {/* COMMON ENTRY: Academic Session → Class (NO Section filter) */}
@@ -668,7 +714,49 @@ export function ExamsPage() {
         </div>
       )}
 
-      {/* Admit Card Modal */}
+      {/* ── Document Engine Admit Card Modal ──────────────────── */}
+      {engineAdmitOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto py-8 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[850px]">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="font-semibold text-gray-900">Admit Card — Document Engine</h2>
+              <button onClick={() => { setEngineAdmitOpen(false); setEngineAdmitPayload(null) }} className="text-gray-400 hover:text-gray-700 text-2xl leading-none cursor-pointer">×</button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[80vh]">
+              {engineAdmitLoading && (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Compiling Admit Card…</span>
+                </div>
+              )}
+              {engineAdmitPayload && <AdmitCardRenderer payload={engineAdmitPayload} showPrintButton={true} />}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Document Engine Report Card Modal ──────────────────── */}
+      {engineResultOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto py-8 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[850px]">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="font-semibold text-gray-900">Report Card — Document Engine</h2>
+              <button onClick={() => { setEngineResultOpen(false); setEngineResultPayload(null) }} className="text-gray-400 hover:text-gray-700 text-2xl leading-none cursor-pointer">×</button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[80vh]">
+              {engineResultLoading && (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Compiling Report Card…</span>
+                </div>
+              )}
+              {engineResultPayload && <ReportCardRenderer payload={engineResultPayload} showPrintButton={true} />}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Legacy Fallback Admit Card Modal (kept for backward compat) */}
       {selectedAdmitCardStudent && (
         <AdmitCardModal
           open={admitCardModalOpen}
@@ -686,7 +774,7 @@ export function ExamsPage() {
         />
       )}
 
-      {/* Result Card Modal */}
+      {/* Legacy Fallback Result Card Modal (kept for backward compat) */}
       {selectedResultStudent && selectedResultMarksData && (
         <ResultCardModal
           open={resultCardModalOpen}

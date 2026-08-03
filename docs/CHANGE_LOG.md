@@ -5,7 +5,79 @@ All notable changes to the School ERP project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] — 2026-08-04 — CloudEMS Phase 5: Academic Document Engine
+
+### Added
+
+#### Document Generation Engine (Backend)
+
+- **4-Layer Architecture**: Data Provider → Calculation Engine → Template Manager → Verification
+  - `data-provider.service.ts`: Collects all raw context (student, school, exam, marks, attendance) from DB
+  - `calculation-engine.service.ts`: Computes grades (A1–E), subject totals, percentage, result status (PASS/COMPARTMENT/FAIL), attendance percentage
+  - `document-engine.service.ts`: Orchestrates the full pipeline — template resolution, payload compilation, checksum generation, QR URL construction, document persistence
+  - `presets.ts`: CBSE, ICSE, STATE_BOARD, CUSTOM default template configurations
+
+- **Versioned Template System**: Every template edit creates version n+1 without overwriting historical versions. Ensures old documents always render against the template version they were generated with.
+
+- **SHA-256 Integrity**: Each document gets a cryptographic `checksum` field locking student ID, school ID, document type, issue date, and marks summary. Tampering detected instantly on public verification.
+
+- **QR Verification ID**: Format `DOC-YYYY-TYP-XXXXXXXX` — scannable, globally unique, publicly verifiable without any authentication.
+
+#### Prisma Schema
+
+- `DocumentType` enum: ADMIT_CARD, REPORT_CARD, FEE_RECEIPT, TRANSFER_CERTIFICATE, BONAFIDE_CERTIFICATE, CHARACTER_CERTIFICATE, STUDENT_ID_CARD, TEACHER_ID_CARD, SALARY_SLIP, EXPERIENCE_CERTIFICATE, LEAVING_CERTIFICATE, MIGRATION_CERTIFICATE
+- `TemplatePreset` enum: CBSE, ICSE, STATE_BOARD, CUSTOM
+- `GeneratedDocumentStatus` enum: GENERATED, PRINTED, REVOKED
+- `AcademicDocumentTemplate` model: versioned, per-document-type JSON configuration store with `isActive` flag
+- `GeneratedDocument` model: official document record with verificationId, checksum, templateId, templateVersion, metadata (frozen payload snapshot), status
+
+#### API Routes (`/api/v1/documents/*`)
+
+- `GET  /documents/templates/:documentType` — Fetch active template config
+- `POST /documents/templates/:documentType` — Save new template version (v+1)
+- `POST /documents/templates/:documentType/reset` — Reset to preset defaults (new version)
+- `GET  /documents/preview/:documentType` — Compile live document preview payload
+- `POST /documents/generate` — Generate official document with verificationId + checksum
+- `GET  /documents/public/verify/:verificationId` — Public QR verification (no auth, privacy-preserved)
+- `POST /documents/bulk-generate/init` — Bulk generation architecture stub (Phase 6 queue)
+
+#### Frontend — Document Engine Components
+
+- `document-engine.types.ts`: Full frontend type definitions matching backend payload shapes
+- `document-engine.api.ts`: Axios API client for all document engine endpoints
+- `DocumentEngine.tsx`: Universal A4 paper container with watermark overlay, QR footer, print media CSS, `@page` size directive
+- `AdmitCardRenderer.tsx`: CBSE-style high-fidelity admit card with exam schedule table, student info grid, signature blocks, configurable colors/fonts
+- `ReportCardRenderer.tsx`: Academic report card with subject-wise marks table, grade legend, co-scholastic section, attendance summary, overall result badge, signature blocks
+- `BlockBasedTemplateEditor.tsx`: Full visual template editor (6 tabs: Presets, Branding, Blocks, Watermark, Signatures, Instructions) with real-time live preview pane
+
+#### Frontend — Pages & Routes
+
+- `DocumentEnginePage.tsx` (`/admin/documents`): Admin hub for template management — lists document types, launches editor, triggers live preview
+- `PublicVerifyPage.tsx` (`/verify/:verificationId`): Public QR landing page — no authentication required, privacy-preserved, shows school name, student name (no contact details), result status, SHA-256 checksum
+
+#### Exam Module Redesign
+
+- `ExamsPage.tsx`: Replaced hardcoded `AdmitCardModal` and `ResultCardModal` with Document Engine renderers
+  - `handleViewAdmitCard()`: Now calls `/documents/preview/ADMIT_CARD` per student + exam, renders `AdmitCardRenderer`
+  - `handleViewResult()`: Now calls `/documents/preview/REPORT_CARD` per student + exam, renders `ReportCardRenderer`
+  - Graceful fallback to legacy modals if engine returns error
+  - "Document Engine Settings" link replaces old template settings button
+- Legacy `AdmitCardModal` and `ResultCardModal` kept as fallback (not removed)
+
+#### Admin Sidebar
+
+- "📄 Document Engine" nav link added under Operations → Exams & Results
+
+### Architecture Notes
+
+- **Bulk Generation**: API, data models, status flow, and interfaces are defined. Full async queue processing (worker-based class-level batch) deferred to Phase 6.
+- **Template Versioning**: Historical documents always render against the template version they were issued with, ensuring legal reproducibility.
+- **Public Verification Privacy**: The public verify endpoint exposes only: school name/logo, student name, admission number, class, session, document type, result status (no marks breakdown), issue date, checksum. Phone numbers, detailed grades, and personal data are never exposed publicly.
+
+---
+
 ## [4.0.0] — 2026-08-04 — CloudEMS Phase 4: Platform Administration Layer
+
 
 ### Added
 

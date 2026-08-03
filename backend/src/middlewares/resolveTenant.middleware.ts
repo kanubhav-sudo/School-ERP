@@ -20,7 +20,7 @@ export async function resolveTenantMiddleware(
   try {
     // 1. Skip tenant resolution for Super Admin routes.
     // Platform routes and super-admin auth routes bypass the tenant check.
-    const PLATFORM_PATHS = ['/super-admin', '/platform', '/auth/super-admin']
+    const PLATFORM_PATHS = ['/super-admin', '/platform', '/auth/super-admin', '/documents/public/verify']
     const shouldSkip = PLATFORM_PATHS.some(
       (prefix) => req.path.startsWith(prefix) || req.originalUrl.includes(prefix)
     )

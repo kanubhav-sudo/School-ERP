@@ -49,6 +49,8 @@ import { FeePlansPage } from './features/admin/fee-plans/FeePlansPage'
 import { FeeRecordsPage } from './features/admin/fee-records/FeeRecordsPage'
 import { AdminHomeworkPage } from './features/admin/homework/AdminHomeworkPage'
 import { ExamsPage } from './features/admin/exams/ExamsPage'
+import { DocumentEnginePage } from './features/admin/document-engine/DocumentEnginePage'
+import { PublicVerifyPage } from './pages/PublicVerifyPage'
 // Route Guards
 import { GuestRoute, ProtectedRoute, RoleRoute, getDashboardPath } from './routes/guards'
 
@@ -145,6 +147,7 @@ function App() {
               <Route path="finance/fee-records" element={<FeeRecordsPage />} />
               <Route path="homework" element={<AdminHomeworkPage />} />
               <Route path="exams" element={<ExamsPage />} />
+              <Route path="documents" element={<DocumentEnginePage />} />
             </Route>
 
             {/* Protected Teacher Routes */}
@@ -192,6 +195,9 @@ function App() {
               <Route path="notices" element={<StudentNoticesPage />} />
               <Route path="announcements" element={<StudentAnnouncementsPage />} />
             </Route>
+
+            {/* Public Document Verification (No Auth Required) */}
+            <Route path="/verify/:verificationId" element={<PublicVerifyPage />} />
 
             {/* Error Pages */}
             <Route path="/unauthorized" element={<Unauthorized />} />
