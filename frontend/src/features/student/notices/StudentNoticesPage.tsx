@@ -12,7 +12,7 @@ export function StudentNoticesPage() {
     queryFn: () => studentPortalApi.getNotices({ page, limit: 20 }),
   })
 
-  const notices = data?.notices ?? []
+  const notices: any[] = data?.notices ?? []
   const pagination = data?.pagination
 
   if (isLoading) return <div>Loading notices...</div>
@@ -27,7 +27,7 @@ export function StudentNoticesPage() {
             No notices available.
           </div>
         ) : (
-          notices.map((notice: { id: string; title: string; publishedAt: string; content: string }) => (
+          notices.map((notice: any) => (
             <div key={notice.id} className="p-6 bg-card rounded-xl border shadow-sm">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">

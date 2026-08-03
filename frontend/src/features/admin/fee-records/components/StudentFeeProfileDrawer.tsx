@@ -105,8 +105,8 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
 
   const summary = data?.summary
   const student = data?.student
-  const payments = (data?.payments || []) as Array<{ id: string; receiptNumber: string; amount: number; paymentDate: string; paymentMode: string }>
-  const timeline = (data?.timeline || []) as Array<{ month: number; label: string; status: string; netAmount: number; paidAmount: number; balanceAmount: number }>
+  const payments = (data?.payments || []) as Array<{ id: string; receiptNumber: string; amount: number; paymentDate?: string; paymentMode: string; remarks?: string; createdAt?: string }>
+  const timeline = (data?.timeline || []) as Array<{ month: number; label: string; status: string; netAmount: number; paidAmount: number; balanceAmount: number; displayText?: string }>
 
   return (
     <>
@@ -262,7 +262,7 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
                           </div>
                         </div>
                         <div className="text-right text-xs text-muted-foreground">
-                          {format(new Date(p.paymentDate || p.createdAt), 'dd MMM yyyy')}
+                          {format(new Date(p.paymentDate || p.createdAt || new Date()), 'dd MMM yyyy')}
                         </div>
                       </div>
                     ))}
@@ -345,7 +345,7 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
                 <Label htmlFor="pay-mode" className="text-xs font-semibold">
                   Payment Mode
                 </Label>
-                <Select value={payMode} onValueChange={(v: 'CASH' | 'CHEQUE' | 'BANK_TRANSFER' | 'ONLINE' | 'UPI' | 'CARD') => setPayMode(v)}>
+                <Select value={payMode} onValueChange={(v) => setPayMode(v as any)}>
                   <SelectTrigger id="pay-mode">
                     <SelectValue />
                   </SelectTrigger>

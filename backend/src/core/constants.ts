@@ -10,9 +10,11 @@
 
 // ─── User Roles ──────────────────────────────────────────────
 export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
   ADMIN: 'ADMIN',
   TEACHER: 'TEACHER',
   STUDENT: 'STUDENT',
+  PARENT: 'PARENT',
 } as const
 
 export type Role = (typeof ROLES)[keyof typeof ROLES]
@@ -63,6 +65,7 @@ export const NOTICE_TARGET = {
   ADMIN: 'ADMIN',
   TEACHER: 'TEACHER',
   STUDENT: 'STUDENT',
+  PARENT: 'PARENT',
 } as const
 
 export type NoticeTarget = (typeof NOTICE_TARGET)[keyof typeof NOTICE_TARGET]

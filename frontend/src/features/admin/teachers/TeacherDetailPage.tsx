@@ -177,7 +177,7 @@ function EditAssignmentForm({
 
   const { data: allSections } = useQuery<SectionData[]>({
     queryKey: ['sections'],
-    queryFn: fetchSections,
+    queryFn: () => fetchSections(),
   })
 
   const { data: allSubjects } = useQuery<SubjectData[]>({
@@ -341,7 +341,7 @@ function AddAssignmentForm({ teacherId, onSuccess }: { teacherId: string; onSucc
 
   const { data: allSections } = useQuery<SectionData[]>({
     queryKey: ['sections'],
-    queryFn: fetchSections,
+    queryFn: () => fetchSections(),
   })
 
   const { data: allSubjects } = useQuery<SubjectData[]>({

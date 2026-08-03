@@ -90,7 +90,7 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
   })
   const { data: sections = [] } = useQuery({
     queryKey: ['sections'],
-    queryFn: fetchSections,
+    queryFn: () => fetchSections(),
   })
 
   // Fetch all fee plans (no pagination needed for dropdown)

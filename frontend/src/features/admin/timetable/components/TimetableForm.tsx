@@ -236,8 +236,8 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
               <div className="space-y-2">
                 <label className="text-sm font-medium">Period</label>
                 <Select
-                  value={watch('periodNumber')?.toString() || ''}
-                  onValueChange={(val) => setValue('periodNumber', parseInt(val))}
+                  value={watch('periodNumber')?.toString() ?? ''}
+                  onValueChange={(val) => setValue('periodNumber', parseInt(val as string))}
                 >
                   <SelectTrigger className={errors.periodNumber ? 'border-destructive' : ''}>
                     <SelectValue placeholder={sortedPeriods.length === 0 ? 'No periods configured' : 'Select Period'}>

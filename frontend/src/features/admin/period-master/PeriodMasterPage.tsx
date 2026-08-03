@@ -67,7 +67,6 @@ export function PeriodMasterPage() {
   useEffect(() => {
     if (sessions && !selectedSessionId) {
       const active = sessions.find((s) => s.isActive) || sessions[0]
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (active) setSelectedSessionId(active.id)
     }
   }, [sessions, selectedSessionId])
@@ -108,7 +107,6 @@ export function PeriodMasterPage() {
   }, [existingPeriods, reset])
 
   // Clear success/error states when session changes
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     setSaveSuccess(false)
     setServerError(null)

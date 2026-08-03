@@ -24,7 +24,7 @@ export function StudentAnnouncementsPage() {
     queryFn: () => studentPortalApi.getAnnouncements({ page, limit: 20 }),
   })
 
-  const announcements = (data?.announcements ?? []) as AnnouncementItem[]
+  const announcements = (data?.announcements ?? []) as unknown as AnnouncementItem[]
   const pagination = data?.pagination
 
   if (isLoading) return <div>Loading announcements...</div>

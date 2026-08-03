@@ -19,7 +19,7 @@ export function StudentExamsPage() {
   const [admitCardModalOpen, setAdmitCardModalOpen] = useState(false)
   const [resultCardModalOpen, setResultCardModalOpen] = useState(false)
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['student-exams'],
     queryFn: studentPortalApi.getExams,
     staleTime: 0,

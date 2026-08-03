@@ -19,7 +19,7 @@ export function SectionsPage() {
 
   const { data: sections = [], isLoading } = useQuery({
     queryKey: ['sections'],
-    queryFn: fetchSections,
+    queryFn: () => fetchSections(),
   })
 
   const deleteMutation = useMutation({

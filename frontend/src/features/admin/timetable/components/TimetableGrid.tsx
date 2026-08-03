@@ -61,7 +61,7 @@ export function TimetableGrid({ entries, periodMasters = [], onEdit, onDelete }:
                       <div className="flex flex-col h-full bg-background rounded-lg border border-border p-3 shadow-sm relative">
                         <div className="font-semibold text-primary">{entry.subject.name}</div>
                         <div className="text-xs text-muted-foreground mt-1">
-                          {/* @ts-expect-error - Handle both Admin and Teacher entry types */}
+                          {/*  - Handle both Admin and Teacher entry types */}
                           {entry.teacher ? (
                             <>{entry.teacher.firstName} {entry.teacher.lastName}</>
                           ) : (

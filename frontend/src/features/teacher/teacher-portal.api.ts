@@ -106,6 +106,7 @@ export interface TimetableEntry {
   class: { id: string; name: string }
   section: { id: string; name: string }
   subject: { id: string; name: string; code: string }
+  period?: { startTime: string; endTime: string }
 }
 
 export async function fetchTeacherTimetable(): Promise<TimetableEntry[]> {

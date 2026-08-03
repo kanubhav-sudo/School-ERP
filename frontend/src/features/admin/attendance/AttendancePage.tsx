@@ -42,7 +42,7 @@ export function AttendancePage() {
 
   const { data: sectionsData } = useQuery({
     queryKey: ['sections'],
-    queryFn: fetchSections,
+    queryFn: () => fetchSections(),
   })
   const sections = (sectionsData ?? []).filter((s) => s.classId === selectedClassId)
 

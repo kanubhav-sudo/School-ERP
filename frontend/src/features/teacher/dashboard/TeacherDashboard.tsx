@@ -44,7 +44,7 @@ export function TeacherDashboard() {
   const todayClasses =
     timetable
       ?.filter((t) => t.dayOfWeek === todayDayOfWeek)
-      .sort((a, b) => a.startTime.localeCompare(b.startTime)) || []
+      .sort((a, b) => (a.period?.startTime || '').localeCompare(b.period?.startTime || '')) || []
 
   const renderStatCard = (
     title: string,
@@ -118,8 +118,8 @@ export function TeacherDashboard() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex flex-col items-center justify-center bg-muted/50 rounded-lg p-2 min-w-[80px]">
-                        <span className="text-sm font-semibold">{item.startTime}</span>
-                        <span className="text-xs text-muted-foreground">{item.endTime}</span>
+                        <span className="text-sm font-semibold">{item.period?.startTime || '-'}</span>
+                        <span className="text-xs text-muted-foreground">{item.period?.endTime || '-'}</span>
                       </div>
                       <div>
                         <p className="font-medium">{item.subject.name}</p>

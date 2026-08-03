@@ -34,6 +34,7 @@ export function FeePaymentDialog({
   const [amount, setAmount] = useState('')
   const [paymentMode, setPaymentMode] = useState<AddFeePaymentParams['paymentMode']>('CASH')
   const [transactionId, setTransactionId] = useState('')
+  const [receiptNumber, setReceiptNumber] = useState('')
   const [remarks, setRemarks] = useState('')
 
   const queryClient = useQueryClient()
@@ -64,6 +65,7 @@ export function FeePaymentDialog({
     mutation.mutate({
       studentId,
       amount: Number(amount),
+      receiptNumber: receiptNumber.trim(),
       paymentMode,
       transactionId: transactionId || undefined,
       remarks: remarks || undefined,
@@ -90,10 +92,20 @@ export function FeePaymentDialog({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="receiptNumber">Receipt Number *</Label>
+            <Input
+              id="receiptNumber"
+              value={receiptNumber}
+              onChange={(e) => setReceiptNumber(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="paymentMode">Payment Mode</Label>
             <Select
               value={paymentMode}
-              onValueChange={(val: AddFeePaymentParams['paymentMode']) => setPaymentMode(val)}
+              onValueChange={(val) => setPaymentMode(val as AddFeePaymentParams['paymentMode'])}
             >
               <SelectTrigger id="paymentMode">
                 <SelectValue />

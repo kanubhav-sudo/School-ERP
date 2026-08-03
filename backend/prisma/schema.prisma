@@ -28,9 +28,11 @@ enum AccountAuditAction {
 }
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
   TEACHER
   STUDENT
+  PARENT
 }
 
 enum AccountStatus {
@@ -119,13 +121,252 @@ enum PaymentMode {
   ONLINE
 }
 
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum PlanTier {
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+  CUSTOM
+}
+
+enum NotificationType {
+  NOTICE
+  ANNOUNCEMENT
+  HOMEWORK
+  FEE_REMINDER
+  EXAM
+  ADMIT_CARD
+  RESULT
+  HOLIDAY
+  EMERGENCY
+  CIRCULAR
+}
+
+// ─── Platform & School Management (CloudEMS SaaS v2) ──────────
+
+model School {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  slug         String   @unique
+  customDomain String?  @unique @map("custom_domain")
+  logoUrl      String?  @map("logo_url")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  settings      SchoolSettings?
+  features      SchoolFeatures?
+  subscriptions Subscription[]
+  users         User[]
+  parents       Parent[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@index([slug])
+  @@index([customDomain])
+  @@map("schools")
+}
+
+model SchoolSettings {
+  id                String   @id @default(uuid()) @db.Uuid
+  schoolId          String   @unique @map("school_id") @db.Uuid
+  school            School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  logoUrl           String?  @map("logo_url")
+  primaryColor      String   @default("#4F46E5") @map("primary_color")
+  accentColor       String   @default("#06B6D4") @map("accent_color")
+  principalName     String?  @map("principal_name")
+  address           String?
+  city              String?
+  state             String?
+  country           String   @default("India")
+  pincode           String?
+  phone             String?
+  email             String?
+
+  sessionStartMonth Int      @default(4) @map("session_start_month")
+  workingDays       String[] @default(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]) @map("working_days")
+  attendanceRules   Json?    @map("attendance_rules")
+  gradingRules      Json?    @map("grading_rules")
+  dateFormat        String   @default("DD/MM/YYYY") @map("date_format")
+  timeZone          String   @default("Asia/Kolkata") @map("time_zone")
+  currency          String   @default("INR")
+
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("school_settings")
+}
+
+model SchoolFeatures {
+  id               String   @id @default(uuid()) @db.Uuid
+  schoolId         String   @unique @map("school_id") @db.Uuid
+  school           School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  attendanceModule Boolean  @default(true) @map("attendance_module")
+  feesModule       Boolean  @default(true) @map("fees_module")
+  examModule       Boolean  @default(true) @map("exam_module")
+  homeworkModule   Boolean  @default(true) @map("homework_module")
+  noticeModule     Boolean  @default(true) @map("notice_module")
+  transportModule  Boolean  @default(false) @map("transport_module")
+  libraryModule    Boolean  @default(false) @map("library_module")
+  hostelModule     Boolean  @default(false) @map("hostel_module")
+  inventoryModule  Boolean  @default(false) @map("inventory_module")
+  payrollModule    Boolean  @default(false) @map("payroll_module")
+  onlineExamModule Boolean  @default(false) @map("online_exam_module")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("school_features")
+}
+
+model Plan {
+  id           String         @id @default(uuid()) @db.Uuid
+  name         String
+  tier         PlanTier       @default(BASIC)
+  monthlyPrice Int            @map("monthly_price")
+  yearlyPrice  Int            @map("yearly_price")
+  maxStudents  Int            @default(500) @map("max_students")
+  maxStorageMb Int            @default(5120) @map("max_storage_mb")
+  features     Json
+  isActive     Boolean        @default(true) @map("is_active")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id              String             @id @default(uuid()) @db.Uuid
+  schoolId        String             @map("school_id") @db.Uuid
+  school          School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  planId          String             @map("plan_id") @db.Uuid
+  plan            Plan               @relation(fields: [planId], references: [id])
+  
+  status          SubscriptionStatus @default(TRIAL)
+  startDate       DateTime           @default(now()) @map("start_date")
+  endDate         DateTime           @map("end_date")
+  gracePeriodDays Int                @default(7) @map("grace_period_days")
+  autoRenew       Boolean            @default(true) @map("auto_renew")
+
+  invoices        SubscriptionInvoice[]
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  @@index([schoolId])
+  @@map("subscriptions")
+}
+
+model SubscriptionInvoice {
+  id             String       @id @default(uuid()) @db.Uuid
+  subscriptionId String       @map("subscription_id") @db.Uuid
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  amount         Int
+  status         String
+  paidAt         DateTime?    @map("paid_at")
+  pdfUrl         String?      @map("pdf_url")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@map("subscription_invoices")
+}
+
+model Parent {
+  id         String   @id @default(uuid()) @db.Uuid
+  schoolId   String   @map("school_id") @db.Uuid
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userId     String   @unique @map("user_id") @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  fullName   String   @map("full_name")
+  occupation String?
+  address    String?
+  city       String?
+  state      String?
+  pincode    String?
+
+  students   StudentParent[]
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([schoolId])
+  @@map("parents")
+}
+
+model StudentParent {
+  studentId String  @map("student_id") @db.Uuid
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parentId  String  @map("parent_id") @db.Uuid
+  parent    Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  relation  String  @default("FATHER")
+
+  @@id([studentId, parentId])
+  @@map("student_parents")
+}
+
+model Notification {
+  id          String           @id @default(uuid()) @db.Uuid
+  schoolId    String           @map("school_id") @db.Uuid
+  school      School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  type        NotificationType
+  title       String
+  message     String           @db.Text
+  payload     Json?
+  
+  targetRole  Role?            @map("target_role")
+  recipientId String?          @map("recipient_id") @db.Uuid
+  isRead      Boolean          @default(false) @map("is_read")
+  sentAt      DateTime         @default(now()) @map("sent_at")
+
+  @@index([schoolId, recipientId])
+  @@index([schoolId, targetRole])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  schoolId   String?  @map("school_id") @db.Uuid
+  school     School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  userId     String?  @map("user_id") @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  role       Role
+  action     String
+  entity     String
+  entityId   String?  @map("entity_id")
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([schoolId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
 // ─── User ─────────────────────────────────────────────────────
 // Holds authentication credentials only.
 // Profile data lives in separate child models (Milestone 3).
 
 model User {
   id                  String        @id @default(uuid()) @db.Uuid
+  schoolId            String?       @map("school_id") @db.Uuid
+  school              School?       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
   username            String        @unique
+  phone               String?
   email               String        @unique
   passwordHash        String        @map("password_hash")
   role                Role
@@ -142,10 +383,13 @@ model User {
 
   teacher          Teacher?
   student          Student?
+  parent           Parent?
   notices          Notice[]
   accountAuditLogs AccountAuditLog[] @relation("AuditSubject")
   actionsPerformed AccountAuditLog[] @relation("AuditActor")
+  auditLogs        AuditLog[]
 
+  @@index([schoolId])
   @@index([role])
   @@index([accountStatus])
   @@map("users")
@@ -414,6 +658,7 @@ model Student {
   reportCards         ReportCard[]
   examMarks           ExamMark[]
   homeworkSubmissions HomeworkSubmission[]
+  parents             StudentParent[]
 
   @@index([isActive])
   @@index([status])

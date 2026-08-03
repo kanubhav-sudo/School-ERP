@@ -323,7 +323,11 @@ export function TeacherHomeworkPage() {
                     size="sm"
                     variant="outline"
                     className="gap-1.5 text-muted-foreground"
-                    onClick={() => updateMutation.mutate({ id: hw.id, data: { status: hw.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED' } })}
+                    onClick={() => {
+                      const fd = new FormData();
+                      fd.append('status', hw.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED');
+                      updateMutation.mutate({ id: hw.id, data: fd });
+                    }}
                     title={hw.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
                   >
                     {hw.status === 'PUBLISHED' ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
