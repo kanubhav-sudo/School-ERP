@@ -9,6 +9,7 @@ import { requestIdMiddleware } from './middlewares/requestId.middleware'
 import { requestLoggerMiddleware } from './middlewares/requestLogger.middleware'
 import { errorHandler } from './middlewares/error.middleware'
 import { resolveTenantMiddleware } from './middlewares/resolveTenant.middleware'
+import { tenantContextMiddleware } from './middlewares/tenant-context.middleware'
 import apiRoutes from './routes'
 
 import path from 'path'
@@ -35,8 +36,9 @@ app.use(cookieParser())
 app.use(express.json({ limit: '10kb' })) // Mitigate DoS attacks via payload sizing
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 
-// 3. Global Tenant Resolution
+// 3. Global Tenant Resolution & Context Setup
 app.use(resolveTenantMiddleware)
+app.use(tenantContextMiddleware)
 
 // 4. Mount Routes
 app.use(API_PREFIX, apiRoutes)

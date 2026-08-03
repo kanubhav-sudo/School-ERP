@@ -27,7 +27,7 @@ export async function listSubjects(req: Request, res: Response, next: NextFuncti
       return
     }
 
-    const result = await SubjectService.listSubjects(parsed.data)
+    const result = await SubjectService.listSubjects(req.db, parsed.data)
     ApiResponse.success(res, result, 'Subjects retrieved')
   } catch (err) {
     next(err)
@@ -39,7 +39,7 @@ export async function listSubjects(req: Request, res: Response, next: NextFuncti
 export async function getSubject(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = req.params.id as string
-    const subject = await SubjectService.getSubjectById(id)
+    const subject = await SubjectService.getSubjectById(req.db, id)
     ApiResponse.success(res, subject, 'Subject retrieved')
   } catch (err) {
     next(err)
@@ -60,7 +60,7 @@ export async function createSubject(
       return
     }
 
-    const subject = await SubjectService.createSubject(parsed.data)
+    const subject = await SubjectService.createSubject(req.db, parsed.data)
     ApiResponse.created(res, subject, 'Subject created')
   } catch (err) {
     next(err)
@@ -82,7 +82,7 @@ export async function updateSubject(
       return
     }
 
-    const subject = await SubjectService.updateSubject(id, parsed.data)
+    const subject = await SubjectService.updateSubject(req.db, id, parsed.data)
     ApiResponse.success(res, subject, 'Subject updated')
   } catch (err) {
     next(err)
@@ -98,7 +98,7 @@ export async function deleteSubject(
 ): Promise<void> {
   try {
     const id = req.params.id as string
-    await SubjectService.deleteSubject(id)
+    await SubjectService.deleteSubject(req.db, id)
     ApiResponse.success(res, null, 'Subject deleted')
   } catch (err) {
     next(err)
@@ -120,7 +120,7 @@ export async function assignToClass(
       return
     }
 
-    const assignment = await SubjectService.assignSubjectToClass(id, parsed.data.classId)
+    const assignment = await SubjectService.assignSubjectToClass(req.db, id, parsed.data.classId)
     ApiResponse.created(res, assignment, 'Subject assigned to class')
   } catch (err) {
     next(err)
@@ -139,7 +139,7 @@ export async function removeFromClass(
       ApiResponse.badRequest(res, 'Validation failed', [{ message: 'classId is required' }])
       return
     }
-    await SubjectService.removeSubjectFromClass(id, classId)
+    await SubjectService.removeSubjectFromClass(req.db, id, classId)
     ApiResponse.success(res, null, 'Subject removed from class')
   } catch (err) {
     next(err)

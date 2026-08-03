@@ -25,7 +25,7 @@ export async function listSections(req: Request, res: Response, next: NextFuncti
       return
     }
 
-    const result = await SectionService.listSections(parsed.data)
+    const result = await SectionService.listSections(req.db, parsed.data)
     ApiResponse.success(res, result, 'Sections retrieved')
   } catch (err) {
     next(err)
@@ -37,7 +37,7 @@ export async function listSections(req: Request, res: Response, next: NextFuncti
 export async function getSection(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = req.params.id as string
-    const section = await SectionService.getSectionById(id)
+    const section = await SectionService.getSectionById(req.db, id)
     ApiResponse.success(res, section, 'Section retrieved')
   } catch (err) {
     next(err)
@@ -58,7 +58,7 @@ export async function createSection(
       return
     }
 
-    const section = await SectionService.createSection(parsed.data)
+    const section = await SectionService.createSection(req.db, parsed.data)
     ApiResponse.created(res, section, 'Section created')
   } catch (err) {
     next(err)
@@ -80,7 +80,7 @@ export async function updateSection(
       return
     }
 
-    const section = await SectionService.updateSection(id, parsed.data)
+    const section = await SectionService.updateSection(req.db, id, parsed.data)
     ApiResponse.success(res, section, 'Section updated')
   } catch (err) {
     next(err)
@@ -96,7 +96,7 @@ export async function deleteSection(
 ): Promise<void> {
   try {
     const id = req.params.id as string
-    await SectionService.deleteSection(id)
+    await SectionService.deleteSection(req.db, id)
     ApiResponse.success(res, null, 'Section deleted')
   } catch (err) {
     next(err)

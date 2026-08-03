@@ -6,7 +6,6 @@
  * @module services/class
  */
 
-import prisma from '../database/prisma'
 import { ConflictError, NotFoundError } from '../core/errors'
 import type {
   CreateClassInput,
@@ -16,7 +15,7 @@ import type {
 
 // ─── List ─────────────────────────────────────────────────────
 
-export async function listClasses(filters: ListClassesInput) {
+export async function listClasses(db: any, filters: ListClassesInput) {
   const { page, limit, search, isActive } = filters
 
   const skip = (page - 1) * limit
@@ -27,14 +26,14 @@ export async function listClasses(filters: ListClassesInput) {
   }
 
   const [classes, total] = await Promise.all([
-    prisma.class.findMany({
+    db.class.findMany({
       where,
       skip,
       take: limit,
       orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
       include: { _count: { select: { sections: true } } },
     }),
-    prisma.class.count({ where }),
+    db.class.count({ where }),
   ])
 
   return {
@@ -50,8 +49,8 @@ export async function listClasses(filters: ListClassesInput) {
 
 // ─── Get One ──────────────────────────────────────────────────
 
-export async function getClassById(id: string) {
-  const cls = await prisma.class.findUnique({
+export async function getClassById(db: any, id: string) {
+  const cls = await db.class.findFirst({
     where: { id },
     include: { sections: { orderBy: { name: 'asc' } }, _count: { select: { sections: true } } },
   })
@@ -61,11 +60,11 @@ export async function getClassById(id: string) {
 
 // ─── Create ───────────────────────────────────────────────────
 
-export async function createClass(data: CreateClassInput) {
-  const existing = await prisma.class.findUnique({ where: { name: data.name } })
+export async function createClass(db: any, data: CreateClassInput) {
+  const existing = await db.class.findFirst({ where: { name: data.name } })
   if (existing) throw new ConflictError(`Class "${data.name}" already exists`)
 
-  return prisma.class.create({
+  return db.class.create({
     data: {
       name: data.name,
       displayOrder: data.displayOrder ?? 0,
@@ -76,17 +75,17 @@ export async function createClass(data: CreateClassInput) {
 
 // ─── Update ───────────────────────────────────────────────────
 
-export async function updateClass(id: string, data: UpdateClassInput) {
-  await getClassById(id)
+export async function updateClass(db: any, id: string, data: UpdateClassInput) {
+  await getClassById(db, id)
 
   if (data.name) {
-    const duplicate = await prisma.class.findFirst({
+    const duplicate = await db.class.findFirst({
       where: { name: data.name, NOT: { id } },
     })
     if (duplicate) throw new ConflictError(`Class "${data.name}" already exists`)
   }
 
-  return prisma.class.update({
+  return db.class.update({
     where: { id },
     data: {
       ...(data.name !== undefined && { name: data.name }),
@@ -98,13 +97,13 @@ export async function updateClass(id: string, data: UpdateClassInput) {
 
 // ─── Delete ───────────────────────────────────────────────────
 
-export async function deleteClass(id: string) {
-  const cls = await getClassById(id)
+export async function deleteClass(db: any, id: string) {
+  const cls = await getClassById(db, id)
 
   // Prevent deletion if sections exist
   if (cls._count.sections > 0) {
     throw new ConflictError('Cannot delete a class that has sections. Remove the sections first.')
   }
 
-  return prisma.class.delete({ where: { id } })
+  return db.class.delete({ where: { id } })
 }

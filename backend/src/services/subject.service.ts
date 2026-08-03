@@ -7,7 +7,6 @@
  * @module services/subject
  */
 
-import prisma from '../database/prisma'
 import { ConflictError, NotFoundError } from '../core/errors'
 import type {
   CreateSubjectInput,
@@ -17,7 +16,7 @@ import type {
 
 // ─── List ─────────────────────────────────────────────────────
 
-export async function listSubjects(filters: ListSubjectsInput) {
+export async function listSubjects(db: any, filters: ListSubjectsInput) {
   const { page, limit, search, classId, isActive } = filters
 
   const skip = (page - 1) * limit
@@ -36,7 +35,7 @@ export async function listSubjects(filters: ListSubjectsInput) {
   }
 
   const [subjects, total] = await Promise.all([
-    prisma.subject.findMany({
+    db.subject.findMany({
       where,
       skip,
       take: limit,
@@ -48,7 +47,7 @@ export async function listSubjects(filters: ListSubjectsInput) {
         _count: { select: { classSubjects: true } },
       },
     }),
-    prisma.subject.count({ where }),
+    db.subject.count({ where }),
   ])
 
   return {
@@ -64,8 +63,8 @@ export async function listSubjects(filters: ListSubjectsInput) {
 
 // ─── Get One ──────────────────────────────────────────────────
 
-export async function getSubjectById(id: string) {
-  const subject = await prisma.subject.findUnique({
+export async function getSubjectById(db: any, id: string) {
+  const subject = await db.subject.findFirst({
     where: { id },
     include: {
       classSubjects: {
@@ -79,11 +78,11 @@ export async function getSubjectById(id: string) {
 
 // ─── Create ───────────────────────────────────────────────────
 
-export async function createSubject(data: CreateSubjectInput) {
-  const existing = await prisma.subject.findUnique({ where: { code: data.code } })
+export async function createSubject(db: any, data: CreateSubjectInput) {
+  const existing = await db.subject.findFirst({ where: { code: data.code } })
   if (existing) throw new ConflictError(`Subject with code "${data.code}" already exists`)
 
-  return prisma.subject.create({
+  return db.subject.create({
     data: {
       name: data.name,
       code: data.code,
@@ -95,17 +94,17 @@ export async function createSubject(data: CreateSubjectInput) {
 
 // ─── Update ───────────────────────────────────────────────────
 
-export async function updateSubject(id: string, data: UpdateSubjectInput) {
-  await getSubjectById(id)
+export async function updateSubject(db: any, id: string, data: UpdateSubjectInput) {
+  await getSubjectById(db, id)
 
   if (data.code) {
-    const duplicate = await prisma.subject.findFirst({
+    const duplicate = await db.subject.findFirst({
       where: { code: data.code, NOT: { id } },
     })
     if (duplicate) throw new ConflictError(`Subject with code "${data.code}" already exists`)
   }
 
-  return prisma.subject.update({
+  return db.subject.update({
     where: { id },
     data: {
       ...(data.name !== undefined && { name: data.name }),
@@ -123,8 +122,8 @@ export async function updateSubject(id: string, data: UpdateSubjectInput) {
 
 // ─── Delete ───────────────────────────────────────────────────
 
-export async function deleteSubject(id: string) {
-  const subject = await getSubjectById(id)
+export async function deleteSubject(db: any, id: string) {
+  const subject = await getSubjectById(db, id)
 
   if (subject.classSubjects.length > 0) {
     throw new ConflictError(
@@ -132,33 +131,33 @@ export async function deleteSubject(id: string) {
     )
   }
 
-  return prisma.subject.delete({ where: { id } })
+  return db.subject.delete({ where: { id } })
 }
 
 // ─── Class Assignment ─────────────────────────────────────────
 
-export async function assignSubjectToClass(subjectId: string, classId: string) {
+export async function assignSubjectToClass(db: any, subjectId: string, classId: string) {
   // Verify both exist
-  await getSubjectById(subjectId)
-  const cls = await prisma.class.findUnique({ where: { id: classId } })
+  await getSubjectById(db, subjectId)
+  const cls = await db.class.findFirst({ where: { id: classId } })
   if (!cls) throw new NotFoundError('Class not found')
 
   // Check if already assigned
-  const existing = await prisma.classSubject.findUnique({
-    where: { classId_subjectId: { classId, subjectId } },
+  const existing = await db.classSubject.findFirst({
+    where: { classId, subjectId },
   })
   if (existing) throw new ConflictError('Subject is already assigned to this class')
 
-  return prisma.classSubject.create({ data: { classId, subjectId } })
+  return db.classSubject.create({ data: { classId, subjectId } })
 }
 
-export async function removeSubjectFromClass(subjectId: string, classId: string) {
-  const assignment = await prisma.classSubject.findUnique({
-    where: { classId_subjectId: { classId, subjectId } },
+export async function removeSubjectFromClass(db: any, subjectId: string, classId: string) {
+  const assignment = await db.classSubject.findFirst({
+    where: { classId, subjectId },
   })
   if (!assignment) throw new NotFoundError('Assignment not found')
 
-  return prisma.classSubject.delete({
+  return db.classSubject.delete({
     where: { classId_subjectId: { classId, subjectId } },
   })
 }

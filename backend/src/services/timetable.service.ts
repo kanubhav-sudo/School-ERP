@@ -13,7 +13,6 @@
  * @module services/timetable
  */
 
-import prisma from '../database/prisma'
 import { ConflictError, NotFoundError, ValidationError } from '../core/errors'
 import type {
   CreateTimetableInput,
@@ -45,7 +44,6 @@ const timetableSelect = {
   subject: { select: { id: true, name: true, code: true } },
 } as const
 
-
 // ─── Helpers ──────────────────────────────────────────────────
 
 /**
@@ -54,18 +52,18 @@ const timetableSelect = {
 /** Minimal shape required by `withPeriodTimes` — any timetable entry must have these fields. */
 type TimetableEntryBase = { sessionId: string; periodNumber: number } & Record<string, unknown>
 
-async function withPeriodTimes(entries: TimetableEntryBase | TimetableEntryBase[]) {
+async function withPeriodTimes(db: any, entries: TimetableEntryBase | TimetableEntryBase[]) {
   const isArray = Array.isArray(entries)
   const arr = isArray ? entries : [entries]
   if (arr.length === 0) return isArray ? [] : null
 
   const sessionIds = [...new Set(arr.map((e: TimetableEntryBase) => e.sessionId))]
-  const periodMasters = await prisma.periodMaster.findMany({
+  const periodMasters = await db.periodMaster.findMany({
     where: { sessionId: { in: sessionIds } },
   })
 
   const periodMap = new Map<string, Prisma.PeriodMasterGetPayload<Record<string, never>>>()
-  periodMasters.forEach((pm) => {
+  periodMasters.forEach((pm: any) => {
     periodMap.set(`${pm.sessionId}-${pm.periodNumber}`, pm)
   })
 
@@ -83,10 +81,10 @@ async function withPeriodTimes(entries: TimetableEntryBase | TimetableEntryBase[
 
 // ─── List ─────────────────────────────────────────────────────
 
-export async function listTimetable(filters: ListTimetableInput) {
+export async function listTimetable(db: any, filters: ListTimetableInput) {
   const { sessionId, sectionId, teacherId, classId, dayOfWeek } = filters
 
-  const entries = await prisma.timetable.findMany({
+  const entries = await db.timetable.findMany({
     where: {
       isDeleted: false,
       ...(sessionId ? { sessionId } : {}),
@@ -99,13 +97,13 @@ export async function listTimetable(filters: ListTimetableInput) {
     orderBy: [{ dayOfWeek: 'asc' }, { periodNumber: 'asc' }],
   })
 
-  return withPeriodTimes(entries)
+  return withPeriodTimes(db, entries)
 }
 
 // ─── Get By Section (full week) ───────────────────────────────
 
-export async function getTimetableBySection(sectionId: string, sessionId?: string) {
-  const entries = await prisma.timetable.findMany({
+export async function getTimetableBySection(db: any, sectionId: string, sessionId?: string) {
+  const entries = await db.timetable.findMany({
     where: {
       isDeleted: false,
       sectionId,
@@ -114,19 +112,19 @@ export async function getTimetableBySection(sectionId: string, sessionId?: strin
     select: timetableSelect,
     orderBy: [{ dayOfWeek: 'asc' }, { periodNumber: 'asc' }],
   })
-  return withPeriodTimes(entries)
+  return withPeriodTimes(db, entries)
 }
 
 // ─── Get By Teacher (full week schedule) ─────────────────────
 
-export async function getTimetableByTeacher(teacherId: string, sessionId?: string) {
-  const teacher = await prisma.teacher.findFirst({
+export async function getTimetableByTeacher(db: any, teacherId: string, sessionId?: string) {
+  const teacher = await db.teacher.findFirst({
     where: { id: teacherId, isActive: true },
     select: { id: true },
   })
   if (!teacher) throw new NotFoundError('Teacher not found')
 
-  const entries = await prisma.timetable.findMany({
+  const entries = await db.timetable.findMany({
     where: {
       isDeleted: false,
       teacherId,
@@ -135,24 +133,24 @@ export async function getTimetableByTeacher(teacherId: string, sessionId?: strin
     select: timetableSelect,
     orderBy: [{ dayOfWeek: 'asc' }, { periodNumber: 'asc' }],
   })
-  return withPeriodTimes(entries)
+  return withPeriodTimes(db, entries)
 }
 
 // ─── Get One ──────────────────────────────────────────────────
 
-export async function getTimetableById(id: string) {
-  const entry = await prisma.timetable.findFirst({
+export async function getTimetableById(db: any, id: string) {
+  const entry = await db.timetable.findFirst({
     where: { id, isDeleted: false },
     select: timetableSelect,
   })
   if (!entry) throw new NotFoundError('Timetable entry not found')
-  return withPeriodTimes(entry)
+  return withPeriodTimes(db, entry)
 }
 
 // ─── Create ───────────────────────────────────────────────────
 
-export async function createTimetableEntry(data: CreateTimetableInput, userId?: string) {
-  const session = await prisma.academicSession.findFirst({
+export async function createTimetableEntry(db: any, data: CreateTimetableInput, userId?: string) {
+  const session = await db.academicSession.findFirst({
     where: { id: data.sessionId },
   })
   if (!session) {
@@ -163,10 +161,10 @@ export async function createTimetableEntry(data: CreateTimetableInput, userId?: 
 
   // 2. Verify references exist
   const [cls, section, teacher, subject] = await Promise.all([
-    prisma.class.findFirst({ where: { id: data.classId, isActive: true } }),
-    prisma.section.findFirst({ where: { id: data.sectionId, isActive: true } }),
-    prisma.teacher.findFirst({ where: { id: data.teacherId, isActive: true } }),
-    prisma.subject.findFirst({ where: { id: data.subjectId, isActive: true } }),
+    db.class.findFirst({ where: { id: data.classId, isActive: true } }),
+    db.section.findFirst({ where: { id: data.sectionId, isActive: true } }),
+    db.teacher.findFirst({ where: { id: data.teacherId, isActive: true } }),
+    db.subject.findFirst({ where: { id: data.subjectId, isActive: true } }),
   ])
   if (!cls) throw new NotFoundError('Class not found or inactive')
   if (!section) throw new NotFoundError('Section not found or inactive')
@@ -176,7 +174,7 @@ export async function createTimetableEntry(data: CreateTimetableInput, userId?: 
   // 4. Create (unique constraints on [sectionId, dayOfWeek, periodNumber] and
   //    [teacherId, dayOfWeek, periodNumber] will catch remaining conflicts at DB level)
   try {
-    const entry = await prisma.timetable.create({
+    const entry = await db.timetable.create({
       data: {
         ...data,
         createdById: userId ?? null,
@@ -184,7 +182,7 @@ export async function createTimetableEntry(data: CreateTimetableInput, userId?: 
       },
       select: timetableSelect,
     })
-    return withPeriodTimes(entry)
+    return withPeriodTimes(db, entry)
   } catch (err: unknown) {
     // P2002 = unique constraint violation
     if (
@@ -202,17 +200,18 @@ export async function createTimetableEntry(data: CreateTimetableInput, userId?: 
 // ─── Update ───────────────────────────────────────────────────
 
 export async function updateTimetableEntry(
+  db: any,
   id: string,
   data: UpdateTimetableInput,
   userId?: string
 ) {
-  const existing = await prisma.timetable.findFirst({
+  const existing = await db.timetable.findFirst({
     where: { id, isDeleted: false },
   })
   if (!existing) throw new NotFoundError('Timetable entry not found')
 
   try {
-    const entry = await prisma.timetable.update({
+    const entry = await db.timetable.update({
       where: { id },
       data: {
         ...data,
@@ -220,7 +219,7 @@ export async function updateTimetableEntry(
       },
       select: timetableSelect,
     })
-    return withPeriodTimes(entry)
+    return withPeriodTimes(db, entry)
   } catch (err: unknown) {
     if (
       err &&
@@ -236,13 +235,13 @@ export async function updateTimetableEntry(
 
 // ─── Soft Delete ──────────────────────────────────────────────
 
-export async function deleteTimetableEntry(id: string, userId?: string) {
-  const existing = await prisma.timetable.findFirst({
+export async function deleteTimetableEntry(db: any, id: string, userId?: string) {
+  const existing = await db.timetable.findFirst({
     where: { id, isDeleted: false },
   })
   if (!existing) throw new NotFoundError('Timetable entry not found')
 
-  await prisma.timetable.update({
+  await db.timetable.update({
     where: { id },
     data: {
       isDeleted: true,

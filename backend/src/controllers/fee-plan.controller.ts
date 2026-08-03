@@ -22,7 +22,7 @@ export class FeePlanController {
         return
       }
 
-      const feePlan = await createFeePlan(parsed.data, req.user!.sub)
+      const feePlan = await createFeePlan(req.db, parsed.data, req.user!.sub)
       ApiResponse.created(res, feePlan, 'Fee plan created successfully')
     } catch (error) {
       next(error)
@@ -37,7 +37,7 @@ export class FeePlanController {
         return
       }
 
-      const result = await listFeePlans(parsed.data)
+      const result = await listFeePlans(req.db, parsed.data)
       ApiResponse.success(res, result)
     } catch (error) {
       next(error)
@@ -46,7 +46,7 @@ export class FeePlanController {
 
   static async getFeePlanById(req: Request, res: Response, next: NextFunction) {
     try {
-      const feePlan = await getFeePlanById(req.params.id as string)
+      const feePlan = await getFeePlanById(req.db, req.params.id as string)
       ApiResponse.success(res, feePlan)
     } catch (error) {
       next(error)
@@ -61,7 +61,12 @@ export class FeePlanController {
         return
       }
 
-      const feePlan = await updateFeePlan(req.params.id as string, parsed.data, req.user!.sub)
+      const feePlan = await updateFeePlan(
+        req.db,
+        req.params.id as string,
+        parsed.data,
+        req.user!.sub
+      )
       ApiResponse.success(res, feePlan, 'Fee plan updated successfully')
     } catch (error) {
       next(error)
@@ -70,7 +75,7 @@ export class FeePlanController {
 
   static async deleteFeePlan(req: Request, res: Response, next: NextFunction) {
     try {
-      await deleteFeePlan(req.params.id as string, req.user!.sub)
+      await deleteFeePlan(req.db, req.params.id as string, req.user!.sub)
       ApiResponse.success(res, null, 'Fee plan deleted successfully')
     } catch (error) {
       next(error)

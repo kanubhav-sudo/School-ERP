@@ -11,6 +11,8 @@
 import { Request, Response, NextFunction } from 'express'
 import { verifyAccessToken } from '../services/auth.service'
 import { UnauthorizedError } from '../core/errors'
+import prisma from '../database/prisma'
+import { createTenantClient } from '../database/tenant-client'
 
 // Extend the Express Request type to include the user payload
 declare global {
@@ -45,6 +47,9 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
       if (payload.schoolId !== req.school.id) {
         throw new UnauthorizedError('You do not have access to this school')
       }
+      req.db = createTenantClient(prisma, payload.schoolId)
+    } else {
+      req.db = prisma
     }
 
     req.user = payload

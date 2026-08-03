@@ -194,7 +194,7 @@ export async function changePassword(
     if (!isValid) throw new ForbiddenError('Incorrect current password')
 
     const newPasswordHash = await bcrypt.hash(newPassword, 12)
-    await AccountService.changePassword(userId, currentPassword, newPasswordHash)
+    await AccountService.changePassword(req.db, userId, currentPassword, newPasswordHash)
 
     ApiResponse.success(res, null, 'Password changed successfully')
   } catch (err) {

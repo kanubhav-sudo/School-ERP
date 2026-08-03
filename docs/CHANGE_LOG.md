@@ -5,6 +5,25 @@ All notable changes to the School ERP project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] — 2026-08-03 — CloudEMS Phase 3: Tenant Scoping & Auto-Isolated Data Access
+
+### Added
+- `tenant-client.ts`: Prisma `$extends` tenant client extension in `backend/src/database/tenant-client.ts` for automatic query scoping (`schoolId` injection) and soft-delete filtering (`isDeleted: false` / `deletedAt: null`).
+- `tenant-context.middleware.ts`: Express middleware in `backend/src/middlewares/tenant-context.middleware.ts` that instantiates and attaches `req.db` to every request.
+- `storage.service.ts`: Storage service in `backend/src/services/storage.service.ts` supporting tenant-isolated file management.
+- `TENANT_ISOLATION_TEST_PLAN.md`: Comprehensive test plan in `docs/testing/TENANT_ISOLATION_TEST_PLAN.md`.
+- `MIGRATION_SAFETY_PLAN.md`: Migration safety framework in `docs/architecture/MIGRATION_SAFETY_PLAN.md`.
+- `PHASE_3_ENGINEERING_REPORT.md`: Comprehensive Phase 3 engineering report in `docs/architecture/PHASE_3_ENGINEERING_REPORT.md`.
+
+### Changed
+- `prisma/schema.prisma`: Added `schoolId` and relations to all 21 tenant-scoped models (`Student`, `Teacher`, `AcademicSession`, `Class`, `Section`, `Subject`, `Attendance`, `Timetable`, `PeriodMaster`, `Homework`, `Notice`, `FeePlan`, `FeeRecord`, `Exam`, `Account`, etc.).
+- Refactored all 19 business services in `backend/src/services/` to accept `req.db` as their DB context and removed all direct imports/calls to raw `prisma` client.
+- Refactored all 19 Express controllers in `backend/src/controllers/` to pass `req.db` into service method calls.
+
+### Architectural Guarantees
+- Zero-oversight tenant isolation: DB queries automatically scoped to `schoolId` via Prisma client extension (`req.db`).
+- Protection against cross-tenant data leaks: Developers cannot accidentally query across tenants when using `req.db`.
+
 ---
 
 ## [2.0.0] — 2026-08-03 — CloudEMS Phase 2: Authentication Engine & Identity Redesign

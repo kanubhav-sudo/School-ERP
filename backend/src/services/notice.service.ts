@@ -1,4 +1,3 @@
-import { prisma } from '../database'
 import { NotFoundError } from '../core/errors'
 import {
   CreateNoticeInput,
@@ -10,8 +9,8 @@ export class NoticeService {
   /**
    * Create a new notice
    */
-  static async createNotice(data: CreateNoticeInput, authorId: string) {
-    const notice = await prisma.notice.create({
+  static async createNotice(db: any, data: CreateNoticeInput, authorId: string) {
+    const notice = await db.notice.create({
       data: {
         title: data.title,
         content: data.content,
@@ -31,7 +30,7 @@ export class NoticeService {
   /**
    * Get notices with optional filtering
    */
-  static async getNotices(query: NoticeQueryInput) {
+  static async getNotices(db: any, query: NoticeQueryInput) {
     const now = new Date()
     const andConditions: object[] = [{ isDeleted: false }]
 
@@ -62,7 +61,7 @@ export class NoticeService {
     const skip = (page - 1) * limit
 
     const [notices, total] = await Promise.all([
-      prisma.notice.findMany({
+      db.notice.findMany({
         where: { AND: andConditions },
         orderBy: [{ priority: 'desc' }, { publishedAt: 'desc' }],
         skip,
@@ -73,7 +72,7 @@ export class NoticeService {
           },
         },
       }),
-      prisma.notice.count({ where: { AND: andConditions } }),
+      db.notice.count({ where: { AND: andConditions } }),
     ])
 
     return {
@@ -83,15 +82,15 @@ export class NoticeService {
         limit,
         total,
         totalPages: Math.ceil(total / limit),
-      }
+      },
     }
   }
 
   /**
    * Get a specific notice by ID
    */
-  static async getNoticeById(id: string) {
-    const notice = await prisma.notice.findUnique({
+  static async getNoticeById(db: any, id: string) {
+    const notice = await db.notice.findFirst({
       where: { id, isDeleted: false },
       include: {
         author: {
@@ -110,11 +109,11 @@ export class NoticeService {
   /**
    * Update a notice
    */
-  static async updateNotice(id: string, data: UpdateNoticeInput, updatedById: string) {
+  static async updateNotice(db: any, id: string, data: UpdateNoticeInput, updatedById: string) {
     // Check if notice exists
-    await this.getNoticeById(id)
+    await this.getNoticeById(db, id)
 
-    const notice = await prisma.notice.update({
+    const notice = await db.notice.update({
       where: { id },
       data: {
         title: data.title,
@@ -139,11 +138,11 @@ export class NoticeService {
   /**
    * Soft delete a notice
    */
-  static async deleteNotice(id: string, deletedById: string) {
+  static async deleteNotice(db: any, id: string, deletedById: string) {
     // Check if notice exists
-    await this.getNoticeById(id)
+    await this.getNoticeById(db, id)
 
-    await prisma.notice.update({
+    await db.notice.update({
       where: { id },
       data: {
         isDeleted: true,

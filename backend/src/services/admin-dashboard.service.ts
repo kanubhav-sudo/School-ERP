@@ -7,38 +7,31 @@
  * @module services/admin-dashboard
  */
 
-import prisma from '../database/prisma'
-
 import { getElapsedAcademicMonths } from './fee-record.service'
 
-export async function getDashboardStats() {
+export async function getDashboardStats(db: any) {
   // Run each count independently to isolate failures
-  const [
-    totalStudents,
-    totalTeachers,
-    totalClasses,
-    totalSections,
-    activeSession,
-    activeNotices
-  ] = await Promise.all([
-    prisma.student.count({ where: { isActive: true, deletedAt: null } }).catch(() => 0),
-    prisma.teacher.count({ where: { isActive: true, deletedAt: null } }).catch(() => 0),
-    prisma.class.count({ where: { isActive: true } }).catch(() => 0),
-    prisma.section.count({ where: { isActive: true } }).catch(() => 0),
-    prisma.academicSession.findFirst({
-      where: { isActive: true },
-      select: { id: true, name: true },
-    }).catch(() => null),
-    prisma.notice.count({
-      where: {
-        isDeleted: false,
-        OR: [
-          { expiresAt: { gt: new Date() } },
-          { expiresAt: null },
-        ],
-      },
-    }).catch(() => 0)
-  ])
+  const [totalStudents, totalTeachers, totalClasses, totalSections, activeSession, activeNotices] =
+    await Promise.all([
+      db.student.count({ where: { isActive: true, deletedAt: null } }).catch(() => 0),
+      db.teacher.count({ where: { isActive: true, deletedAt: null } }).catch(() => 0),
+      db.class.count({ where: { isActive: true } }).catch(() => 0),
+      db.section.count({ where: { isActive: true } }).catch(() => 0),
+      db.academicSession
+        .findFirst({
+          where: { isActive: true },
+          select: { id: true, name: true },
+        })
+        .catch(() => null),
+      db.notice
+        .count({
+          where: {
+            isDeleted: false,
+            OR: [{ expiresAt: { gt: new Date() } }, { expiresAt: null }],
+          },
+        })
+        .catch(() => 0),
+    ])
 
   let totalPendingFees = 0
   let totalCollectedFees = 0
@@ -50,29 +43,35 @@ export async function getDashboardStats() {
     const elapsedMonths = getElapsedAcademicMonths(today)
 
     const [pendingFeeStats, collectedFeeStats, attendanceCount] = await Promise.all([
-      prisma.feeRecord.aggregate({
-        where: {
-          sessionId: activeSession.id,
-          month: { in: elapsedMonths },
-        },
-        _sum: {
-          balanceAmount: true,
-        },
-      }).catch(() => null),
-      prisma.feeRecord.aggregate({
-        where: {
-          sessionId: activeSession.id,
-        },
-        _sum: {
-          paidAmount: true,
-        },
-      }).catch(() => null),
-      prisma.attendance.count({
-        where: {
-          date: today,
-          isDeleted: false,
-        },
-      }).catch(() => 0)
+      db.feeRecord
+        .aggregate({
+          where: {
+            sessionId: activeSession.id,
+            month: { in: elapsedMonths },
+          },
+          _sum: {
+            balanceAmount: true,
+          },
+        })
+        .catch(() => null),
+      db.feeRecord
+        .aggregate({
+          where: {
+            sessionId: activeSession.id,
+          },
+          _sum: {
+            paidAmount: true,
+          },
+        })
+        .catch(() => null),
+      db.attendance
+        .count({
+          where: {
+            date: today,
+            isDeleted: false,
+          },
+        })
+        .catch(() => 0),
     ])
 
     if (pendingFeeStats?._sum) {

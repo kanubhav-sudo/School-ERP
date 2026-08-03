@@ -4,12 +4,12 @@ import * as AdminDashboardService from '../services/admin-dashboard.service'
 import { logger } from '../core'
 
 export async function getDashboardStats(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const stats = await AdminDashboardService.getDashboardStats()
+    const stats = await AdminDashboardService.getDashboardStats(req.db)
     ApiResponse.success(res, stats, 'Dashboard stats retrieved')
   } catch (err) {
     logger.error({ err }, 'Admin dashboard getDashboardStats error')

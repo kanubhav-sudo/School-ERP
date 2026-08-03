@@ -7,7 +7,6 @@
  * @module services/academic-session
  */
 
-import prisma from '../database/prisma'
 import { ConflictError, NotFoundError } from '../core/errors'
 import type {
   CreateAcademicSessionInput,
@@ -17,7 +16,7 @@ import type {
 
 // ─── List ─────────────────────────────────────────────────────
 
-export async function listAcademicSessions(filters: ListAcademicSessionsInput) {
+export async function listAcademicSessions(db: any, filters: ListAcademicSessionsInput) {
   const { page, limit, search, isActive } = filters
 
   const skip = (page - 1) * limit
@@ -28,13 +27,13 @@ export async function listAcademicSessions(filters: ListAcademicSessionsInput) {
   }
 
   const [sessions, total] = await Promise.all([
-    prisma.academicSession.findMany({
+    db.academicSession.findMany({
       where,
       skip,
       take: limit,
       orderBy: [{ isActive: 'desc' }, { startDate: 'desc' }],
     }),
-    prisma.academicSession.count({ where }),
+    db.academicSession.count({ where }),
   ])
 
   return {
@@ -50,32 +49,32 @@ export async function listAcademicSessions(filters: ListAcademicSessionsInput) {
 
 // ─── Get One ──────────────────────────────────────────────────
 
-export async function getAcademicSessionById(id: string) {
-  const session = await prisma.academicSession.findUnique({ where: { id } })
+export async function getAcademicSessionById(db: any, id: string) {
+  const session = await db.academicSession.findFirst({ where: { id } })
   if (!session) throw new NotFoundError(`Academic session not found`)
   return session
 }
 
 // ─── Get Active ───────────────────────────────────────────────
 
-export async function getActiveAcademicSession() {
-  const session = await prisma.academicSession.findFirst({ where: { isActive: true } })
+export async function getActiveAcademicSession(db: any) {
+  const session = await db.academicSession.findFirst({ where: { isActive: true } })
   return session // May be null if none is active
 }
 
 // ─── Create ───────────────────────────────────────────────────
 
-export async function createAcademicSession(data: CreateAcademicSessionInput) {
+export async function createAcademicSession(db: any, data: CreateAcademicSessionInput) {
   // Check for duplicate name
-  const existing = await prisma.academicSession.findUnique({ where: { name: data.name } })
+  const existing = await db.academicSession.findFirst({ where: { name: data.name } })
   if (existing) throw new ConflictError(`Academic session "${data.name}" already exists`)
 
   // If setting as active, deactivate all others first
   if (data.isActive) {
-    await prisma.academicSession.updateMany({ data: { isActive: false } })
+    await db.academicSession.updateMany({ data: { isActive: false } })
   }
 
-  return prisma.academicSession.create({
+  return db.academicSession.create({
     data: {
       name: data.name,
       startDate: new Date(data.startDate),
@@ -87,13 +86,13 @@ export async function createAcademicSession(data: CreateAcademicSessionInput) {
 
 // ─── Update ───────────────────────────────────────────────────
 
-export async function updateAcademicSession(id: string, data: UpdateAcademicSessionInput) {
+export async function updateAcademicSession(db: any, id: string, data: UpdateAcademicSessionInput) {
   // Ensure the session exists
-  await getAcademicSessionById(id)
+  await getAcademicSessionById(db, id)
 
   // Check for duplicate name (exclude the current session)
   if (data.name) {
-    const duplicate = await prisma.academicSession.findFirst({
+    const duplicate = await db.academicSession.findFirst({
       where: { name: data.name, NOT: { id } },
     })
     if (duplicate) throw new ConflictError(`Academic session "${data.name}" already exists`)
@@ -101,13 +100,13 @@ export async function updateAcademicSession(id: string, data: UpdateAcademicSess
 
   // If setting as active, deactivate all others first
   if (data.isActive === true) {
-    await prisma.academicSession.updateMany({
+    await db.academicSession.updateMany({
       where: { NOT: { id } },
       data: { isActive: false },
     })
   }
 
-  return prisma.academicSession.update({
+  return db.academicSession.update({
     where: { id },
     data: {
       ...(data.name !== undefined && { name: data.name }),
@@ -120,20 +119,18 @@ export async function updateAcademicSession(id: string, data: UpdateAcademicSess
 
 // ─── Set Active ───────────────────────────────────────────────
 
-export async function setActiveAcademicSession(id: string) {
-  await getAcademicSessionById(id)
+export async function setActiveAcademicSession(db: any, id: string) {
+  await getAcademicSessionById(db, id)
 
-  // Deactivate all, then activate the target — atomic via transaction
-  return prisma.$transaction([
-    prisma.academicSession.updateMany({ data: { isActive: false } }),
-    prisma.academicSession.update({ where: { id }, data: { isActive: true } }),
-  ])
+  // Deactivate all, then activate target
+  await db.academicSession.updateMany({ data: { isActive: false } })
+  return db.academicSession.update({ where: { id }, data: { isActive: true } })
 }
 
 // ─── Delete ───────────────────────────────────────────────────
 
-export async function deleteAcademicSession(id: string) {
-  const session = await getAcademicSessionById(id)
+export async function deleteAcademicSession(db: any, id: string) {
+  const session = await getAcademicSessionById(db, id)
 
   if (session.isActive) {
     throw new ConflictError(
@@ -141,11 +138,11 @@ export async function deleteAcademicSession(id: string) {
     )
   }
 
-  return prisma.academicSession.delete({ where: { id } })
+  return db.academicSession.delete({ where: { id } })
 }
 
 // ─── Stats ────────────────────────────────────────────────────
 
-export async function getAcademicSessionCount() {
-  return prisma.academicSession.count()
+export async function getAcademicSessionCount(db: any) {
+  return db.academicSession.count()
 }

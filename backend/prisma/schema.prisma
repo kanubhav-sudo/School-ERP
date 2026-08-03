@@ -161,13 +161,42 @@ model School {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  settings      SchoolSettings?
-  features      SchoolFeatures?
-  subscriptions Subscription[]
-  users         User[]
-  parents       Parent[]
-  notifications Notification[]
-  auditLogs     AuditLog[]
+  settings            SchoolSettings?
+  features            SchoolFeatures?
+  subscriptions       Subscription[]
+  users               User[]
+  parents             Parent[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  academicSessions    AcademicSession[]
+  classes             Class[]
+  sections            Section[]
+  subjects            Subject[]
+  classSubjects       ClassSubject[]
+  teachers            Teacher[]
+  teacherAssignments  TeacherAssignment[]
+  students            Student[]
+  studentParents      StudentParent[]
+  timetables          Timetable[]
+  periodMasters       PeriodMaster[]
+  attendances         Attendance[]
+  attendanceRecords   AttendanceRecord[]
+  notices             Notice[]
+  usernameSequences   UsernameSequence[]
+  accountAuditLogs    AccountAuditLog[]
+  feePlans            FeePlan[]
+  feeRecords          FeeRecord[]
+  feePayments         FeePayment[]
+  feeReminderRules    FeeReminderRule[]
+  announcements       Announcement[]
+  exams               Exam[]
+  examSchedules       ExamSchedule[]
+  admitCards          AdmitCard[]
+  examMarks           ExamMark[]
+  reportCards         ReportCard[]
+  examTemplates       ExamTemplate[]
+  homework            Homework[]
+  homeworkSubmissions HomeworkSubmission[]
 
   @@index([slug])
   @@index([customDomain])
@@ -303,6 +332,8 @@ model Parent {
 }
 
 model StudentParent {
+  schoolId  String  @map("school_id") @db.Uuid
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   studentId String  @map("student_id") @db.Uuid
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   parentId  String  @map("parent_id") @db.Uuid
@@ -310,6 +341,7 @@ model StudentParent {
   relation  String  @default("FATHER")
 
   @@id([studentId, parentId])
+  @@index([schoolId])
   @@map("student_parents")
 }
 
@@ -357,8 +389,6 @@ model AuditLog {
 }
 
 // ─── User ─────────────────────────────────────────────────────
-// Holds authentication credentials only.
-// Profile data lives in separate child models (Milestone 3).
 
 model User {
   id                  String        @id @default(uuid()) @db.Uuid
@@ -396,12 +426,12 @@ model User {
 }
 
 // ─── Academic Session ─────────────────────────────────────────
-// Represents an academic year (e.g. "2024-2025").
-// Only one session can be active at a time.
 
 model AcademicSession {
   id        String   @id @default(uuid()) @db.Uuid
-  name      String   @unique
+  schoolId  String   @map("school_id") @db.Uuid
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name      String
   startDate DateTime @map("start_date") @db.Date
   endDate   DateTime @map("end_date") @db.Date
   isActive  Boolean  @default(false) @map("is_active")
@@ -419,16 +449,19 @@ model AcademicSession {
   periodMasters      PeriodMaster[]
   homework           Homework[]
 
+  @@unique([schoolId, name])
+  @@index([schoolId])
   @@index([isActive])
   @@map("academic_sessions")
 }
 
 // ─── Class ────────────────────────────────────────────────────
-// Represents a grade or class level (e.g. "Grade 10", "Class X").
 
 model Class {
   id           String   @id @default(uuid()) @db.Uuid
-  name         String   @unique
+  schoolId     String   @map("school_id") @db.Uuid
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name         String
   displayOrder Int      @default(0) @map("display_order")
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -445,16 +478,19 @@ model Class {
   homework           Homework[]
   exams              Exam[]
 
+  @@unique([schoolId, name])
+  @@index([schoolId])
   @@index([isActive])
   @@index([displayOrder])
   @@map("classes")
 }
 
 // ─── Section ──────────────────────────────────────────────────
-// Represents a division within a class (e.g. "A", "B", "C").
 
 model Section {
   id        String   @id @default(uuid()) @db.Uuid
+  schoolId  String   @map("school_id") @db.Uuid
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   name      String
   capacity  Int      @default(40)
   isActive  Boolean  @default(true) @map("is_active")
@@ -471,19 +507,21 @@ model Section {
   homework           Homework[]
   exams              Exam[]
 
-  @@unique([classId, name])
+  @@unique([schoolId, classId, name])
+  @@index([schoolId])
   @@index([classId])
   @@index([isActive])
   @@map("sections")
 }
 
 // ─── Subject ──────────────────────────────────────────────────
-// Represents a subject taught at the school (e.g. "Mathematics", "MATH101").
 
 model Subject {
   id          String   @id @default(uuid()) @db.Uuid
+  schoolId    String   @map("school_id") @db.Uuid
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   name        String
-  code        String   @unique
+  code        String
   description String?
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -496,14 +534,17 @@ model Subject {
   examSchedules      ExamSchedule[]
   examMarks          ExamMark[]
 
+  @@unique([schoolId, code])
+  @@index([schoolId])
   @@index([isActive])
   @@map("subjects")
 }
 
 // ─── Class–Subject Assignment ─────────────────────────────────
-// Many-to-many: which subjects are taught in which class.
 
 model ClassSubject {
+  schoolId  String @map("school_id") @db.Uuid
+  school    School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   classId   String @map("class_id") @db.Uuid
   subjectId String @map("subject_id") @db.Uuid
 
@@ -511,27 +552,28 @@ model ClassSubject {
   subject Subject @relation(fields: [subjectId], references: [id])
 
   @@id([classId, subjectId])
+  @@index([schoolId])
   @@map("class_subjects")
 }
 
 // ─── Teacher ──────────────────────────────────────────────────
-// Teacher profile. Linked optionally to a User account for login.
 
 model Teacher {
   id               String              @id @default(uuid()) @db.Uuid
+  schoolId         String              @map("school_id") @db.Uuid
+  school           School              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   userId           String?             @unique @map("user_id") @db.Uuid
-  employeeId       String              @unique @map("employee_id")
+  employeeId       String              @map("employee_id")
   firstName        String              @map("first_name")
   lastName         String              @map("last_name")
   gender           Gender
   dateOfBirth      DateTime?           @map("date_of_birth") @db.Date
   phone            String?
-  email            String              @unique
+  email            String
   qualification    String?
   experienceYears  Int                 @default(0) @map("experience_years")
   department       String?
   designation      TeacherDesignation? @default(TEACHER) @map("designation")
-  // NOTE: designation will be consumed by Leave Module, Payroll, Dashboard, Permissions.
   joiningDate      DateTime            @map("joining_date") @db.Date
   employmentStatus EmploymentStatus    @default(PERMANENT) @map("employment_status")
   address          String?
@@ -539,8 +581,6 @@ model Teacher {
   emergencyContact String?             @map("emergency_contact")
   emergencyPhone   String?             @map("emergency_phone")
   photoUrl         String?             @map("photo_url")
-  // NOTE (photoUrl): URL-only in this milestone. Future Storage Module will add file upload
-  // while reusing this same column — no schema migration required at that point.
   notes            String?
   isActive         Boolean             @default(true) @map("is_active")
   deletedAt        DateTime?           @map("deleted_at")
@@ -553,6 +593,9 @@ model Teacher {
   announcements Announcement[]
   homework      Homework[]
 
+  @@unique([schoolId, employeeId])
+  @@unique([schoolId, email])
+  @@index([schoolId])
   @@index([isActive])
   @@index([employmentStatus])
   @@index([designation])
@@ -561,10 +604,11 @@ model Teacher {
 }
 
 // ─── Teacher Assignment ───────────────────────────────────────
-// Maps a teacher to a class + section + subject combination.
 
 model TeacherAssignment {
   id             String  @id @default(uuid()) @db.Uuid
+  schoolId       String  @map("school_id") @db.Uuid
+  school         School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teacherId      String  @map("teacher_id") @db.Uuid
   sessionId      String  @map("session_id") @db.Uuid
   classId        String  @map("class_id") @db.Uuid
@@ -578,7 +622,8 @@ model TeacherAssignment {
   section Section         @relation(fields: [sectionId], references: [id])
   subject Subject         @relation(fields: [subjectId], references: [id])
 
-  @@unique([teacherId, sessionId, classId, sectionId, subjectId])
+  @@unique([schoolId, teacherId, sessionId, classId, sectionId, subjectId])
+  @@index([schoolId])
   @@index([teacherId])
   @@index([sessionId])
   @@index([classId])
@@ -588,12 +633,13 @@ model TeacherAssignment {
 }
 
 // ─── Student ──────────────────────────────────────────────────
-// Student profile. Linked optionally to a User account for login.
 
 model Student {
   id              String      @id @default(uuid()) @db.Uuid
+  schoolId        String      @map("school_id") @db.Uuid
+  school          School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   userId          String?     @unique @map("user_id") @db.Uuid
-  admissionNumber String      @unique @map("admission_number")
+  admissionNumber String      @map("admission_number")
   rollNumber      String?     @map("roll_number")
   firstName       String      @map("first_name")
   lastName        String      @map("last_name")
@@ -626,16 +672,16 @@ model Student {
   classId   String? @map("class_id") @db.Uuid
   sectionId String? @map("section_id") @db.Uuid
 
-  // Fee Assignment (Milestone 5)
+  // Fee Assignment
   feeCategory      FeeCategory? @default(STANDARD) @map("fee_category")
   feePlanId        String?      @map("fee_plan_id") @db.Uuid
   siblingStudentId String?      @map("sibling_student_id") @db.Uuid
   siblingFeeAmount Int?         @map("sibling_fee_amount")
 
-  admissionDate DateTime      @map("admission_date") @db.Date
-  status        StudentStatus @default(ACTIVE)
-  notes         String?
-  advanceBalance Int        @default(0) @map("advance_balance") // paise
+  admissionDate  DateTime      @map("admission_date") @db.Date
+  status         StudentStatus @default(ACTIVE)
+  notes          String?
+  advanceBalance Int           @default(0) @map("advance_balance") // paise
 
   isActive  Boolean   @default(true) @map("is_active")
   deletedAt DateTime? @map("deleted_at")
@@ -647,7 +693,6 @@ model Student {
   class   Class?           @relation(fields: [classId], references: [id])
   section Section?         @relation(fields: [sectionId], references: [id])
 
-  // Fee relations (Milestone 5)
   feePlan   FeePlan?  @relation(fields: [feePlanId], references: [id])
   sibling   Student?  @relation("SiblingRelation", fields: [siblingStudentId], references: [id])
   siblingOf Student[] @relation("SiblingRelation")
@@ -660,6 +705,8 @@ model Student {
   homeworkSubmissions HomeworkSubmission[]
   parents             StudentParent[]
 
+  @@unique([schoolId, admissionNumber])
+  @@index([schoolId])
   @@index([isActive])
   @@index([status])
   @@index([deletedAt])
@@ -673,11 +720,11 @@ model Student {
 }
 
 // ─── Timetable ────────────────────────────────────────────────
-// Defines the weekly class schedule: which teacher teaches which
-// subject in which section at which period/time slot.
 
 model Timetable {
   id           String    @id @default(uuid()) @db.Uuid
+  schoolId     String    @map("school_id") @db.Uuid
+  school       School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   sessionId    String    @map("session_id") @db.Uuid
   classId      String    @map("class_id") @db.Uuid
   sectionId    String    @map("section_id") @db.Uuid
@@ -691,7 +738,7 @@ model Timetable {
   isOverride   Boolean   @default(false) @map("is_override")
   overrideDate DateTime? @map("override_date") @db.Date
 
-  // Audit fields — plain UUIDs, populated from req.user.sub
+  // Audit fields
   createdById String? @map("created_by_id") @db.Uuid
   updatedById String? @map("updated_by_id") @db.Uuid
 
@@ -709,9 +756,9 @@ model Timetable {
   teacher Teacher         @relation(fields: [teacherId], references: [id])
   subject Subject         @relation(fields: [subjectId], references: [id])
 
-  // DB-level double-booking prevention
-  @@unique([sectionId, dayOfWeek, periodNumber]) // one subject per section slot
-  @@unique([teacherId, dayOfWeek, periodNumber]) // teacher can't be in two places
+  @@unique([schoolId, sectionId, dayOfWeek, periodNumber])
+  @@unique([schoolId, teacherId, dayOfWeek, periodNumber])
+  @@index([schoolId])
   @@index([sessionId])
   @@index([sectionId])
   @@index([teacherId])
@@ -721,18 +768,21 @@ model Timetable {
 
 model PeriodMaster {
   id           String @id @default(uuid()) @db.Uuid
+  schoolId     String @map("school_id") @db.Uuid
+  school       School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   sessionId    String @map("session_id") @db.Uuid
   periodNumber Int    @map("period_number")
-  startTime    String @map("start_time") // "HH:MM" 24-hour format
-  endTime      String @map("end_time") // "HH:MM" 24-hour format
+  startTime    String @map("start_time")
+  endTime      String @map("end_time")
 
   session AcademicSession @relation(fields: [sessionId], references: [id])
 
-  @@unique([sessionId, periodNumber])
+  @@unique([schoolId, sessionId, periodNumber])
+  @@index([schoolId])
   @@map("period_master")
 }
 
-// ─── Notices & Announcements ───────────────────────────────────────────────
+// ─── Attendance ───────────────────────────────────────────────
 
 enum AttendanceStatus {
   PRESENT
@@ -743,15 +793,15 @@ enum AttendanceStatus {
 
 model Attendance {
   id           String   @id @default(uuid()) @db.Uuid
+  schoolId     String   @map("school_id") @db.Uuid
+  school       School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   date         DateTime @db.Date
   sectionId    String   @map("section_id") @db.Uuid
   recordedById String   @map("recorded_by_id") @db.Uuid
 
-  // Audit
   createdById String? @map("created_by_id") @db.Uuid
   updatedById String? @map("updated_by_id") @db.Uuid
 
-  // Soft delete
   isDeleted   Boolean   @default(false) @map("is_deleted")
   deletedAt   DateTime? @map("deleted_at")
   deletedById String?   @map("deleted_by_id") @db.Uuid
@@ -762,19 +812,18 @@ model Attendance {
   section Section            @relation(fields: [sectionId], references: [id])
   records AttendanceRecord[]
 
-  // One attendance sheet per section per day
-  @@unique([sectionId, date])
+  @@unique([schoolId, sectionId, date])
+  @@index([schoolId])
   @@index([date])
   @@index([sectionId])
   @@index([isDeleted])
   @@map("attendance")
 }
 
-// ─── Attendance Record ────────────────────────────────────────
-// Child: one row per student in the attendance sheet.
-
 model AttendanceRecord {
   id           String           @id @default(uuid()) @db.Uuid
+  schoolId     String           @map("school_id") @db.Uuid
+  school       School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   attendanceId String           @map("attendance_id") @db.Uuid
   studentId    String           @map("student_id") @db.Uuid
   status       AttendanceStatus
@@ -786,8 +835,8 @@ model AttendanceRecord {
   attendance Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
   student    Student    @relation(fields: [studentId], references: [id])
 
-  // One record per student per attendance sheet
   @@unique([attendanceId, studentId])
+  @@index([schoolId])
   @@index([attendanceId])
   @@index([studentId])
   @@map("attendance_records")
@@ -797,11 +846,13 @@ model AttendanceRecord {
 
 model Notice {
   id             String         @id @default(uuid()) @db.Uuid
+  schoolId       String         @map("school_id") @db.Uuid
+  school         School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   title          String
   content        String         @db.Text
   priority       NoticePriority @default(MEDIUM)
-  targetRoles    Role[] // Empty array means visible to all
-  targetClassIds String[]       @map("target_class_ids") @db.Uuid // Empty means all classes (if applicable)
+  targetRoles    Role[]
+  targetClassIds String[]       @map("target_class_ids") @db.Uuid
 
   publishedAt DateTime  @default(now()) @map("published_at")
   expiresAt   DateTime? @map("expires_at")
@@ -809,13 +860,11 @@ model Notice {
   authorId String @map("author_id") @db.Uuid
   author   User   @relation(fields: [authorId], references: [id])
 
-  attachments String[] // URLs for attached files
+  attachments String[]
 
-  // Audit
   createdById String? @map("created_by_id") @db.Uuid
   updatedById String? @map("updated_by_id") @db.Uuid
 
-  // Soft delete
   isDeleted   Boolean   @default(false) @map("is_deleted")
   deletedAt   DateTime? @map("deleted_at")
   deletedById String?   @map("deleted_by_id") @db.Uuid
@@ -823,6 +872,7 @@ model Notice {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([schoolId])
   @@index([publishedAt])
   @@index([expiresAt])
   @@index([isDeleted])
@@ -832,9 +882,14 @@ model Notice {
 // ─── Username Sequence ────────────────────────────────────────
 
 model UsernameSequence {
-  prefix  String @id
-  lastSeq Int    @default(0) @map("last_seq")
+  id       String @id @default(uuid()) @db.Uuid
+  schoolId String @map("school_id") @db.Uuid
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  prefix   String
+  lastSeq  Int    @default(0) @map("last_seq")
 
+  @@unique([schoolId, prefix])
+  @@index([schoolId])
   @@map("username_sequences")
 }
 
@@ -842,6 +897,8 @@ model UsernameSequence {
 
 model AccountAuditLog {
   id          String             @id @default(uuid()) @db.Uuid
+  schoolId    String?            @map("school_id") @db.Uuid
+  school      School?            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   userId      String             @map("user_id") @db.Uuid
   performedBy String?            @map("performed_by") @db.Uuid
   action      AccountAuditAction
@@ -853,6 +910,7 @@ model AccountAuditLog {
   user  User  @relation("AuditSubject", fields: [userId], references: [id])
   actor User? @relation("AuditActor", fields: [performedBy], references: [id])
 
+  @@index([schoolId])
   @@index([userId])
   @@index([action])
   @@index([createdAt])
@@ -860,28 +918,25 @@ model AccountAuditLog {
 }
 
 // ─── Fee Plan ─────────────────────────────────────────────────
-// Defines a fee structure for a class in an academic session.
-// Extensible via FeePlanType enum — new plan types added without schema redesign.
-// All monetary values stored in paise (1 INR = 100 paise).
 
 model FeePlan {
   id            String  @id @default(uuid()) @db.Uuid
+  schoolId      String  @map("school_id") @db.Uuid
+  school        School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   name          String
   sessionId     String  @map("session_id") @db.Uuid
   classId       String  @map("class_id") @db.Uuid
-  monthlyAmount Int     @map("monthly_amount") // paise (e.g. 150000 = Rs 1500)
-  admissionFee  Int     @default(0) @map("admission_fee") // paise
-  annualFee     Int     @default(0) @map("annual_fee") // paise
-  transportFee  Int     @default(0) @map("transport_fee") // paise
-  otherCharges  Int     @default(0) @map("other_charges") // paise
+  monthlyAmount Int     @map("monthly_amount")
+  admissionFee  Int     @default(0) @map("admission_fee")
+  annualFee     Int     @default(0) @map("annual_fee")
+  transportFee  Int     @default(0) @map("transport_fee")
+  otherCharges  Int     @default(0) @map("other_charges")
   description   String?
   isActive      Boolean @default(true) @map("is_active")
 
-  // Audit
   createdById String? @map("created_by_id") @db.Uuid
   updatedById String? @map("updated_by_id") @db.Uuid
 
-  // Soft delete
   isDeleted   Boolean   @default(false) @map("is_deleted")
   deletedAt   DateTime? @map("deleted_at")
   deletedById String?   @map("deleted_by_id") @db.Uuid
@@ -894,7 +949,8 @@ model FeePlan {
   students   Student[]
   feeRecords FeeRecord[]
 
-  @@unique([name, sessionId, classId])
+  @@unique([schoolId, name, sessionId, classId])
+  @@index([schoolId])
   @@index([sessionId])
   @@index([classId])
   @@index([isActive])
@@ -903,38 +959,33 @@ model FeePlan {
 }
 
 // ─── Fee Record ───────────────────────────────────────────────
-// Monthly fee record per student. One record per student per month per session.
-// Created on-demand by admin (future: auto-generated by cron job).
-// All monetary values stored in paise.
 
 model FeeRecord {
   id        String  @id @default(uuid()) @db.Uuid
+  schoolId  String  @map("school_id") @db.Uuid
+  school    School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   studentId String  @map("student_id") @db.Uuid
   feePlanId String? @map("fee_plan_id") @db.Uuid
   sessionId String  @map("session_id") @db.Uuid
   classId   String  @map("class_id") @db.Uuid
 
-  // Month identifier
-  month Int // 1-12
-  year  Int // e.g. 2025
+  month Int
+  year  Int
 
-  // Financial fields (all in paise)
-  monthlyAmount Int             @map("monthly_amount") // base amount from fee plan or sibling fee
-  lateFine      Int             @default(0) @map("late_fine") // future: applied by cron
-  netAmount     Int             @map("net_amount") // monthlyAmount + lateFine
-  paidAmount    Int             @default(0) @map("paid_amount") // amount paid so far
-  balanceAmount Int             @map("balance_amount") // netAmount - paidAmount
+  monthlyAmount Int             @map("monthly_amount")
+  lateFine      Int             @default(0) @map("late_fine")
+  netAmount     Int             @map("net_amount")
+  paidAmount    Int             @default(0) @map("paid_amount")
+  balanceAmount Int             @map("balance_amount")
   status        FeeRecordStatus @default(PENDING)
-  dueDate       DateTime?       @map("due_date") @db.Date // future: configurable
+  dueDate       DateTime?       @map("due_date") @db.Date
 
-  // Latest payment snapshot (full history in FeePayment table)
   lastPaymentDate DateTime?    @map("last_payment_date") @db.Date
   lastPaymentMode PaymentMode? @map("last_payment_mode")
-  receiptNumber   String?      @map("receipt_number") // future: auto-generated
+  receiptNumber   String?      @map("receipt_number")
 
   remarks String?
 
-  // Audit
   createdById String? @map("created_by_id") @db.Uuid
   updatedById String? @map("updated_by_id") @db.Uuid
 
@@ -945,9 +996,10 @@ model FeeRecord {
   feePlan  FeePlan?        @relation(fields: [feePlanId], references: [id])
   session  AcademicSession @relation(fields: [sessionId], references: [id])
   class    Class           @relation(fields: [classId], references: [id])
-  payments FeePayment[] // Full payment history (future)
+  payments FeePayment[]
 
-  @@unique([studentId, month, year, sessionId])
+  @@unique([schoolId, studentId, month, year, sessionId])
+  @@index([schoolId])
   @@index([studentId])
   @@index([sessionId])
   @@index([classId])
@@ -957,27 +1009,27 @@ model FeeRecord {
 }
 
 // ─── Fee Payment ──────────────────────────────────────────────
-// Individual payment transactions against a fee record.
-// Schema designed now; routes/UI implemented in a future milestone.
-// Supports partial payments and full payment history.
 
 model FeePayment {
   id             String      @id @default(uuid()) @db.Uuid
+  schoolId       String      @map("school_id") @db.Uuid
+  school         School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   feeRecordId    String      @map("fee_record_id") @db.Uuid
   studentId      String?     @map("student_id") @db.Uuid
-  amount         Int // paise
+  amount         Int
   paymentDate    DateTime    @map("payment_date") @db.Date
   paymentMode    PaymentMode @map("payment_mode")
-  receiptNumber  String      @unique @map("receipt_number")
-  transactionRef String?     @map("transaction_ref") // bank/gateway ref
+  receiptNumber  String      @map("receipt_number")
+  transactionRef String?     @map("transaction_ref")
   remarks        String?
 
-  // Audit
   collectedById String?  @map("collected_by_id") @db.Uuid
   createdAt     DateTime @default(now()) @map("created_at")
 
   feeRecord FeeRecord @relation(fields: [feeRecordId], references: [id])
 
+  @@unique([schoolId, receiptNumber])
+  @@index([schoolId])
   @@index([feeRecordId])
   @@index([studentId])
   @@index([paymentDate])
@@ -985,32 +1037,34 @@ model FeePayment {
 }
 
 // ─── Fee Reminder Rule ────────────────────────────────────────
-// Configuration for automated fee reminder notifications.
-// Schema designed now; cron job + notifications implemented in a future milestone.
 
 model FeeReminderRule {
   id         String   @id @default(uuid()) @db.Uuid
+  schoolId   String   @map("school_id") @db.Uuid
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   sessionId  String   @map("session_id") @db.Uuid
   name       String
-  daysOffset Int      @map("days_offset") // negative=before due date, 0=on due date, positive=after
+  daysOffset Int      @map("days_offset")
   isActive   Boolean  @default(true) @map("is_active")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
+  @@index([schoolId])
   @@map("fee_reminder_rules")
 }
 
-// ─── Announcements (Teacher to Section) ───────────────────────
+// ─── Announcements ────────────────────────────────────────────
 
 model Announcement {
   id          String    @id @default(uuid()) @db.Uuid
+  schoolId    String    @map("school_id") @db.Uuid
+  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   title       String
   content     String    @db.Text
   isPinned    Boolean   @default(false) @map("is_pinned")
   expiresAt   DateTime? @map("expires_at")
   attachments String[]  @default([])
 
-  // Assignment scope
   sessionId String @map("session_id") @db.Uuid
   classId   String @map("class_id") @db.Uuid
   sectionId String @map("section_id") @db.Uuid
@@ -1025,6 +1079,7 @@ model Announcement {
   section Section         @relation(fields: [sectionId], references: [id])
   author  Teacher         @relation(fields: [authorId], references: [id])
 
+  @@index([schoolId])
   @@index([sessionId])
   @@index([classId])
   @@index([sectionId])
@@ -1033,12 +1088,12 @@ model Announcement {
   @@map("announcements")
 }
 
-// ─── Exams (Admin/Global setup for Report Cards) ──────────────
-
-// ─── Exams (Admin/Global setup for Report Cards & Timetables) ─
+// ─── Exams ────────────────────────────────────────────────────
 
 model Exam {
   id        String        @id @default(uuid()) @db.Uuid
+  schoolId  String        @map("school_id") @db.Uuid
+  school    School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   sessionId String        @map("session_id") @db.Uuid
   classId   String?       @map("class_id") @db.Uuid
   sectionId String?       @map("section_id") @db.Uuid
@@ -1058,13 +1113,16 @@ model Exam {
   admitCards  AdmitCard[]
   marks       ExamMark[]
 
-  @@unique([sessionId, classId, sectionId, name])
+  @@unique([schoolId, sessionId, classId, sectionId, name])
+  @@index([schoolId])
   @@index([sessionId])
   @@map("exams")
 }
 
 model ExamSchedule {
   id        String   @id @default(uuid()) @db.Uuid
+  schoolId  String   @map("school_id") @db.Uuid
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   examId    String   @map("exam_id") @db.Uuid
   subjectId String   @map("subject_id") @db.Uuid
   examDate  DateTime @map("exam_date")
@@ -1078,7 +1136,8 @@ model ExamSchedule {
   exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
   subject Subject @relation(fields: [subjectId], references: [id])
 
-  @@unique([examId, subjectId])
+  @@unique([schoolId, examId, subjectId])
+  @@index([schoolId])
   @@index([examId])
   @@map("exam_schedules")
 }
@@ -1087,12 +1146,14 @@ model ExamSchedule {
 
 model AdmitCard {
   id            String   @id @default(uuid()) @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   sessionId     String   @map("session_id") @db.Uuid
   examId        String?  @map("exam_id") @db.Uuid
   studentId     String   @map("student_id") @db.Uuid
   fileUrl       String?  @map("file_url")
-  adminStatus   String   @default("AUTO") @map("admin_status") // RELEASED | HOLD | AUTO
-  teacherStatus String   @default("NONE") @map("teacher_status") // RELEASED | HOLD | NONE
+  adminStatus   String   @default("AUTO") @map("admin_status")
+  teacherStatus String   @default("NONE") @map("teacher_status")
   remark        String?
   isReleased    Boolean  @default(false) @map("is_released")
 
@@ -1103,7 +1164,8 @@ model AdmitCard {
   exam    Exam?           @relation(fields: [examId], references: [id])
   student Student         @relation(fields: [studentId], references: [id])
 
-  @@unique([sessionId, studentId, examId])
+  @@unique([schoolId, sessionId, studentId, examId])
+  @@index([schoolId])
   @@index([sessionId])
   @@index([studentId])
   @@map("admit_cards")
@@ -1113,6 +1175,8 @@ model AdmitCard {
 
 model ExamMark {
   id            String   @id @default(uuid()) @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   examId        String   @map("exam_id") @db.Uuid
   studentId     String   @map("student_id") @db.Uuid
   subjectId     String   @map("subject_id") @db.Uuid
@@ -1127,7 +1191,8 @@ model ExamMark {
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
-  @@unique([examId, studentId, subjectId])
+  @@unique([schoolId, examId, studentId, subjectId])
+  @@index([schoolId])
   @@index([examId])
   @@index([studentId])
   @@index([subjectId])
@@ -1138,6 +1203,8 @@ model ExamMark {
 
 model ReportCard {
   id            String   @id @default(uuid()) @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   examId        String   @map("exam_id") @db.Uuid
   studentId     String   @map("student_id") @db.Uuid
   fileUrl       String?  @map("file_url")
@@ -1146,8 +1213,8 @@ model ReportCard {
   percentage    Float?
   grade         String?
   remarks       String?
-  adminStatus   String   @default("AUTO") @map("admin_status") // RELEASED | HOLD | AUTO
-  teacherStatus String   @default("NONE") @map("teacher_status") // COMPLETED | DRAFT | NONE
+  adminStatus   String   @default("AUTO") @map("admin_status")
+  teacherStatus String   @default("NONE") @map("teacher_status")
   isReleased    Boolean  @default(false) @map("is_released")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -1156,7 +1223,8 @@ model ReportCard {
   exam    Exam    @relation(fields: [examId], references: [id])
   student Student @relation(fields: [studentId], references: [id])
 
-  @@unique([examId, studentId])
+  @@unique([schoolId, examId, studentId])
+  @@index([schoolId])
   @@index([examId])
   @@index([studentId])
   @@map("report_cards")
@@ -1166,7 +1234,9 @@ model ReportCard {
 
 model ExamTemplate {
   id                    String   @id @default(uuid()) @db.Uuid
-  type                  String   @unique // ADMIT_CARD | RESULT
+  schoolId              String   @map("school_id") @db.Uuid
+  school                School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  type                  String
   schoolName            String   @default("School ERP Academy") @map("school_name")
   logoUrl               String?  @map("logo_url")
   headerText            String?  @map("header_text")
@@ -1178,6 +1248,8 @@ model ExamTemplate {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@unique([schoolId, type])
+  @@index([schoolId])
   @@map("exam_templates")
 }
 
@@ -1197,6 +1269,8 @@ enum PublishStatus {
 
 model Homework {
   id            String        @id @default(uuid()) @db.Uuid
+  schoolId      String        @map("school_id") @db.Uuid
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   title         String
   description   String?       @db.Text
   dueDate       DateTime      @map("due_date") @db.Date
@@ -1221,6 +1295,7 @@ model Homework {
 
   submissions HomeworkSubmission[]
 
+  @@index([schoolId])
   @@index([sessionId])
   @@index([classId])
   @@index([sectionId])
@@ -1232,6 +1307,8 @@ model Homework {
 
 model HomeworkSubmission {
   id            String         @id @default(uuid()) @db.Uuid
+  schoolId      String         @map("school_id") @db.Uuid
+  school        School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   homeworkId    String         @map("homework_id") @db.Uuid
   studentId     String         @map("student_id") @db.Uuid
   status        HomeworkStatus @default(ASSIGNED)
@@ -1245,7 +1322,8 @@ model HomeworkSubmission {
   homework Homework @relation(fields: [homeworkId], references: [id])
   student  Student  @relation(fields: [studentId], references: [id])
 
-  @@unique([homeworkId, studentId])
+  @@unique([schoolId, homeworkId, studentId])
+  @@index([schoolId])
   @@index([studentId])
   @@index([homeworkId])
   @@map("homework_submissions")

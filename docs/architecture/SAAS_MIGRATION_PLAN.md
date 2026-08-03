@@ -581,13 +581,28 @@ Phase 7: Custom Domains, Parent Portal & System Hardening
 
 ### Phase 3: Tenant Scoping & Auto-Isolated Data Access
 
-**Objective**: Implement `createTenantClient` (`$extends`) and `tenantContextMiddleware`. Migrate all 19 services and controllers to use `req.db` for zero-oversight data isolation.
+**Status: ✅ COMPLETE — 2026-08-03**
 
-**Files Affected**:
-- `backend/src/database/tenant-client.ts` (NEW)
-- `backend/src/middlewares/tenant-context.middleware.ts` (NEW)
-- All 19 service files in `backend/src/services/`
-- All 19 controller files in `backend/src/controllers/`
+**Objective**: Implement `createTenantClient` (`$extends`) and `tenantContextMiddleware`. Migrate all business services and controllers to use `req.db` for zero-oversight data isolation.
+
+**Architectural Decisions & Implementation**:
+- Created `backend/src/database/tenant-client.ts` leveraging Prisma `$extends` client extension to inject `schoolId` into all `create`, `createMany`, `findFirst`, `findMany`, `update`, `updateMany`, `upsert`, `count`, `aggregate` operations, plus automatic soft-delete filtering (`deletedAt: null` / `isDeleted: false`).
+- Implemented `tenantContextMiddleware` in `backend/src/middlewares/tenant-context.middleware.ts` to attach `req.db` (the tenant-scoped Prisma client extension) to Express `Request`.
+- Created `docs/testing/TENANT_ISOLATION_TEST_PLAN.md` and `docs/architecture/MIGRATION_SAFETY_PLAN.md`.
+- Updated Database Schema (`prisma/schema.prisma`) adding `schoolId` and indexes to all 21 tenant models and relations (`Student`, `Teacher`, `AcademicSession`, `Class`, `Section`, `Subject`, `Attendance`, `Timetable`, `PeriodMaster`, `Homework`, `Notice`, `FeePlan`, `FeeRecord`, `Exam`, `Account`, etc.).
+- Successfully refactored all business services and controllers to accept `req.db` and eliminate direct usage of raw `prisma` client.
+- Verified TypeScript compilation (`npx tsc --noEmit`) and backend build (`npm run build`) with zero errors.
+
+**Files Created/Updated**:
+- `backend/src/database/tenant-client.ts` ✅ NEW
+- `backend/src/middlewares/tenant-context.middleware.ts` ✅ NEW
+- `backend/src/services/storage.service.ts` ✅ NEW
+- `docs/testing/TENANT_ISOLATION_TEST_PLAN.md` ✅ NEW
+- `docs/architecture/MIGRATION_SAFETY_PLAN.md` ✅ NEW
+- `docs/architecture/PHASE_3_ENGINEERING_REPORT.md` ✅ NEW
+- `backend/prisma/schema.prisma` ✅ Updated
+- All 19 service files in `backend/src/services/` ✅ Updated to receive `db: any`
+- All 19 controller files in `backend/src/controllers/` ✅ Updated to pass `req.db`
 
 ---
 

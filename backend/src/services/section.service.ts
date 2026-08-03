@@ -7,7 +7,6 @@
  * @module services/section
  */
 
-import prisma from '../database/prisma'
 import { ConflictError, NotFoundError } from '../core/errors'
 import type {
   CreateSectionInput,
@@ -17,7 +16,7 @@ import type {
 
 // ─── List ─────────────────────────────────────────────────────
 
-export async function listSections(filters: ListSectionsInput) {
+export async function listSections(db: any, filters: ListSectionsInput) {
   const { page, limit, search, classId, isActive } = filters
 
   const skip = (page - 1) * limit
@@ -29,14 +28,14 @@ export async function listSections(filters: ListSectionsInput) {
   }
 
   const [sections, total] = await Promise.all([
-    prisma.section.findMany({
+    db.section.findMany({
       where,
       skip,
       take: limit,
       orderBy: [{ class: { displayOrder: 'asc' } }, { name: 'asc' }],
       include: { class: { select: { id: true, name: true } } },
     }),
-    prisma.section.count({ where }),
+    db.section.count({ where }),
   ])
 
   return {
@@ -52,8 +51,8 @@ export async function listSections(filters: ListSectionsInput) {
 
 // ─── Get One ──────────────────────────────────────────────────
 
-export async function getSectionById(id: string) {
-  const section = await prisma.section.findUnique({
+export async function getSectionById(db: any, id: string) {
+  const section = await db.section.findFirst({
     where: { id },
     include: { class: { select: { id: true, name: true } } },
   })
@@ -63,20 +62,20 @@ export async function getSectionById(id: string) {
 
 // ─── Create ───────────────────────────────────────────────────
 
-export async function createSection(data: CreateSectionInput) {
+export async function createSection(db: any, data: CreateSectionInput) {
   // Ensure the parent class exists
-  const parentClass = await prisma.class.findUnique({ where: { id: data.classId } })
+  const parentClass = await db.class.findFirst({ where: { id: data.classId } })
   if (!parentClass) throw new NotFoundError('Class not found')
 
   // Unique constraint: section name must be unique within the class
-  const duplicate = await prisma.section.findFirst({
+  const duplicate = await db.section.findFirst({
     where: { classId: data.classId, name: data.name },
   })
   if (duplicate) {
     throw new ConflictError(`Section "${data.name}" already exists in this class`)
   }
 
-  return prisma.section.create({
+  return db.section.create({
     data: {
       name: data.name,
       classId: data.classId,
@@ -89,15 +88,15 @@ export async function createSection(data: CreateSectionInput) {
 
 // ─── Update ───────────────────────────────────────────────────
 
-export async function updateSection(id: string, data: UpdateSectionInput) {
-  const section = await getSectionById(id)
+export async function updateSection(db: any, id: string, data: UpdateSectionInput) {
+  const section = await getSectionById(db, id)
 
   const resolvedClassId = data.classId ?? section.classId
   const resolvedName = data.name ?? section.name
 
   // If class or name changes, check uniqueness
   if (data.name || data.classId) {
-    const duplicate = await prisma.section.findFirst({
+    const duplicate = await db.section.findFirst({
       where: { classId: resolvedClassId, name: resolvedName, NOT: { id } },
     })
     if (duplicate) {
@@ -107,11 +106,11 @@ export async function updateSection(id: string, data: UpdateSectionInput) {
 
   // If classId changing, verify the new class exists
   if (data.classId && data.classId !== section.classId) {
-    const parentClass = await prisma.class.findUnique({ where: { id: data.classId } })
+    const parentClass = await db.class.findFirst({ where: { id: data.classId } })
     if (!parentClass) throw new NotFoundError('Class not found')
   }
 
-  return prisma.section.update({
+  return db.section.update({
     where: { id },
     data: {
       ...(data.name !== undefined && { name: data.name }),
@@ -125,7 +124,7 @@ export async function updateSection(id: string, data: UpdateSectionInput) {
 
 // ─── Delete ───────────────────────────────────────────────────
 
-export async function deleteSection(id: string) {
-  await getSectionById(id)
-  return prisma.section.delete({ where: { id } })
+export async function deleteSection(db: any, id: string) {
+  await getSectionById(db, id)
+  return db.section.delete({ where: { id } })
 }

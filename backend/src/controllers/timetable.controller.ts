@@ -37,7 +37,7 @@ export async function listTimetable(
       ApiResponse.badRequest(res, 'Invalid query parameters', parsed.error.issues)
       return
     }
-    const entries = await TimetableService.listTimetable(parsed.data)
+    const entries = await TimetableService.listTimetable(req.db, parsed.data)
     ApiResponse.success(res, entries, 'Timetable retrieved')
   } catch (err) {
     next(err)
@@ -48,7 +48,7 @@ export async function listTimetable(
 
 export async function getTimetable(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const entry = await TimetableService.getTimetableById(req.params.id as string)
+    const entry = await TimetableService.getTimetableById(req.db, req.params.id as string)
     ApiResponse.success(res, entry, 'Timetable entry retrieved')
   } catch (err) {
     next(err)
@@ -65,7 +65,7 @@ export async function getTimetableBySection(
   try {
     const { sectionId } = req.params as { sectionId: string }
     const sessionId = req.query.sessionId as string | undefined
-    const entries = await TimetableService.getTimetableBySection(sectionId, sessionId)
+    const entries = await TimetableService.getTimetableBySection(req.db, sectionId, sessionId)
     ApiResponse.success(res, entries, 'Section timetable retrieved')
   } catch (err) {
     next(err)
@@ -82,7 +82,7 @@ export async function getTimetableByTeacher(
   try {
     const { teacherId } = req.params as { teacherId: string }
     const sessionId = req.query.sessionId as string | undefined
-    const entries = await TimetableService.getTimetableByTeacher(teacherId, sessionId)
+    const entries = await TimetableService.getTimetableByTeacher(req.db, teacherId, sessionId)
     ApiResponse.success(res, entries, 'Teacher timetable retrieved')
   } catch (err) {
     next(err)
@@ -103,7 +103,7 @@ export async function createTimetable(
       return
     }
     const userId = req.user?.sub
-    const entry = await TimetableService.createTimetableEntry(parsed.data, userId)
+    const entry = await TimetableService.createTimetableEntry(req.db, parsed.data, userId)
     ApiResponse.created(res, entry, 'Timetable entry created')
   } catch (err) {
     next(err)
@@ -125,7 +125,7 @@ export async function updateTimetable(
       return
     }
     const userId = req.user?.sub
-    const entry = await TimetableService.updateTimetableEntry(id, parsed.data, userId)
+    const entry = await TimetableService.updateTimetableEntry(req.db, id, parsed.data, userId)
     ApiResponse.success(res, entry, 'Timetable entry updated')
   } catch (err) {
     next(err)
@@ -142,7 +142,7 @@ export async function deleteTimetable(
   try {
     const id = req.params.id as string
     const userId = req.user?.sub
-    await TimetableService.deleteTimetableEntry(id, userId)
+    await TimetableService.deleteTimetableEntry(req.db, id, userId)
     ApiResponse.success(res, null, 'Timetable entry deleted')
   } catch (err) {
     next(err)

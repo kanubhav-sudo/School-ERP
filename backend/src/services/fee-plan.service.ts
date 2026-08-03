@@ -12,7 +12,6 @@
  * @module services/fee-plan
  */
 
-import { prisma } from '../database'
 import { ConflictError, NotFoundError } from '../core/errors'
 import type {
   CreateFeePlanInput,
@@ -41,7 +40,7 @@ const feePlanSelect = {
 
 // ─── List ──────────────────────────────────────────────────────
 
-export async function listFeePlans(filters: ListFeePlansInput) {
+export async function listFeePlans(db: any, filters: ListFeePlansInput) {
   const { page, limit, sessionId, classId, isActive } = filters
 
   const skip = (page - 1) * limit
@@ -54,14 +53,14 @@ export async function listFeePlans(filters: ListFeePlansInput) {
   }
 
   const [feePlans, total] = await Promise.all([
-    prisma.feePlan.findMany({
+    db.feePlan.findMany({
       where,
       select: feePlanSelect,
       skip,
       take: limit,
       orderBy: [{ session: { name: 'desc' } }, { class: { displayOrder: 'asc' } }, { name: 'asc' }],
     }),
-    prisma.feePlan.count({ where }),
+    db.feePlan.count({ where }),
   ])
 
   return {
@@ -77,8 +76,8 @@ export async function listFeePlans(filters: ListFeePlansInput) {
 
 // ─── Get One ──────────────────────────────────────────────────
 
-export async function getFeePlanById(id: string) {
-  const feePlan = await prisma.feePlan.findFirst({
+export async function getFeePlanById(db: any, id: string) {
+  const feePlan = await db.feePlan.findFirst({
     where: { id, isDeleted: false },
     select: feePlanSelect,
   })
@@ -88,9 +87,9 @@ export async function getFeePlanById(id: string) {
 
 // ─── Create ───────────────────────────────────────────────────
 
-export async function createFeePlan(data: CreateFeePlanInput, actorId: string) {
+export async function createFeePlan(db: any, data: CreateFeePlanInput, actorId: string) {
   // Check for duplicate name within same session + class
-  const existing = await prisma.feePlan.findFirst({
+  const existing = await db.feePlan.findFirst({
     where: {
       name: data.name,
       sessionId: data.sessionId,
@@ -105,7 +104,7 @@ export async function createFeePlan(data: CreateFeePlanInput, actorId: string) {
   }
 
   // Convert rupees to paise for storage
-  const feePlan = await prisma.feePlan.create({
+  const feePlan = await db.feePlan.create({
     data: {
       name: data.name,
       sessionId: data.sessionId,
@@ -123,17 +122,22 @@ export async function createFeePlan(data: CreateFeePlanInput, actorId: string) {
 
 // ─── Update ───────────────────────────────────────────────────
 
-export async function updateFeePlan(id: string, data: UpdateFeePlanInput, actorId: string) {
-  await getFeePlanById(id)
+export async function updateFeePlan(
+  db: any,
+  id: string,
+  data: UpdateFeePlanInput,
+  actorId: string
+) {
+  await getFeePlanById(db, id)
 
   // If name + session + class is changing, check for duplicate
   if (data.name || data.sessionId || data.classId) {
-    const current = await prisma.feePlan.findUnique({ where: { id } })
+    const current = await db.feePlan.findFirst({ where: { id } })
     const checkName = data.name ?? current!.name
     const checkSessionId = data.sessionId ?? current!.sessionId
     const checkClassId = data.classId ?? current!.classId
 
-    const dup = await prisma.feePlan.findFirst({
+    const dup = await db.feePlan.findFirst({
       where: {
         name: checkName,
         sessionId: checkSessionId,
@@ -149,7 +153,7 @@ export async function updateFeePlan(id: string, data: UpdateFeePlanInput, actorI
     }
   }
 
-  return prisma.feePlan.update({
+  return db.feePlan.update({
     where: { id },
     data: {
       ...(data.name !== undefined && { name: data.name }),
@@ -166,11 +170,11 @@ export async function updateFeePlan(id: string, data: UpdateFeePlanInput, actorI
 
 // ─── Soft Delete ──────────────────────────────────────────────
 
-export async function deleteFeePlan(id: string, actorId: string) {
-  await getFeePlanById(id)
+export async function deleteFeePlan(db: any, id: string, actorId: string) {
+  await getFeePlanById(db, id)
 
   // Prevent deletion if active students are assigned to this plan
-  const assignedCount = await prisma.student.count({
+  const assignedCount = await db.student.count({
     where: { feePlanId: id, deletedAt: null },
   })
   if (assignedCount > 0) {
@@ -179,7 +183,7 @@ export async function deleteFeePlan(id: string, actorId: string) {
     )
   }
 
-  return prisma.feePlan.update({
+  return db.feePlan.update({
     where: { id },
     data: {
       isDeleted: true,

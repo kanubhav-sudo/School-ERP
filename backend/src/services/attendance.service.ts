@@ -13,7 +13,6 @@
  * @module services/attendance
  */
 
-import prisma from '../database/prisma'
 import { NotFoundError, ValidationError } from '../core/errors'
 import type { MarkAttendanceInput, GetAttendanceInput } from '../validators/attendance.validator'
 
@@ -29,11 +28,11 @@ function parseDate(dateStr: string): Date {
 
 // ─── Mark Attendance (Upsert) ─────────────────────────────────
 
-export async function markAttendance(input: MarkAttendanceInput, userId?: string) {
+export async function markAttendance(db: any, input: MarkAttendanceInput, userId?: string) {
   const { date, sectionId, records } = input
 
   // 1. Verify section exists
-  const section = await prisma.section.findFirst({
+  const section = await db.section.findFirst({
     where: { id: sectionId, isActive: true },
     select: { id: true },
   })
@@ -43,7 +42,7 @@ export async function markAttendance(input: MarkAttendanceInput, userId?: string
 
   // 2. Verify all studentIds belong to the requested section and are active
   const studentIds = records.map((r) => r.studentId)
-  const students = await prisma.student.findMany({
+  const students = await db.student.findMany({
     where: {
       id: { in: studentIds },
       sectionId,
@@ -54,7 +53,7 @@ export async function markAttendance(input: MarkAttendanceInput, userId?: string
   })
 
   if (students.length !== studentIds.length) {
-    const foundIds = new Set(students.map((s) => s.id))
+    const foundIds = new Set(students.map((s: { id: string }) => s.id))
     const invalidIds = studentIds.filter((id) => !foundIds.has(id))
     throw new ValidationError('Some student IDs are invalid or do not belong to this section', [
       {
@@ -74,7 +73,7 @@ export async function markAttendance(input: MarkAttendanceInput, userId?: string
   }
 
   // 3. Upsert the parent Attendance row
-  const attendance = await prisma.attendance.upsert({
+  const attendance = await db.attendance.upsert({
     where: {
       sectionId_date: { sectionId, date: parsedDate },
     },
@@ -98,7 +97,7 @@ export async function markAttendance(input: MarkAttendanceInput, userId?: string
   // 4. Upsert each child AttendanceRecord
   await Promise.all(
     records.map((record) =>
-      prisma.attendanceRecord.upsert({
+      db.attendanceRecord.upsert({
         where: {
           attendanceId_studentId: {
             attendanceId: attendance.id,
@@ -120,7 +119,7 @@ export async function markAttendance(input: MarkAttendanceInput, userId?: string
   )
 
   // 5. Return the full attendance sheet
-  return getAttendanceSheet(sectionId, date)
+  return getAttendanceSheet(db, sectionId, date)
 }
 
 // ─── Get Attendance ───────────────────────────────────────────
@@ -129,10 +128,10 @@ export async function markAttendance(input: MarkAttendanceInput, userId?: string
  * Fetch a single attendance sheet for a section on a specific date,
  * including all student records. Returns null if not yet recorded.
  */
-export async function getAttendanceSheet(sectionId: string, date: string) {
+export async function getAttendanceSheet(db: any, sectionId: string, date: string) {
   const parsedDate = parseDate(date)
 
-  const sheet = await prisma.attendance.findFirst({
+  const sheet = await db.attendance.findFirst({
     where: {
       sectionId,
       date: parsedDate,
@@ -173,10 +172,10 @@ export async function getAttendanceSheet(sectionId: string, date: string) {
  * List attendance sheets for a section, optionally filtered by date.
  * Used by teachers/admins to see historical records.
  */
-export async function listAttendance(filters: GetAttendanceInput) {
+export async function listAttendance(db: any, filters: GetAttendanceInput) {
   const { sectionId, date } = filters
 
-  const sheets = await prisma.attendance.findMany({
+  const sheets = await db.attendance.findMany({
     where: {
       isDeleted: false,
       ...(sectionId ? { sectionId } : {}),
@@ -220,12 +219,13 @@ export async function listAttendance(filters: GetAttendanceInput) {
  * Counts occurrences of each status for each student.
  */
 export async function getAttendanceSummary(
+  db: any,
   sectionId: string,
   startDate?: string,
   endDate?: string
 ) {
   // Verify section exists
-  const section = await prisma.section.findFirst({
+  const section = await db.section.findFirst({
     where: { id: sectionId, isActive: true },
     select: { id: true, name: true },
   })
@@ -236,7 +236,7 @@ export async function getAttendanceSummary(
   if (endDate) whereDate.lte = parseDate(endDate)
 
   // Fetch all records for all attendance sheets in the section+date range
-  const records = await prisma.attendanceRecord.findMany({
+  const records = await db.attendanceRecord.findMany({
     where: {
       attendance: {
         sectionId,

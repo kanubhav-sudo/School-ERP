@@ -29,7 +29,7 @@ export async function listAttendance(
       ApiResponse.badRequest(res, 'Invalid query parameters', parsed.error.issues)
       return
     }
-    const sheets = await AttendanceService.listAttendance(parsed.data)
+    const sheets = await AttendanceService.listAttendance(req.db, parsed.data)
     ApiResponse.success(res, sheets, 'Attendance records retrieved')
   } catch (err) {
     next(err)
@@ -49,7 +49,7 @@ export async function getAttendanceSheet(
       ApiResponse.badRequest(res, 'sectionId and date query parameters are required')
       return
     }
-    const sheet = await AttendanceService.getAttendanceSheet(sectionId, date)
+    const sheet = await AttendanceService.getAttendanceSheet(req.db, sectionId, date)
     if (!sheet) {
       // Not recorded yet — return null data with 200 so frontend can show empty state
       ApiResponse.success(res, null, 'No attendance recorded for this date')
@@ -75,7 +75,7 @@ export async function markAttendance(
       return
     }
     const userId = req.user?.sub
-    const sheet = await AttendanceService.markAttendance(parsed.data, userId)
+    const sheet = await AttendanceService.markAttendance(req.db, parsed.data, userId)
     ApiResponse.success(res, sheet, 'Attendance marked successfully')
   } catch (err) {
     next(err)

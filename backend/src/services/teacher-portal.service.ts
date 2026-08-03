@@ -8,7 +8,6 @@
  * @module services/teacher-portal
  */
 
-import prisma from '../database/prisma'
 import { ForbiddenError, NotFoundError } from '../core/errors'
 import * as AttendanceService from './attendance.service'
 import type { MarkAttendanceInput } from '../validators/attendance.validator'
@@ -19,8 +18,8 @@ import { DayOfWeek } from '../generated/prisma'
 /**
  * Get the teacher ID associated with the current user ID.
  */
-export async function getTeacherIdForUser(userId: string): Promise<string> {
-  const teacher = await prisma.teacher.findUnique({
+export async function getTeacherIdForUser(db: any, userId: string): Promise<string> {
+  const teacher = await db.teacher.findUnique({
     where: { userId },
     select: { id: true },
   })
@@ -33,8 +32,8 @@ export async function getTeacherIdForUser(userId: string): Promise<string> {
 /**
  * Verify that the teacher is assigned to the given section.
  */
-async function verifySectionOwnership(teacherId: string, sectionId: string) {
-  const assignment = await prisma.teacherAssignment.findFirst({
+async function verifySectionOwnership(db: any, teacherId: string, sectionId: string) {
+  const assignment = await db.teacherAssignment.findFirst({
     where: { teacherId, sectionId },
   })
   if (!assignment) {
@@ -44,63 +43,64 @@ async function verifySectionOwnership(teacherId: string, sectionId: string) {
 
 // ─── Dashboard ────────────────────────────────────────────────
 
-export async function getDashboardStats(userId: string) {
-  const teacherId = await getTeacherIdForUser(userId)
+export async function getDashboardStats(db: any, userId: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
+
   const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase() as DayOfWeek
 
   // Find all sections assigned to this teacher
-  const assignments = await prisma.teacherAssignment.findMany({
+  const assignments = await db.teacherAssignment.findMany({
     where: { teacherId },
     select: { sectionId: true },
   })
-  const sectionIds = [...new Set(assignments.map(a => a.sectionId))]
+  const sectionIds = [...new Set(assignments.map((a: any) => a.sectionId))]
 
-  const [todayClasses, totalStudents, recentNoticesCount, announcementsCount, attendanceDone] = await Promise.all([
-    // Count today's classes from timetable
-    prisma.timetable.count({
-      where: {
-        teacherId,
-        dayOfWeek: todayDay,
-        isDeleted: false,
-      },
-    }),
-    // Count total unique students across all assigned sections
-    prisma.student.count({
-      where: {
-        isActive: true,
-        deletedAt: null,
-        sectionId: { in: sectionIds },
-      },
-    }),
-    // Count active notices targeted at TEACHER or all roles
-    prisma.notice.count({
-      where: {
-        isDeleted: false,
-        OR: [
-          { targetRoles: { has: 'TEACHER' } },
-          { targetRoles: { isEmpty: true } },
-          { targetRoles: { equals: [] } }
-        ],
-      },
-    }),
-    // Count announcements in their sections
-    prisma.announcement.count({
-      where: {
-        sectionId: { in: sectionIds },
-      },
-    }),
-    // Find attendance records for today for their sections
-    prisma.attendance.count({
-      where: {
-        sectionId: { in: sectionIds },
-        date: today,
-        isDeleted: false,
-      },
-    }),
-  ])
+  const [todayClasses, totalStudents, recentNoticesCount, announcementsCount, attendanceDone] =
+    await Promise.all([
+      // Count today's classes from timetable
+      db.timetable.count({
+        where: {
+          teacherId,
+          dayOfWeek: todayDay,
+          isDeleted: false,
+        },
+      }),
+      // Count total unique students across all assigned sections
+      db.student.count({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          sectionId: { in: sectionIds },
+        },
+      }),
+      // Count active notices targeted at TEACHER or all roles
+      db.notice.count({
+        where: {
+          isDeleted: false,
+          OR: [
+            { targetRoles: { has: 'TEACHER' } },
+            { targetRoles: { isEmpty: true } },
+            { targetRoles: { equals: [] } },
+          ],
+        },
+      }),
+      // Count announcements in their sections
+      db.announcement.count({
+        where: {
+          sectionId: { in: sectionIds },
+        },
+      }),
+      // Find attendance records for today for their sections
+      db.attendance.count({
+        where: {
+          sectionId: { in: sectionIds },
+          date: today,
+          isDeleted: false,
+        },
+      }),
+    ])
 
   return {
     todayClasses,
@@ -114,10 +114,10 @@ export async function getDashboardStats(userId: string) {
 
 // ─── My Classes ───────────────────────────────────────────────
 
-export async function getMyClasses(userId: string, sessionId?: string) {
-  const teacherId = await getTeacherIdForUser(userId)
+export async function getMyClasses(db: any, userId: string, sessionId?: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
 
-  const assignments = await prisma.teacherAssignment.findMany({
+  const assignments = await db.teacherAssignment.findMany({
     where: {
       teacherId,
       ...(sessionId ? { sessionId } : {}),
@@ -180,10 +180,10 @@ export async function getMyClasses(userId: string, sessionId?: string) {
   return Array.from(classesMap.values())
 }
 
-export async function getTeacherSections(userId: string, sessionId?: string) {
-  const teacherId = await getTeacherIdForUser(userId)
+export async function getTeacherSections(db: any, userId: string, sessionId?: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
 
-  const assignments = await prisma.teacherAssignment.findMany({
+  const assignments = await db.teacherAssignment.findMany({
     where: {
       teacherId,
       ...(sessionId ? { sessionId } : {}),
@@ -200,7 +200,7 @@ export async function getTeacherSections(userId: string, sessionId?: string) {
     ],
   })
 
-  return assignments.map((asg) => ({
+  return assignments.map((asg: any) => ({
     id: asg.section.id,
     name: asg.section.name,
     classId: asg.class.id,
@@ -210,11 +210,11 @@ export async function getTeacherSections(userId: string, sessionId?: string) {
 
 // ─── Students & Attendance ────────────────────────────────────
 
-export async function getSectionStudents(userId: string, sectionId: string) {
-  const teacherId = await getTeacherIdForUser(userId)
-  await verifySectionOwnership(teacherId, sectionId)
+export async function getSectionStudents(db: any, userId: string, sectionId: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  await verifySectionOwnership(db, teacherId, sectionId)
 
-  return prisma.student.findMany({
+  return db.student.findMany({
     where: {
       sectionId,
       isActive: true,
@@ -232,24 +232,24 @@ export async function getSectionStudents(userId: string, sectionId: string) {
   })
 }
 
-export async function getAttendanceSheet(userId: string, sectionId: string, date: string) {
-  const teacherId = await getTeacherIdForUser(userId)
-  await verifySectionOwnership(teacherId, sectionId)
-  return AttendanceService.getAttendanceSheet(sectionId, date)
+export async function getAttendanceSheet(db: any, userId: string, sectionId: string, date: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  await verifySectionOwnership(db, teacherId, sectionId)
+  return AttendanceService.getAttendanceSheet(db, sectionId, date)
 }
 
-export async function markAttendance(userId: string, data: MarkAttendanceInput) {
-  const teacherId = await getTeacherIdForUser(userId)
-  await verifySectionOwnership(teacherId, data.sectionId)
-  return AttendanceService.markAttendance(data, userId)
+export async function markAttendance(db: any, userId: string, data: MarkAttendanceInput) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  await verifySectionOwnership(db, teacherId, data.sectionId)
+  return AttendanceService.markAttendance(db, data, userId)
 }
 
 // ─── Timetable ───────────────────────────────────────────────
 
-export async function getTeacherTimetable(userId: string) {
-  const teacherId = await getTeacherIdForUser(userId)
+export async function getTeacherTimetable(db: any, userId: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
 
-  return prisma.timetable.findMany({
+  return db.timetable.findMany({
     where: {
       teacherId,
       isDeleted: false,
@@ -266,15 +266,15 @@ export async function getTeacherTimetable(userId: string) {
 
 // ─── Notices ──────────────────────────────────────────────────
 
-export async function getNotices(userId: string) {
-  await getTeacherIdForUser(userId) // Ensure they are a teacher
-  return prisma.notice.findMany({
+export async function getNotices(db: any, userId: string) {
+  await getTeacherIdForUser(db, userId) // Ensure they are a teacher
+  return db.notice.findMany({
     where: {
       isDeleted: false,
       OR: [
         { targetRoles: { has: 'TEACHER' } },
         { targetRoles: { isEmpty: true } },
-        { targetRoles: { equals: [] } }
+        { targetRoles: { equals: [] } },
       ],
     },
     include: {
@@ -288,21 +288,21 @@ export async function getNotices(userId: string) {
 
 // ─── Announcements ────────────────────────────────────────────
 
-export async function getAnnouncements(userId: string, page = 1, limit = 20) {
-  const teacherId = await getTeacherIdForUser(userId)
-  
+export async function getAnnouncements(db: any, userId: string, page = 1, limit = 20) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+
   // Teachers can only see announcements for sections they teach OR ones they authored
-  const assignments = await prisma.teacherAssignment.findMany({
+  const assignments = await db.teacherAssignment.findMany({
     where: { teacherId },
     select: { sectionId: true },
   })
-  const sectionIds = [...new Set(assignments.map(a => a.sectionId))]
+  const sectionIds = [...new Set(assignments.map((a: any) => a.sectionId))]
 
   const where = { sectionId: { in: sectionIds } }
   const skip = (page - 1) * limit
 
   const [announcements, total] = await Promise.all([
-    prisma.announcement.findMany({
+    db.announcement.findMany({
       where,
       include: {
         session: { select: { name: true } },
@@ -313,7 +313,7 @@ export async function getAnnouncements(userId: string, page = 1, limit = 20) {
       skip,
       take: limit,
     }),
-    prisma.announcement.count({ where }),
+    db.announcement.count({ where }),
   ])
 
   return {
@@ -327,22 +327,26 @@ export async function getAnnouncements(userId: string, page = 1, limit = 20) {
   }
 }
 
-export async function createAnnouncement(userId: string, data: {
-  title: string
-  content: string
-  sectionId: string
-  classId?: string
-  sessionId?: string
-  isPinned?: boolean
-  expiresAt?: string
-  attachments?: string[]
-}) {
-  const teacherId = await getTeacherIdForUser(userId)
-  await verifySectionOwnership(teacherId, data.sectionId)
+export async function createAnnouncement(
+  db: any,
+  userId: string,
+  data: {
+    title: string
+    content: string
+    sectionId: string
+    classId?: string
+    sessionId?: string
+    isPinned?: boolean
+    expiresAt?: string
+    attachments?: string[]
+  }
+) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  await verifySectionOwnership(db, teacherId, data.sectionId)
 
   let sessionId = data.sessionId
   if (!sessionId || sessionId === 'dummy') {
-    const activeSession = await prisma.academicSession.findFirst({
+    const activeSession = await db.academicSession.findFirst({
       where: { isActive: true },
       select: { id: true },
     })
@@ -351,8 +355,8 @@ export async function createAnnouncement(userId: string, data: {
     }
     sessionId = activeSession.id
   }
-  
-  return prisma.announcement.create({
+
+  return db.announcement.create({
     data: {
       title: data.title,
       content: data.content,
@@ -369,31 +373,37 @@ export async function createAnnouncement(userId: string, data: {
 
 import { deleteFiles } from '../utils/file.util'
 
-export async function updateAnnouncement(userId: string, id: string, data: {
-  title?: string
-  content?: string
-  isPinned?: boolean
-  expiresAt?: string
-  attachments?: string[]
-}) {
-  const teacherId = await getTeacherIdForUser(userId)
-  
-  const announcement = await prisma.announcement.findUnique({ where: { id } })
+export async function updateAnnouncement(
+  db: any,
+  userId: string,
+  id: string,
+  data: {
+    title?: string
+    content?: string
+    isPinned?: boolean
+    expiresAt?: string
+    attachments?: string[]
+  }
+) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+
+  const announcement = await db.announcement.findUnique({ where: { id } })
   if (!announcement) throw new ForbiddenError('Announcement not found')
-  if (announcement.authorId !== teacherId) throw new ForbiddenError('You can only edit your own announcements')
+  if (announcement.authorId !== teacherId)
+    throw new ForbiddenError('You can only edit your own announcements')
 
   // Identify attachments that were removed and delete them from disk
   if (data.attachments) {
     const newAttachments = data.attachments
     const removedAttachments = announcement.attachments.filter(
-      (oldUrl) => !newAttachments.includes(oldUrl)
+      (oldUrl: string) => !newAttachments.includes(oldUrl)
     )
     if (removedAttachments.length > 0) {
       deleteFiles(removedAttachments)
     }
   }
 
-  return prisma.announcement.update({
+  return db.announcement.update({
     where: { id },
     data: {
       title: data.title,
@@ -405,37 +415,38 @@ export async function updateAnnouncement(userId: string, id: string, data: {
   })
 }
 
-export async function deleteAnnouncement(userId: string, id: string) {
-  const teacherId = await getTeacherIdForUser(userId)
-  const announcement = await prisma.announcement.findUnique({ where: { id } })
+export async function deleteAnnouncement(db: any, userId: string, id: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  const announcement = await db.announcement.findUnique({ where: { id } })
   if (!announcement) throw new ForbiddenError('Announcement not found')
-  if (announcement.authorId !== teacherId) throw new ForbiddenError('You can only delete your own announcements')
+  if (announcement.authorId !== teacherId)
+    throw new ForbiddenError('You can only delete your own announcements')
 
   if (announcement.attachments && announcement.attachments.length > 0) {
     deleteFiles(announcement.attachments)
   }
 
-  return prisma.announcement.delete({ where: { id } })
+  return db.announcement.delete({ where: { id } })
 }
 
 // ─── Exams (Admit & Report Cards) ─────────────────────────────
 
-export async function getExams(userId: string, sessionId?: string) {
-  await getTeacherIdForUser(userId) // Ensure teacher
-  return prisma.exam.findMany({
+export async function getExams(db: any, userId: string, sessionId?: string) {
+  await getTeacherIdForUser(db, userId) // Ensure teacher
+  return db.exam.findMany({
     where: sessionId ? { sessionId } : {},
     orderBy: { createdAt: 'desc' },
   })
 }
 
-export async function getExamStudents(userId: string, sectionId: string, examId?: string) {
-  const teacherId = await getTeacherIdForUser(userId)
-  await verifySectionOwnership(teacherId, sectionId)
+export async function getExamStudents(db: any, userId: string, sectionId: string, examId?: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  await verifySectionOwnership(db, teacherId, sectionId)
 
   const validExamId = examId && examId !== 'none' ? examId : undefined
 
   // Get students with fee records to check if paid
-  const students = await prisma.student.findMany({
+  const students = await db.student.findMany({
     where: {
       sectionId,
       isActive: true,
@@ -445,19 +456,21 @@ export async function getExamStudents(userId: string, sectionId: string, examId?
       feeRecords: true,
       admitCards: true,
       reportCards: {
-        where: validExamId ? { examId: validExamId } : undefined
-      }
+        where: validExamId ? { examId: validExamId } : undefined,
+      },
     },
     orderBy: { rollNumber: 'asc' },
   })
 
-  return students.map(student => {
+  return students.map((student: any) => {
     // Determine fee status. If any fee record is not paid or waived, they are unpaid.
     // In a real system, you'd check active session fees. We'll simplify to check all fee records.
-    const hasUnpaidFees = student.feeRecords.some(f => f.status !== 'PAID' && f.status !== 'WAIVED')
+    const hasUnpaidFees = student.feeRecords.some(
+      (f: any) => f.status !== 'PAID' && f.status !== 'WAIVED'
+    )
     const admitCard = student.admitCards.length > 0 ? student.admitCards[0] : null
     const reportCard = student.reportCards.length > 0 ? student.reportCards[0] : null
-    
+
     return {
       id: student.id,
       firstName: student.firstName,
@@ -471,16 +484,21 @@ export async function getExamStudents(userId: string, sectionId: string, examId?
   })
 }
 
-export async function uploadAdmitCard(userId: string, data: { sessionId?: string; studentId: string; fileUrl: string; sectionId: string }) {
-  const teacherId = await getTeacherIdForUser(userId)
-  await verifySectionOwnership(teacherId, data.sectionId)
+export async function uploadAdmitCard(
+  db: any,
+  userId: string,
+  data: { sessionId?: string; studentId: string; fileUrl: string; sectionId: string }
+) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  await verifySectionOwnership(db, teacherId, data.sectionId)
 
   // Resolve session from student profile if not provided (or if 'current-session-id' placeholder sent)
-  let resolvedSessionId = data.sessionId && data.sessionId !== 'current-session-id' ? data.sessionId : null
+  let resolvedSessionId =
+    data.sessionId && data.sessionId !== 'current-session-id' ? data.sessionId : null
   if (!resolvedSessionId) {
-    const student = await prisma.student.findUnique({
+    const student = await db.student.findUnique({
       where: { id: data.studentId },
-      select: { sessionId: true }
+      select: { sessionId: true },
     })
     resolvedSessionId = student?.sessionId ?? null
   }
@@ -489,7 +507,7 @@ export async function uploadAdmitCard(userId: string, data: { sessionId?: string
     throw new NotFoundError('Student does not have an active session assigned')
   }
 
-  const existingCard = await prisma.admitCard.findFirst({
+  const existingCard = await db.admitCard.findFirst({
     where: {
       sessionId: resolvedSessionId,
       studentId: data.studentId,
@@ -497,13 +515,13 @@ export async function uploadAdmitCard(userId: string, data: { sessionId?: string
   })
 
   if (existingCard) {
-    return prisma.admitCard.update({
+    return db.admitCard.update({
       where: { id: existingCard.id },
       data: { fileUrl: data.fileUrl },
     })
   }
 
-  return prisma.admitCard.create({
+  return db.admitCard.create({
     data: {
       sessionId: resolvedSessionId,
       studentId: data.studentId,
@@ -512,16 +530,20 @@ export async function uploadAdmitCard(userId: string, data: { sessionId?: string
   })
 }
 
-export async function uploadReportCard(userId: string, data: { examId: string; studentId: string; fileUrl: string; sectionId: string }) {
-  const teacherId = await getTeacherIdForUser(userId)
-  await verifySectionOwnership(teacherId, data.sectionId)
+export async function uploadReportCard(
+  db: any,
+  userId: string,
+  data: { examId: string; studentId: string; fileUrl: string; sectionId: string }
+) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  await verifySectionOwnership(db, teacherId, data.sectionId)
 
-  return prisma.reportCard.upsert({
+  return db.reportCard.upsert({
     where: {
       examId_studentId: {
         examId: data.examId,
         studentId: data.studentId,
-      }
+      },
     },
     update: { fileUrl: data.fileUrl },
     create: {

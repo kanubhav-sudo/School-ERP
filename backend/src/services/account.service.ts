@@ -1,6 +1,5 @@
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../database'
 import { Prisma } from '../generated/prisma'
 import { AccountAuditAction } from '../generated/prisma'
 import { NotFoundError, ValidationError } from '../core/errors'
@@ -11,13 +10,15 @@ export const TEMP_PASSWORD_LENGTH = 16
  * Log an account action in the audit trail.
  */
 export async function logAccountAction(
+  db: any,
   userId: string,
   action: AccountAuditAction,
   performedBy?: string,
   remarks?: string,
   tx?: Prisma.TransactionClient
 ) {
-  const db = tx ?? prisma
+  const client = tx ?? db
+  void client
   await db.accountAuditLog.create({
     data: {
       userId,
@@ -43,8 +44,12 @@ export function generateTemporaryPassword(): string {
 /**
  * Generate the next Teacher username sequentially (e.g. TCH000001).
  */
-export async function generateTeacherUsername(tx?: Prisma.TransactionClient): Promise<string> {
-  const db = tx ?? prisma
+export async function generateTeacherUsername(
+  db: any,
+  tx?: Prisma.TransactionClient
+): Promise<string> {
+  const client = tx ?? db
+  void client
   const prefix = 'TCH'
 
   const seq = await db.usernameSequence.upsert({
@@ -60,10 +65,12 @@ export async function generateTeacherUsername(tx?: Prisma.TransactionClient): Pr
  * Generate the next Student username sequentially (e.g. STU2026000001).
  */
 export async function generateStudentUsername(
+  db: any,
   admissionYear: number,
   tx?: Prisma.TransactionClient
 ): Promise<string> {
-  const db = tx ?? prisma
+  const client = tx ?? db
+  void client
   const prefix = `STU${admissionYear}`
 
   const seq = await db.usernameSequence.upsert({
@@ -79,18 +86,20 @@ export async function generateStudentUsername(
  * Creates a User account for a teacher. Must be called inside a transaction.
  */
 export async function createUserForTeacher(
+  db: any,
   teacherId: string,
-  tx: Prisma.TransactionClient
+  tx?: any
 ): Promise<{ username: string; temporaryPassword: string }> {
-  const teacher = await tx.teacher.findUnique({ where: { id: teacherId } })
+  const client = tx ?? db
+  const teacher = await client.teacher.findUnique({ where: { id: teacherId } })
   if (!teacher) throw new NotFoundError('Teacher not found')
   if (teacher.userId) throw new ValidationError('Teacher already has an account')
 
-  const username = await generateTeacherUsername(tx)
+  const username = await generateTeacherUsername(db, client)
   const temporaryPassword = generateTemporaryPassword()
   const passwordHash = await bcrypt.hash(temporaryPassword, 12)
 
-  const user = await tx.user.create({
+  const user = await client.user.create({
     data: {
       username,
       email: teacher.email, // Use teacher's email
@@ -101,24 +110,26 @@ export async function createUserForTeacher(
     },
   })
 
-  await tx.teacher.update({
+  await client.teacher.update({
     where: { id: teacherId },
     data: { userId: user.id },
   })
 
   await logAccountAction(
+    db,
     user.id,
-    'ACCOUNT_CREATED',
+    'ACCOUNT_CREATED' as AccountAuditAction,
     undefined,
     'Account auto-created for teacher',
-    tx
+    client
   )
   await logAccountAction(
+    db,
     user.id,
-    'CREDENTIALS_ISSUED',
+    'CREDENTIALS_ISSUED' as AccountAuditAction,
     undefined,
-    'Initial credentials generated',
-    tx
+    'Initial credentials issued for teacher',
+    client
   )
 
   return { username, temporaryPassword }
@@ -128,25 +139,30 @@ export async function createUserForTeacher(
  * Creates a User account for a student. Must be called inside a transaction.
  */
 export async function createUserForStudent(
+  db: any,
   studentId: string,
-  tx: Prisma.TransactionClient
+  tx?: any
 ): Promise<{ username: string; temporaryPassword: string }> {
-  const student = await tx.student.findUnique({ where: { id: studentId } })
+  const client = tx ?? db
+  const student = await client.student.findUnique({
+    where: { id: studentId },
+    include: { session: true },
+  })
   if (!student) throw new NotFoundError('Student not found')
   if (student.userId) throw new ValidationError('Student already has an account')
 
-  const admissionYear = student.admissionDate.getFullYear()
-  const username = await generateStudentUsername(admissionYear, tx)
+  const admissionYear = student.admissionDate
+    ? new Date(student.admissionDate).getFullYear()
+    : new Date().getFullYear()
+
+  const username = await generateStudentUsername(db, admissionYear, client)
   const temporaryPassword = generateTemporaryPassword()
   const passwordHash = await bcrypt.hash(temporaryPassword, 12)
 
-  // Students might not have an email
-  const email = student.email || `${username.toLowerCase()}@student.local`
-
-  const user = await tx.user.create({
+  const user = await client.user.create({
     data: {
       username,
-      email,
+      email: student.email || null,
       passwordHash,
       role: 'STUDENT',
       accountStatus: 'ACTIVE',
@@ -154,24 +170,26 @@ export async function createUserForStudent(
     },
   })
 
-  await tx.student.update({
+  await client.student.update({
     where: { id: studentId },
     data: { userId: user.id },
   })
 
   await logAccountAction(
+    db,
     user.id,
-    'ACCOUNT_CREATED',
+    'ACCOUNT_CREATED' as AccountAuditAction,
     undefined,
     'Account auto-created for student',
-    tx
+    client
   )
   await logAccountAction(
+    db,
     user.id,
-    'CREDENTIALS_ISSUED',
+    'CREDENTIALS_ISSUED' as AccountAuditAction,
     undefined,
-    'Initial credentials generated',
-    tx
+    'Initial credentials issued for student',
+    client
   )
 
   return { username, temporaryPassword }
@@ -182,11 +200,12 @@ export async function createUserForStudent(
  * Invalidates current password immediately.
  */
 export async function resetPassword(
+  db: any,
   userId: string,
   adminId: string,
   remarks?: string
 ): Promise<{ temporaryPassword: string }> {
-  return await prisma.$transaction(async (tx) => {
+  return await db.$transaction(async (tx: any) => {
     const user = await tx.user.findUnique({ where: { id: userId } })
     if (!user) throw new NotFoundError('User not found')
 
@@ -204,8 +223,9 @@ export async function resetPassword(
       },
     })
 
-    await logAccountAction(userId, 'PASSWORD_RESET', adminId, remarks, tx)
+    await logAccountAction(db, userId, 'PASSWORD_RESET', adminId, remarks, tx)
     await logAccountAction(
+      db,
       userId,
       'CREDENTIALS_ISSUED',
       adminId,
@@ -222,11 +242,12 @@ export async function resetPassword(
  * (although technically it overwrites the password hash, the business semantic is "lost password").
  */
 export async function reissueCredentials(
+  db: any,
   userId: string,
   adminId: string,
   remarks?: string
 ): Promise<{ temporaryPassword: string }> {
-  return await prisma.$transaction(async (tx) => {
+  return await db.$transaction(async (tx: any) => {
     const user = await tx.user.findUnique({ where: { id: userId } })
     if (!user) throw new NotFoundError('User not found')
 
@@ -242,7 +263,7 @@ export async function reissueCredentials(
       },
     })
 
-    await logAccountAction(userId, 'CREDENTIALS_REISSUED', adminId, remarks, tx)
+    await logAccountAction(db, userId, 'CREDENTIALS_REISSUED', adminId, remarks, tx)
 
     return { temporaryPassword }
   })
@@ -251,50 +272,51 @@ export async function reissueCredentials(
 /**
  * Admin action: Activates a suspended/disabled account.
  */
-export async function activateAccount(userId: string, adminId: string, remarks?: string) {
-  await prisma.$transaction(async (tx) => {
+export async function activateAccount(db: any, userId: string, adminId: string, remarks?: string) {
+  await db.$transaction(async (tx: any) => {
     await tx.user.update({
       where: { id: userId },
       data: { accountStatus: 'ACTIVE' },
     })
-    await logAccountAction(userId, 'ACCOUNT_ACTIVATED', adminId, remarks, tx)
+    await logAccountAction(db, userId, 'ACCOUNT_ACTIVATED', adminId, remarks, tx)
   })
 }
 
 /**
  * Admin action: Suspends an account.
  */
-export async function suspendAccount(userId: string, adminId: string, remarks?: string) {
-  await prisma.$transaction(async (tx) => {
+export async function suspendAccount(db: any, userId: string, adminId: string, remarks?: string) {
+  await db.$transaction(async (tx: any) => {
     await tx.user.update({
       where: { id: userId },
       data: { accountStatus: 'SUSPENDED', refreshTokenVersion: { increment: 1 } },
     })
-    await logAccountAction(userId, 'ACCOUNT_SUSPENDED', adminId, remarks, tx)
+    await logAccountAction(db, userId, 'ACCOUNT_SUSPENDED', adminId, remarks, tx)
   })
 }
 
 /**
  * Admin action: Disables an account (INACTIVE).
  */
-export async function disableAccount(userId: string, adminId: string, remarks?: string) {
-  await prisma.$transaction(async (tx) => {
+export async function disableAccount(db: any, userId: string, adminId: string, remarks?: string) {
+  await db.$transaction(async (tx: any) => {
     await tx.user.update({
       where: { id: userId },
       data: { accountStatus: 'INACTIVE', refreshTokenVersion: { increment: 1 } },
     })
-    await logAccountAction(userId, 'ACCOUNT_DISABLED', adminId, remarks, tx)
+    await logAccountAction(db, userId, 'ACCOUNT_DISABLED', adminId, remarks, tx)
   })
 }
 /**
  * User action: Change their own password (self-service).
  */
 export async function changePassword(
+  db: any,
   userId: string,
   _currentPasswordHash: string, // passed from controller after comparing
   newPasswordHash: string
 ) {
-  await prisma.$transaction(async (tx) => {
+  await db.$transaction(async (tx: any) => {
     await tx.user.update({
       where: { id: userId },
       data: {
@@ -305,6 +327,7 @@ export async function changePassword(
       },
     })
     await logAccountAction(
+      db,
       userId,
       'PASSWORD_CHANGED',
       undefined,
@@ -317,34 +340,39 @@ export async function changePassword(
 /**
  * Admin action: Unlocks an account that was locked due to failed logins.
  */
-export async function unlockAccount(userId: string, adminId: string, remarks?: string) {
-  await prisma.$transaction(async (tx) => {
+export async function unlockAccount(db: any, userId: string, adminId: string, remarks?: string) {
+  await db.$transaction(async (tx: any) => {
     await tx.user.update({
       where: { id: userId },
       data: { lockedUntil: null, failedLoginAttempts: 0 },
     })
-    await logAccountAction(userId, 'ACCOUNT_UNLOCKED', adminId, remarks, tx)
+    await logAccountAction(db, userId, 'ACCOUNT_UNLOCKED', adminId, remarks, tx)
   })
 }
 
 /**
  * Admin action: Forces the user to change their password on next login.
  */
-export async function forcePasswordChange(userId: string, adminId: string, remarks?: string) {
-  await prisma.$transaction(async (tx) => {
+export async function forcePasswordChange(
+  db: any,
+  userId: string,
+  adminId: string,
+  remarks?: string
+) {
+  await db.$transaction(async (tx: any) => {
     await tx.user.update({
       where: { id: userId },
       data: { mustChangePassword: true },
     })
-    await logAccountAction(userId, 'FORCE_PASSWORD_CHANGE', adminId, remarks, tx)
+    await logAccountAction(db, userId, 'FORCE_PASSWORD_CHANGE', adminId, remarks, tx)
   })
 }
 
 /**
  * Fetch detailed account info including audit logs.
  */
-export async function getAccountDetails(userId: string) {
-  const user = await prisma.user.findUnique({
+export async function getAccountDetails(db: any, userId: string) {
+  const user = await db.user.findUnique({
     where: { id: userId },
     select: {
       id: true,

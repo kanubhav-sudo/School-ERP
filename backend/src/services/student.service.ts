@@ -7,7 +7,6 @@
  * @module services/student
  */
 
-import prisma from '../database/prisma'
 import { ConflictError, NotFoundError } from '../core/errors'
 import type {
   CreateStudentInput,
@@ -62,7 +61,7 @@ const studentSelect = {
 
 // ─── List ─────────────────────────────────────────────────────
 
-export async function listStudents(filters: ListStudentsInput) {
+export async function listStudents(db: any, filters: ListStudentsInput) {
   const { page, limit, search, sessionId, classId, sectionId, status, isActive } = filters
 
   const skip = getPaginationSkip(page, limit)
@@ -87,14 +86,14 @@ export async function listStudents(filters: ListStudentsInput) {
   }
 
   const [students, total] = await Promise.all([
-    prisma.student.findMany({
+    db.student.findMany({
       where,
       select: studentSelect,
       skip,
       take: limit,
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     }),
-    prisma.student.count({ where }),
+    db.student.count({ where }),
   ])
 
   return {
@@ -105,8 +104,8 @@ export async function listStudents(filters: ListStudentsInput) {
 
 // ─── Get One ──────────────────────────────────────────────────
 
-export async function getStudentById(id: string) {
-  const student = await prisma.student.findFirst({
+export async function getStudentById(db: any, id: string) {
+  const student = await db.student.findFirst({
     where: { id, deletedAt: null },
     select: studentSelect,
   })
@@ -117,83 +116,81 @@ export async function getStudentById(id: string) {
 import { createUserForStudent } from './account.service'
 import { generateFeeRecordsForStudent } from './fee-record.service'
 
-export async function createStudent(data: CreateStudentInput) {
+export async function createStudent(db: any, data: CreateStudentInput) {
   // Check for duplicate admission number
-  const existing = await prisma.student.findUnique({
+  const existing = await db.student.findFirst({
     where: { admissionNumber: data.admissionNumber },
   })
   if (existing) {
     throw new ConflictError(`Admission number "${data.admissionNumber}" is already in use`)
   }
 
-  return await prisma.$transaction(async (tx) => {
-    // Validate FeePlan
-    if (data.feePlanId) {
-      const feePlan = await tx.feePlan.findUnique({ where: { id: data.feePlanId } })
-      if (!feePlan) throw new NotFoundError('Fee plan not found')
-      if (feePlan.classId !== data.classId || feePlan.sessionId !== data.sessionId) {
-        throw new ConflictError('Selected fee plan is not valid for this class and session')
-      }
+  // Validate FeePlan
+  if (data.feePlanId) {
+    const feePlan = await db.feePlan.findFirst({ where: { id: data.feePlanId } })
+    if (!feePlan) throw new NotFoundError('Fee plan not found')
+    if (feePlan.classId !== data.classId || feePlan.sessionId !== data.sessionId) {
+      throw new ConflictError('Selected fee plan is not valid for this class and session')
     }
+  }
 
-    const student = await tx.student.create({
-      data: {
-        admissionNumber: data.admissionNumber,
-        rollNumber: data.rollNumber,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        gender: data.gender,
-        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-        bloodGroup: data.bloodGroup,
-        phone: data.phone,
-        email: data.email,
-        fatherName: data.fatherName,
-        fatherPhone: data.fatherPhone,
-        motherName: data.motherName,
-        motherPhone: data.motherPhone,
-        guardianName: data.guardianName,
-        guardianPhone: data.guardianPhone,
-        guardianRelation: data.guardianRelation,
-        emergencyContact: data.emergencyContact,
-        emergencyPhone: data.emergencyPhone,
-        address: data.address,
-        sessionId: data.sessionId,
-        classId: data.classId,
-        sectionId: data.sectionId,
-        feeCategory: data.feeCategory,
-        feePlanId: data.feePlanId,
-        siblingStudentId: data.siblingStudentId,
-        siblingFeeAmount: data.siblingFeeAmount,
-        admissionDate: new Date(data.admissionDate),
-        status: data.status,
-        notes: data.notes,
-        isActive: data.isActive,
-      },
-      select: studentSelect,
-    })
-
-    const credentials = await createUserForStudent(student.id, tx)
-
-    const finalStudent = await tx.student.findUnique({
-      where: { id: student.id },
-      select: studentSelect,
-    })
-
-    // Generate fee records
-    await generateFeeRecordsForStudent(student.id, tx)
-
-    return { student: finalStudent!, credentials }
+  const student = await db.student.create({
+    data: {
+      admissionNumber: data.admissionNumber,
+      rollNumber: data.rollNumber,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      gender: data.gender,
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+      bloodGroup: data.bloodGroup,
+      phone: data.phone,
+      email: data.email,
+      fatherName: data.fatherName,
+      fatherPhone: data.fatherPhone,
+      motherName: data.motherName,
+      motherPhone: data.motherPhone,
+      guardianName: data.guardianName,
+      guardianPhone: data.guardianPhone,
+      guardianRelation: data.guardianRelation,
+      emergencyContact: data.emergencyContact,
+      emergencyPhone: data.emergencyPhone,
+      address: data.address,
+      sessionId: data.sessionId,
+      classId: data.classId,
+      sectionId: data.sectionId,
+      feeCategory: data.feeCategory,
+      feePlanId: data.feePlanId,
+      siblingStudentId: data.siblingStudentId,
+      siblingFeeAmount: data.siblingFeeAmount,
+      admissionDate: new Date(data.admissionDate),
+      status: data.status,
+      notes: data.notes,
+      isActive: data.isActive,
+    },
+    select: studentSelect,
   })
+
+  const credentials = await createUserForStudent(db, student.id)
+
+  const finalStudent = await db.student.findFirst({
+    where: { id: student.id },
+    select: studentSelect,
+  })
+
+  // Generate fee records
+  await generateFeeRecordsForStudent(student.id, db)
+
+  return { student: finalStudent!, credentials }
 }
 
 // ─── Update ───────────────────────────────────────────────────
 
-export async function updateStudent(id: string, data: UpdateStudentInput) {
-  await getStudentById(id)
+export async function updateStudent(db: any, id: string, data: UpdateStudentInput) {
+  await getStudentById(db, id)
 
   // Check duplicate admission number
   if (data.admissionNumber) {
-    const dup = await prisma.student.findFirst({
+    const dup = await db.student.findFirst({
       where: { admissionNumber: data.admissionNumber, NOT: { id } },
     })
     if (dup) throw new ConflictError(`Admission number "${data.admissionNumber}" is already in use`)
@@ -205,19 +202,19 @@ export async function updateStudent(id: string, data: UpdateStudentInput) {
   }
 
   // Validate FeePlan matches class and session
-  const student = await getStudentById(id)
+  const student = await getStudentById(db, id)
   const finalClassId = data.classId !== undefined ? data.classId : student.classId
   const finalSessionId = data.sessionId !== undefined ? data.sessionId : student.sessionId
   const finalFeePlanId = data.feePlanId !== undefined ? data.feePlanId : student.feePlanId
 
   if (finalFeePlanId) {
-    const feePlan = await prisma.feePlan.findUnique({ where: { id: finalFeePlanId } })
+    const feePlan = await db.feePlan.findFirst({ where: { id: finalFeePlanId } })
     if (feePlan && (feePlan.classId !== finalClassId || feePlan.sessionId !== finalSessionId)) {
       throw new ConflictError('Assigned fee plan is not valid for the new class or session')
     }
   }
 
-  return prisma.student.update({
+  return db.student.update({
     where: { id },
     data: {
       ...(data.admissionNumber !== undefined && { admissionNumber: data.admissionNumber }),
@@ -259,10 +256,10 @@ export async function updateStudent(id: string, data: UpdateStudentInput) {
 
 // ─── Soft Delete ──────────────────────────────────────────────
 
-export async function deleteStudent(id: string) {
-  await getStudentById(id)
+export async function deleteStudent(db: any, id: string) {
+  await getStudentById(db, id)
 
-  return prisma.student.update({
+  return db.student.update({
     where: { id },
     data: { deletedAt: new Date(), isActive: false },
   })

@@ -12,7 +12,7 @@ export async function getAccountDetails(
 ): Promise<void> {
   try {
     const id = req.params.id as string
-    const details = await AccountService.getAccountDetails(id)
+    const details = await AccountService.getAccountDetails(req.db, id)
     ApiResponse.success(res, details, 'Account details retrieved')
   } catch (err) {
     next(err)
@@ -35,7 +35,7 @@ export async function resetPassword(
       return
     }
 
-    const result = await AccountService.resetPassword(id, adminId, parsed.data.remarks)
+    const result = await AccountService.resetPassword(req.db, id, adminId, parsed.data.remarks)
     ApiResponse.success(res, result, 'Password reset successfully')
   } catch (err) {
     next(err)
@@ -58,7 +58,7 @@ export async function reissueCredentials(
       return
     }
 
-    const result = await AccountService.reissueCredentials(id, adminId, parsed.data.remarks)
+    const result = await AccountService.reissueCredentials(req.db, id, adminId, parsed.data.remarks)
     ApiResponse.success(res, result, 'Credentials reissued successfully')
   } catch (err) {
     next(err)
@@ -81,7 +81,7 @@ export async function activateAccount(
       return
     }
 
-    await AccountService.activateAccount(id, adminId, parsed.data.remarks)
+    await AccountService.activateAccount(req.db, id, adminId, parsed.data.remarks)
     ApiResponse.success(res, null, 'Account activated successfully')
   } catch (err) {
     next(err)
@@ -104,7 +104,7 @@ export async function suspendAccount(
       return
     }
 
-    await AccountService.suspendAccount(id, adminId, parsed.data.remarks)
+    await AccountService.suspendAccount(req.db, id, adminId, parsed.data.remarks)
     ApiResponse.success(res, null, 'Account suspended successfully')
   } catch (err) {
     next(err)
@@ -127,7 +127,7 @@ export async function disableAccount(
       return
     }
 
-    await AccountService.disableAccount(id, adminId, parsed.data.remarks)
+    await AccountService.disableAccount(req.db, id, adminId, parsed.data.remarks)
     ApiResponse.success(res, null, 'Account disabled successfully')
   } catch (err) {
     next(err)
@@ -150,7 +150,7 @@ export async function unlockAccount(
       return
     }
 
-    await AccountService.unlockAccount(id, adminId, parsed.data.remarks)
+    await AccountService.unlockAccount(req.db, id, adminId, parsed.data.remarks)
     ApiResponse.success(res, null, 'Account unlocked successfully')
   } catch (err) {
     next(err)
@@ -173,7 +173,7 @@ export async function forcePasswordChange(
       return
     }
 
-    await AccountService.forcePasswordChange(id, adminId, parsed.data.remarks)
+    await AccountService.forcePasswordChange(req.db, id, adminId, parsed.data.remarks)
     ApiResponse.success(res, null, 'Forced password change on next login')
   } catch (err) {
     next(err)

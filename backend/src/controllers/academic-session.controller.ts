@@ -38,7 +38,7 @@ export async function listAcademicSessions(
       return
     }
 
-    const result = await AcademicSessionService.listAcademicSessions(parsed.data)
+    const result = await AcademicSessionService.listAcademicSessions(req.db, parsed.data)
     ApiResponse.success(res, result, 'Academic sessions retrieved')
   } catch (err) {
     next(err)
@@ -48,12 +48,12 @@ export async function listAcademicSessions(
 // ─── Get Active ───────────────────────────────────────────────
 
 export async function getActiveAcademicSession(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const session = await AcademicSessionService.getActiveAcademicSession()
+    const session = await AcademicSessionService.getActiveAcademicSession(req.db)
     ApiResponse.success(res, session, 'Active academic session retrieved')
   } catch (err) {
     next(err)
@@ -69,7 +69,7 @@ export async function getAcademicSession(
 ): Promise<void> {
   try {
     const id = req.params.id as string
-    const session = await AcademicSessionService.getAcademicSessionById(id)
+    const session = await AcademicSessionService.getAcademicSessionById(req.db, id)
     ApiResponse.success(res, session, 'Academic session retrieved')
   } catch (err) {
     next(err)
@@ -90,7 +90,7 @@ export async function createAcademicSession(
       return
     }
 
-    const session = await AcademicSessionService.createAcademicSession(parsed.data)
+    const session = await AcademicSessionService.createAcademicSession(req.db, parsed.data)
     ApiResponse.created(res, session, 'Academic session created')
   } catch (err) {
     next(err)
@@ -112,7 +112,7 @@ export async function updateAcademicSession(
       return
     }
 
-    const session = await AcademicSessionService.updateAcademicSession(id, parsed.data)
+    const session = await AcademicSessionService.updateAcademicSession(req.db, id, parsed.data)
     ApiResponse.success(res, session, 'Academic session updated')
   } catch (err) {
     next(err)
@@ -128,8 +128,8 @@ export async function setActiveAcademicSession(
 ): Promise<void> {
   try {
     const id = req.params.id as string
-    await AcademicSessionService.setActiveAcademicSession(id)
-    const session = await AcademicSessionService.getAcademicSessionById(id)
+    await AcademicSessionService.setActiveAcademicSession(req.db, id)
+    const session = await AcademicSessionService.getAcademicSessionById(req.db, id)
     ApiResponse.success(res, session, 'Academic session set as active')
   } catch (err) {
     next(err)
@@ -145,7 +145,7 @@ export async function deleteAcademicSession(
 ): Promise<void> {
   try {
     const id = req.params.id as string
-    await AcademicSessionService.deleteAcademicSession(id)
+    await AcademicSessionService.deleteAcademicSession(req.db, id)
     ApiResponse.success(res, null, 'Academic session deleted')
   } catch (err) {
     next(err)

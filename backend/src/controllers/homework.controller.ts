@@ -14,7 +14,7 @@ const createHomeworkSchema = z.object({
   sessionId: z.string().uuid(),
   classId: z.string().uuid(),
   sectionId: z.string().uuid(),
-  subjectId: z.string().uuid()
+  subjectId: z.string().uuid(),
 })
 
 const updateHomeworkSchema = z.object({
@@ -23,7 +23,7 @@ const updateHomeworkSchema = z.object({
   dueDate: z.string().optional(),
   marks: z.coerce.number().int().optional(),
   status: z.nativeEnum(PublishStatus).optional(),
-  retainedAttachment: z.string().optional() // if present, keep it; if not, and no new file, it means deleted
+  retainedAttachment: z.string().optional(), // if present, keep it; if not, and no new file, it means deleted
 })
 
 export class HomeworkController {
@@ -48,7 +48,11 @@ export class HomeworkController {
         attachmentUrl = `/uploads/${req.file.filename}`
       }
 
-      const homework = await HomeworkService.createHomework({ ...parsed.data, attachmentUrl, teacherId })
+      const homework = await HomeworkService.createHomework(req.db, {
+        ...parsed.data,
+        attachmentUrl,
+        teacherId,
+      })
       ApiResponse.created(res, homework, 'Homework created successfully')
     } catch (error) {
       if (req.file) deleteFile(req.file.path)
@@ -68,7 +72,7 @@ export class HomeworkController {
 
       const role = req.user?.role
       const teacherId = role === 'ADMIN' ? undefined : req.user?.sub
-      
+
       let attachmentUrl: string | null | undefined = undefined
       if (req.file) {
         attachmentUrl = `/uploads/${req.file.filename}`
@@ -78,11 +82,6 @@ export class HomeworkController {
         attachmentUrl = null // explicitly deleted
       }
 
-      // We might need to delete old attachment if a new one is uploaded or if explicitly deleted
-      // We'll let the service handle disk deletion or we can do it here if we fetch the old record first.
-      // But we need the old record to know what to delete. Let's do it in the service.
-
-      // Build payload with only UpdateHomeworkInput fields (strips retainedAttachment used above)
       const payload = {
         title: parsed.data.title,
         description: parsed.data.description,
@@ -92,7 +91,7 @@ export class HomeworkController {
         attachmentUrl,
       }
 
-      const homework = await HomeworkService.updateHomework(id, payload, teacherId)
+      const homework = await HomeworkService.updateHomework(req.db, id, payload, teacherId)
       ApiResponse.success(res, homework, 'Homework updated successfully')
     } catch (error) {
       if (req.file) deleteFile(req.file.path)
@@ -105,7 +104,7 @@ export class HomeworkController {
       const { id } = req.params as { id: string }
       const role = req.user?.role
       const teacherId = role === 'ADMIN' ? undefined : req.user?.sub
-      await HomeworkService.deleteHomework(id, teacherId)
+      await HomeworkService.deleteHomework(req.db, id, teacherId)
       ApiResponse.success(res, null, 'Homework deleted successfully')
     } catch (error) {
       next(error)
@@ -124,10 +123,10 @@ export class HomeworkController {
         classId: req.query.classId as string | undefined,
         sectionId: req.query.sectionId as string | undefined,
         subjectId: req.query.subjectId as string | undefined,
-        status: req.query.status as PublishStatus | undefined
+        status: req.query.status as PublishStatus | undefined,
       }
 
-      const homeworks = await HomeworkService.getHomeworkForTeacher(teacherId, filters)
+      const homeworks = await HomeworkService.getHomeworkForTeacher(req.db, teacherId, filters)
       ApiResponse.success(res, homeworks, 'Homeworks fetched successfully')
     } catch (error) {
       next(error)
@@ -141,10 +140,10 @@ export class HomeworkController {
         classId: req.query.classId as string | undefined,
         sectionId: req.query.sectionId as string | undefined,
         subjectId: req.query.subjectId as string | undefined,
-        status: req.query.status as PublishStatus | undefined
+        status: req.query.status as PublishStatus | undefined,
       }
 
-      const homeworks = await HomeworkService.getAllHomework(filters)
+      const homeworks = await HomeworkService.getAllHomework(req.db, filters)
       ApiResponse.success(res, homeworks, 'All homeworks fetched successfully')
     } catch (error) {
       next(error)

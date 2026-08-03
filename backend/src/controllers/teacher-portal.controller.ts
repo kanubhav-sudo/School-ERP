@@ -26,7 +26,7 @@ export async function getDashboardStats(
 ): Promise<void> {
   try {
     const userId = requireUser(req)
-    const stats = await TeacherPortalService.getDashboardStats(userId)
+    const stats = await TeacherPortalService.getDashboardStats(req.db, userId)
     ApiResponse.success(res, stats, 'Teacher dashboard stats retrieved')
   } catch (err) {
     next(err)
@@ -37,7 +37,7 @@ export async function getMyClasses(req: Request, res: Response, next: NextFuncti
   try {
     const userId = requireUser(req)
     const sessionId = req.query.sessionId as string | undefined
-    const classes = await TeacherPortalService.getMyClasses(userId, sessionId)
+    const classes = await TeacherPortalService.getMyClasses(req.db, userId, sessionId)
     ApiResponse.success(res, classes, 'Teacher classes retrieved')
   } catch (err) {
     next(err)
@@ -52,7 +52,7 @@ export async function getTeacherSections(
   try {
     const userId = requireUser(req)
     const sessionId = req.query.sessionId as string | undefined
-    const sections = await TeacherPortalService.getTeacherSections(userId, sessionId)
+    const sections = await TeacherPortalService.getTeacherSections(req.db, userId, sessionId)
     ApiResponse.success(res, sections, 'Teacher sections retrieved')
   } catch (err) {
     next(err)
@@ -67,7 +67,7 @@ export async function getSectionStudents(
   try {
     const userId = requireUser(req)
     const sectionId = req.params.sectionId as string
-    const students = await TeacherPortalService.getSectionStudents(userId, sectionId)
+    const students = await TeacherPortalService.getSectionStudents(req.db, userId, sectionId)
     ApiResponse.success(res, { students }, 'Section students retrieved') // Wrapping in { students } for consistency with paginated response expected by frontend if applicable
   } catch (err) {
     next(err)
@@ -90,7 +90,7 @@ export async function getAttendanceSheet(
       ])
     }
 
-    const sheet = await TeacherPortalService.getAttendanceSheet(userId, sectionId, date)
+    const sheet = await TeacherPortalService.getAttendanceSheet(req.db, userId, sectionId, date)
     if (!sheet) {
       ApiResponse.success(res, null, 'No attendance recorded for this date')
       return
@@ -120,7 +120,7 @@ export async function markAttendance(
       return
     }
 
-    const sheet = await TeacherPortalService.markAttendance(userId, parsed.data)
+    const sheet = await TeacherPortalService.markAttendance(req.db, userId, parsed.data)
     ApiResponse.success(res, sheet, 'Attendance marked successfully')
   } catch (err) {
     next(err)
@@ -129,7 +129,7 @@ export async function markAttendance(
 
 export async function getTeacherTimetable(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await TeacherPortalService.getTeacherTimetable(requireUser(req))
+    const data = await TeacherPortalService.getTeacherTimetable(req.db, requireUser(req))
     res.json({ success: true, data })
   } catch (error) {
     next(error)
@@ -138,7 +138,7 @@ export async function getTeacherTimetable(req: Request, res: Response, next: Nex
 
 export async function getNotices(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await TeacherPortalService.getNotices(requireUser(req))
+    const data = await TeacherPortalService.getNotices(req.db, requireUser(req))
     res.json({ success: true, data })
   } catch (error) {
     next(error)
@@ -149,7 +149,7 @@ export async function getAnnouncements(req: Request, res: Response, next: NextFu
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20))
-    const data = await TeacherPortalService.getAnnouncements(requireUser(req), page, limit)
+    const data = await TeacherPortalService.getAnnouncements(req.db, requireUser(req), page, limit)
     res.json({ success: true, data })
   } catch (error) {
     next(error)
@@ -160,18 +160,18 @@ export async function createAnnouncement(req: Request, res: Response, next: Next
   try {
     const files = req.files as Express.Multer.File[]
     let attachments: string[] = []
-    
+
     if (files && files.length > 0) {
-      attachments = files.map(file => `/uploads/${file.filename}`)
+      attachments = files.map((file) => `/uploads/${file.filename}`)
     }
 
     const payload = {
       ...req.body,
       isPinned: req.body.isPinned === 'true' || req.body.isPinned === true,
-      attachments
+      attachments,
     }
-    
-    const data = await TeacherPortalService.createAnnouncement(requireUser(req), payload)
+
+    const data = await TeacherPortalService.createAnnouncement(req.db, requireUser(req), payload)
     res.status(201).json({ success: true, data })
   } catch (error) {
     next(error)
@@ -182,9 +182,9 @@ export async function updateAnnouncement(req: Request, res: Response, next: Next
   try {
     const files = req.files as Express.Multer.File[]
     let newAttachments: string[] = []
-    
+
     if (files && files.length > 0) {
-      newAttachments = files.map(file => `/uploads/${file.filename}`)
+      newAttachments = files.map((file) => `/uploads/${file.filename}`)
     }
 
     // Retained attachments could be a single string or an array of strings
@@ -200,10 +200,15 @@ export async function updateAnnouncement(req: Request, res: Response, next: Next
     const payload = {
       ...req.body,
       isPinned: req.body.isPinned === 'true' || req.body.isPinned === true,
-      attachments: [...retainedAttachments, ...newAttachments]
+      attachments: [...retainedAttachments, ...newAttachments],
     }
 
-    const data = await TeacherPortalService.updateAnnouncement(requireUser(req), req.params.id as string, payload)
+    const data = await TeacherPortalService.updateAnnouncement(
+      req.db,
+      requireUser(req),
+      req.params.id as string,
+      payload
+    )
     res.json({ success: true, data })
   } catch (error) {
     next(error)
@@ -212,7 +217,7 @@ export async function updateAnnouncement(req: Request, res: Response, next: Next
 
 export async function deleteAnnouncement(req: Request, res: Response, next: NextFunction) {
   try {
-    await TeacherPortalService.deleteAnnouncement(requireUser(req), req.params.id as string)
+    await TeacherPortalService.deleteAnnouncement(req.db, requireUser(req), req.params.id as string)
     res.json({ success: true, data: null })
   } catch (error) {
     next(error)
@@ -221,7 +226,11 @@ export async function deleteAnnouncement(req: Request, res: Response, next: Next
 
 export async function getExams(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await TeacherPortalService.getExams(requireUser(req), req.query.sessionId as string)
+    const data = await TeacherPortalService.getExams(
+      req.db,
+      requireUser(req),
+      req.query.sessionId as string
+    )
     res.json({ success: true, data })
   } catch (error) {
     next(error)
@@ -230,7 +239,12 @@ export async function getExams(req: Request, res: Response, next: NextFunction) 
 
 export async function getExamStudents(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await TeacherPortalService.getExamStudents(requireUser(req), req.params.sectionId as string, req.query.examId as string)
+    const data = await TeacherPortalService.getExamStudents(
+      req.db,
+      requireUser(req),
+      req.params.sectionId as string,
+      req.query.examId as string
+    )
     res.json({ success: true, data })
   } catch (error) {
     next(error)
@@ -239,7 +253,7 @@ export async function getExamStudents(req: Request, res: Response, next: NextFun
 
 export async function uploadAdmitCard(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await TeacherPortalService.uploadAdmitCard(requireUser(req), req.body)
+    const data = await TeacherPortalService.uploadAdmitCard(req.db, requireUser(req), req.body)
     res.status(201).json({ success: true, data })
   } catch (error) {
     next(error)
@@ -248,7 +262,7 @@ export async function uploadAdmitCard(req: Request, res: Response, next: NextFun
 
 export async function uploadReportCard(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await TeacherPortalService.uploadReportCard(requireUser(req), req.body)
+    const data = await TeacherPortalService.uploadReportCard(req.db, requireUser(req), req.body)
     res.status(201).json({ success: true, data })
   } catch (error) {
     next(error)

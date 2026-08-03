@@ -7,7 +7,6 @@
  * @module services/teacher
  */
 
-import prisma from '../database/prisma'
 import { ConflictError, NotFoundError, ValidationError } from '../core/errors'
 import type {
   CreateTeacherInput,
@@ -60,7 +59,7 @@ const teacherSelect = {
 
 // ─── List ─────────────────────────────────────────────────────
 
-export async function listTeachers(filters: ListTeachersInput) {
+export async function listTeachers(db: any, filters: ListTeachersInput) {
   const {
     page,
     limit,
@@ -104,14 +103,14 @@ export async function listTeachers(filters: ListTeachersInput) {
   }
 
   const [teachers, total] = await Promise.all([
-    prisma.teacher.findMany({
+    db.teacher.findMany({
       where,
       select: teacherSelect,
       skip,
       take: limit,
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     }),
-    prisma.teacher.count({ where }),
+    db.teacher.count({ where }),
   ])
 
   return {
@@ -122,8 +121,8 @@ export async function listTeachers(filters: ListTeachersInput) {
 
 // ─── Get One ──────────────────────────────────────────────────
 
-export async function getTeacherById(id: string) {
-  const teacher = await prisma.teacher.findFirst({
+export async function getTeacherById(db: any, id: string) {
+  const teacher = await db.teacher.findFirst({
     where: { id, deletedAt: null },
     select: teacherSelect,
   })
@@ -133,9 +132,9 @@ export async function getTeacherById(id: string) {
 
 import { createUserForTeacher } from './account.service'
 
-export async function createTeacher(data: CreateTeacherInput) {
+export async function createTeacher(db: any, data: CreateTeacherInput) {
   // Check for duplicate employeeId
-  const existingById = await prisma.teacher.findUnique({
+  const existingById = await db.teacher.findFirst({
     where: { employeeId: data.employeeId },
   })
   if (existingById) {
@@ -143,60 +142,55 @@ export async function createTeacher(data: CreateTeacherInput) {
   }
 
   // Check for duplicate email
-  const existingByEmail = await prisma.teacher.findUnique({ where: { email: data.email } })
+  const existingByEmail = await db.teacher.findFirst({ where: { email: data.email } })
   if (existingByEmail) {
     throw new ConflictError(`Email "${data.email}" is already in use`)
   }
 
-  return await prisma.$transaction(async (tx) => {
-    const teacher = await tx.teacher.create({
-      data: {
-        employeeId: data.employeeId,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        gender: data.gender,
-        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-        phone: data.phone,
-        email: data.email,
-        qualification: data.qualification,
-        experienceYears: data.experienceYears,
-        department: data.department,
-        designation: data.designation,
-        joiningDate: new Date(data.joiningDate),
-        employmentStatus: data.employmentStatus,
-        address: data.address,
-        bloodGroup: data.bloodGroup ?? null,
-        emergencyContact: data.emergencyContact ?? null,
-        emergencyPhone: data.emergencyPhone ?? null,
-        photoUrl: data.photoUrl ?? null,
-        notes: data.notes,
-        isActive: data.isActive,
-      },
-      select: teacherSelect,
-    })
-
-    const credentials = await createUserForTeacher(teacher.id, tx)
-
-    // We update the teacher object to reflect the new userId so it's correct in the response.
-    // In our DB, createUserForTeacher updates the teacher row. We can just set it here to save a query.
-    // Actually, we can just fetch it again to be safe.
-    const finalTeacher = await tx.teacher.findUnique({
-      where: { id: teacher.id },
-      select: teacherSelect,
-    })
-
-    return { teacher: finalTeacher!, credentials }
+  const teacher = await db.teacher.create({
+    data: {
+      employeeId: data.employeeId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      gender: data.gender,
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+      phone: data.phone,
+      email: data.email,
+      qualification: data.qualification,
+      experienceYears: data.experienceYears,
+      department: data.department,
+      designation: data.designation,
+      joiningDate: new Date(data.joiningDate),
+      employmentStatus: data.employmentStatus,
+      address: data.address,
+      bloodGroup: data.bloodGroup ?? null,
+      emergencyContact: data.emergencyContact ?? null,
+      emergencyPhone: data.emergencyPhone ?? null,
+      photoUrl: data.photoUrl ?? null,
+      notes: data.notes,
+      isActive: data.isActive,
+    },
+    select: teacherSelect,
   })
+
+  const credentials = await createUserForTeacher(db, teacher.id)
+
+  const finalTeacher = await db.teacher.findFirst({
+    where: { id: teacher.id },
+    select: teacherSelect,
+  })
+
+  return { teacher: finalTeacher!, credentials }
 }
 
 // ─── Update ───────────────────────────────────────────────────
 
-export async function updateTeacher(id: string, data: UpdateTeacherInput) {
-  await getTeacherById(id)
+export async function updateTeacher(db: any, id: string, data: UpdateTeacherInput) {
+  await getTeacherById(db, id)
 
   // Check duplicate employeeId
   if (data.employeeId) {
-    const dup = await prisma.teacher.findFirst({
+    const dup = await db.teacher.findFirst({
       where: { employeeId: data.employeeId, NOT: { id } },
     })
     if (dup) throw new ConflictError(`Employee ID "${data.employeeId}" is already in use`)
@@ -204,13 +198,13 @@ export async function updateTeacher(id: string, data: UpdateTeacherInput) {
 
   // Check duplicate email
   if (data.email) {
-    const dup = await prisma.teacher.findFirst({
+    const dup = await db.teacher.findFirst({
       where: { email: data.email, NOT: { id } },
     })
     if (dup) throw new ConflictError(`Email "${data.email}" is already in use`)
   }
 
-  return prisma.teacher.update({
+  return db.teacher.update({
     where: { id },
     data: {
       ...(data.employeeId !== undefined && { employeeId: data.employeeId }),
@@ -242,10 +236,10 @@ export async function updateTeacher(id: string, data: UpdateTeacherInput) {
 
 // ─── Soft Delete ──────────────────────────────────────────────
 
-export async function deleteTeacher(id: string) {
-  await getTeacherById(id)
+export async function deleteTeacher(db: any, id: string) {
+  await getTeacherById(db, id)
 
-  return prisma.teacher.update({
+  return db.teacher.update({
     where: { id },
     data: { deletedAt: new Date(), isActive: false },
   })
@@ -253,21 +247,25 @@ export async function deleteTeacher(id: string) {
 
 // ─── Assignments ──────────────────────────────────────────────
 
-export async function addTeacherAssignment(teacherId: string, data: CreateTeacherAssignmentInput) {
-  await getTeacherById(teacherId)
+export async function addTeacherAssignment(
+  db: any,
+  teacherId: string,
+  data: CreateTeacherAssignmentInput
+) {
+  await getTeacherById(db, teacherId)
 
   // Validate session exists
-  const session = await prisma.academicSession.findUnique({ where: { id: data.sessionId } })
+  const session = await db.academicSession.findFirst({ where: { id: data.sessionId } })
   if (!session) throw new NotFoundError('Academic session not found')
 
   // Validate section belongs to class
-  const section = await prisma.section.findFirst({
+  const section = await db.section.findFirst({
     where: { id: data.sectionId, classId: data.classId },
   })
   if (!section) throw new ValidationError('Section does not belong to the selected class', [])
 
   // Prevent duplicates
-  const existing = await prisma.teacherAssignment.findFirst({
+  const existing = await db.teacherAssignment.findFirst({
     where: {
       teacherId,
       sessionId: data.sessionId,
@@ -280,7 +278,7 @@ export async function addTeacherAssignment(teacherId: string, data: CreateTeache
 
   // Check class teacher uniqueness if setting isClassTeacher
   if (data.isClassTeacher) {
-    const existingClassTeacher = await prisma.teacherAssignment.findFirst({
+    const existingClassTeacher = await db.teacherAssignment.findFirst({
       where: {
         sessionId: data.sessionId,
         classId: data.classId,
@@ -295,7 +293,7 @@ export async function addTeacherAssignment(teacherId: string, data: CreateTeache
     }
   }
 
-  return prisma.teacherAssignment.create({
+  return db.teacherAssignment.create({
     data: {
       teacherId,
       sessionId: data.sessionId,
@@ -317,11 +315,12 @@ export async function addTeacherAssignment(teacherId: string, data: CreateTeache
 }
 
 export async function updateTeacherAssignment(
+  db: any,
   teacherId: string,
   assignmentId: string,
   data: UpdateTeacherAssignmentInput
 ) {
-  const assignment = await prisma.teacherAssignment.findUnique({
+  const assignment = await db.teacherAssignment.findFirst({
     where: { id: assignmentId, teacherId },
   })
   if (!assignment) throw new NotFoundError('Assignment not found')
@@ -334,14 +333,14 @@ export async function updateTeacherAssignment(
 
   // Validate section belongs to class if section or class changed
   if (data.classId || data.sectionId) {
-    const section = await prisma.section.findFirst({
+    const section = await db.section.findFirst({
       where: { id: sectionId, classId },
     })
     if (!section) throw new ValidationError('Section does not belong to the selected class', [])
   }
 
   // Prevent duplicates (excluding self)
-  const existing = await prisma.teacherAssignment.findFirst({
+  const existing = await db.teacherAssignment.findFirst({
     where: {
       teacherId,
       sessionId,
@@ -355,7 +354,7 @@ export async function updateTeacherAssignment(
 
   // Check class teacher uniqueness if setting isClassTeacher
   if (isClassTeacher) {
-    const existingClassTeacher = await prisma.teacherAssignment.findFirst({
+    const existingClassTeacher = await db.teacherAssignment.findFirst({
       where: {
         sessionId,
         classId,
@@ -371,7 +370,7 @@ export async function updateTeacherAssignment(
     }
   }
 
-  return prisma.teacherAssignment.update({
+  return db.teacherAssignment.update({
     where: { id: assignmentId },
     data: {
       sessionId,
@@ -392,25 +391,25 @@ export async function updateTeacherAssignment(
   })
 }
 
-export async function removeTeacherAssignment(teacherId: string, assignmentId: string) {
-  await getTeacherById(teacherId)
+export async function removeTeacherAssignment(db: any, teacherId: string, assignmentId: string) {
+  await getTeacherById(db, teacherId)
 
-  const assignment = await prisma.teacherAssignment.findFirst({
+  const assignment = await db.teacherAssignment.findFirst({
     where: { id: assignmentId, teacherId },
   })
   if (!assignment) throw new NotFoundError('Assignment not found')
 
-  return prisma.teacherAssignment.delete({ where: { id: assignmentId } })
+  return db.teacherAssignment.delete({ where: { id: assignmentId } })
 }
 
 // ─── Stats ────────────────────────────────────────────────────
 
-export async function getTeacherStats(sessionId?: string) {
+export async function getTeacherStats(db: any, sessionId?: string) {
   const [total, active, inactive, classTeachers] = await Promise.all([
-    prisma.teacher.count({ where: { deletedAt: null } }),
-    prisma.teacher.count({ where: { deletedAt: null, isActive: true } }),
-    prisma.teacher.count({ where: { deletedAt: null, isActive: false } }),
-    prisma.teacher.count({
+    db.teacher.count({ where: { deletedAt: null } }),
+    db.teacher.count({ where: { deletedAt: null, isActive: true } }),
+    db.teacher.count({ where: { deletedAt: null, isActive: false } }),
+    db.teacher.count({
       where: {
         deletedAt: null,
         assignments: {
@@ -428,10 +427,10 @@ export async function getTeacherStats(sessionId?: string) {
 
 // ─── Timetable & Sections ─────────────────────────────────────
 
-export async function getTeacherTimetable(teacherId: string, sessionId?: string) {
-  await getTeacherById(teacherId)
+export async function getTeacherTimetable(db: any, teacherId: string, sessionId?: string) {
+  await getTeacherById(db, teacherId)
 
-  return prisma.timetable.findMany({
+  return db.timetable.findMany({
     where: {
       teacherId,
       isDeleted: false,
@@ -444,14 +443,14 @@ export async function getTeacherTimetable(teacherId: string, sessionId?: string)
       teacher: { select: { id: true, firstName: true, lastName: true, employeeId: true } },
       subject: { select: { id: true, name: true, code: true } },
     },
-    orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+    orderBy: [{ dayOfWeek: 'asc' }],
   })
 }
 
-export async function getTeacherSections(teacherId: string, sessionId?: string) {
-  await getTeacherById(teacherId)
+export async function getTeacherSections(db: any, teacherId: string, sessionId?: string) {
+  await getTeacherById(db, teacherId)
 
-  return prisma.teacherAssignment.findMany({
+  return db.teacherAssignment.findMany({
     where: {
       teacherId,
       ...(sessionId ? { sessionId } : {}),

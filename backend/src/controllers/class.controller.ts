@@ -26,7 +26,7 @@ export async function listClasses(req: Request, res: Response, next: NextFunctio
       return
     }
 
-    const result = await ClassService.listClasses(parsed.data)
+    const result = await ClassService.listClasses(req.db, parsed.data)
     ApiResponse.success(res, result, 'Classes retrieved')
   } catch (err) {
     next(err)
@@ -38,7 +38,7 @@ export async function listClasses(req: Request, res: Response, next: NextFunctio
 export async function getClass(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = req.params.id as string
-    const cls = await ClassService.getClassById(id)
+    const cls = await ClassService.getClassById(req.db, id)
     ApiResponse.success(res, cls, 'Class retrieved')
   } catch (err) {
     next(err)
@@ -55,7 +55,7 @@ export async function createClass(req: Request, res: Response, next: NextFunctio
       return
     }
 
-    const cls = await ClassService.createClass(parsed.data)
+    const cls = await ClassService.createClass(req.db, parsed.data)
     ApiResponse.created(res, cls, 'Class created')
   } catch (err) {
     next(err)
@@ -73,7 +73,7 @@ export async function updateClass(req: Request, res: Response, next: NextFunctio
       return
     }
 
-    const cls = await ClassService.updateClass(id, parsed.data)
+    const cls = await ClassService.updateClass(req.db, id, parsed.data)
     ApiResponse.success(res, cls, 'Class updated')
   } catch (err) {
     next(err)
@@ -85,7 +85,7 @@ export async function updateClass(req: Request, res: Response, next: NextFunctio
 export async function deleteClass(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = req.params.id as string
-    await ClassService.deleteClass(id)
+    await ClassService.deleteClass(req.db, id)
     ApiResponse.success(res, null, 'Class deleted')
   } catch (err) {
     next(err)

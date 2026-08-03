@@ -1,4 +1,3 @@
-import prisma from '../database/prisma'
 import type { ListFeeRecordsInput, FeeSummaryInput } from '../validators/fee-record.validator'
 import { ConflictError, NotFoundError } from '../core/errors'
 import { Prisma, FeeRecordStatus, PaymentMode } from '../generated/prisma'
@@ -28,8 +27,7 @@ export function getCurrentAcademicSeq(date = new Date()): number {
 
 export function getElapsedAcademicMonths(date = new Date()): number[] {
   const currentSeq = getCurrentAcademicSeq(date)
-  return ALL_ACADEMIC_MONTHS
-    .filter((m) => !m.isVacation)
+  return ALL_ACADEMIC_MONTHS.filter((m) => !m.isVacation)
     .filter((m) => {
       const seq = m.month >= 4 ? m.month - 3 : m.month + 9
       return seq <= currentSeq
@@ -65,8 +63,9 @@ const feeRecordSelect = {
   feePlan: { select: { id: true, name: true } },
 }
 
-export async function listFeeRecords(filters: ListFeeRecordsInput) {
-  const { page, limit, sessionId, classId, sectionId, month, status, studentId, search, sortBy } = filters
+export async function listFeeRecords(db: any, filters: ListFeeRecordsInput) {
+  const { page, limit, sessionId, classId, sectionId, month, status, studentId, search, sortBy } =
+    filters
   const skip = (page - 1) * limit
 
   const where: Prisma.FeeRecordWhereInput = {
@@ -78,7 +77,10 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
   }
 
   if (sectionId) {
-    where.student = { ...(where.student as object), sectionId } as Prisma.FeeRecordWhereInput['student']
+    where.student = {
+      ...(where.student as object),
+      sectionId,
+    } as Prisma.FeeRecordWhereInput['student']
   }
 
   if (search) {
@@ -96,7 +98,11 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
     ]
   }
 
-  let orderBy: Prisma.FeeRecordOrderByWithRelationInput | Prisma.FeeRecordOrderByWithRelationInput[] = [{ year: 'desc' }, { month: 'desc' }]
+  let orderBy:
+    Prisma.FeeRecordOrderByWithRelationInput | Prisma.FeeRecordOrderByWithRelationInput[] = [
+    { year: 'desc' },
+    { month: 'desc' },
+  ]
   if (sortBy === 'newest') orderBy = [{ year: 'desc' }, { month: 'desc' }]
   if (sortBy === 'oldest') orderBy = [{ year: 'asc' }, { month: 'asc' }]
   if (sortBy === 'highest') orderBy = { netAmount: 'desc' }
@@ -104,14 +110,14 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
   if (sortBy === 'name') orderBy = { student: { firstName: 'asc' } }
 
   const [feeRecords, total] = await Promise.all([
-    prisma.feeRecord.findMany({
+    db.feeRecord.findMany({
       where,
       select: feeRecordSelect,
       skip,
       take: limit,
       orderBy,
     }),
-    prisma.feeRecord.count({ where }),
+    db.feeRecord.count({ where }),
   ])
 
   return {
@@ -128,13 +134,16 @@ export async function listFeeRecords(filters: ListFeeRecordsInput) {
 /**
   Redesigned Student Fee List (Class-only filter, no section filter required)
  */
-export async function getStudentFeeList(filters: {
-  sessionId?: string
-  classId?: string
-  search?: string
-  page?: number
-  limit?: number
-}) {
+export async function getStudentFeeList(
+  db: any,
+  filters: {
+    sessionId?: string
+    classId?: string
+    search?: string
+    page?: number
+    limit?: number
+  }
+) {
   const page = filters.page || 1
   const limit = filters.limit || 20
   const skip = (page - 1) * limit
@@ -155,7 +164,7 @@ export async function getStudentFeeList(filters: {
   }
 
   const [students, total] = await Promise.all([
-    prisma.student.findMany({
+    db.student.findMany({
       where,
       select: {
         id: true,
@@ -181,7 +190,7 @@ export async function getStudentFeeList(filters: {
       take: limit,
       orderBy: [{ firstName: 'asc' }],
     }),
-    prisma.student.count({ where }),
+    db.student.count({ where }),
   ])
 
   const currentDate = new Date()
@@ -192,10 +201,10 @@ export async function getStudentFeeList(filters: {
 
   for (const s of students) {
     if (s.id) {
-      await generateFeeRecordsForStudent(s.id)
+      await generateFeeRecordsForStudent(db, s.id)
     }
 
-    const records = await prisma.feeRecord.findMany({
+    const records = await db.feeRecord.findMany({
       where: {
         studentId: s.id,
         ...(filters.sessionId ? { sessionId: filters.sessionId } : {}),
@@ -226,7 +235,7 @@ export async function getStudentFeeList(filters: {
         }
       }
 
-      const record = records.find((r) => r.month === mInfo.month)
+      const record = records.find((r: any) => r.month === mInfo.month)
       const acadSeq = mInfo.month >= 4 ? mInfo.month - 3 : mInfo.month + 9
 
       if (acadSeq <= currentAcademicSeq && record) {
@@ -263,7 +272,7 @@ export async function getStudentFeeList(filters: {
       }
     })
 
-    const totalYearlyFee = records.reduce((sum, r) => sum + r.netAmount, 0)
+    const totalYearlyFee = records.reduce((sum: any, r: any) => sum + r.netAmount, 0)
     const yearlyPendingAmount = Math.max(0, totalYearlyFee - paidAmount - (s.advanceBalance || 0))
 
     studentRows.push({
@@ -296,14 +305,14 @@ export async function getStudentFeeList(filters: {
   }
 }
 
-export async function getFeeSummary(filters: FeeSummaryInput) {
+export async function getFeeSummary(db: any, filters: FeeSummaryInput) {
   const { sessionId, month } = filters
   const where = {
     sessionId,
     month: { lte: month },
   }
 
-  const result = await prisma.feeRecord.aggregate({
+  const result = await db.feeRecord.aggregate({
     where,
     _sum: {
       netAmount: true,
@@ -318,8 +327,8 @@ export async function getFeeSummary(filters: FeeSummaryInput) {
   }
 }
 
-export async function generateFeeRecordsForStudent(studentId: string, tx: Prisma.TransactionClient = prisma) {
-  const student = await tx.student.findUnique({
+export async function generateFeeRecordsForStudent(db: any, studentId: string) {
+  const student = await db.student.findUnique({
     where: { id: studentId },
     include: {
       session: true,
@@ -327,12 +336,20 @@ export async function generateFeeRecordsForStudent(studentId: string, tx: Prisma
     },
   })
 
-  if (!student || !student.feePlanId || !student.feePlan || !student.session || !student.sessionId || !student.classId) return
+  if (
+    !student ||
+    !student.feePlanId ||
+    !student.feePlan ||
+    !student.session ||
+    !student.sessionId ||
+    !student.classId
+  )
+    return
 
   const startYear = parseInt(student.session.name.substring(0, 4))
   if (isNaN(startYear)) return
 
-  const existingRecords = await tx.feeRecord.findMany({
+  const existingRecords = await db.feeRecord.findMany({
     where: {
       studentId,
       sessionId: student.sessionId,
@@ -340,7 +357,7 @@ export async function generateFeeRecordsForStudent(studentId: string, tx: Prisma
     select: { month: true, year: true },
   })
 
-  const existingSet = new Set(existingRecords.map((r) => `${r.month}-${r.year}`))
+  const existingSet = new Set(existingRecords.map((r: any) => `${r.month}-${r.year}`))
   const newRecordsData = []
 
   let monthlyAmount = student.feePlan.monthlyAmount
@@ -366,12 +383,13 @@ export async function generateFeeRecordsForStudent(studentId: string, tx: Prisma
         netAmount: monthlyAmount,
         balanceAmount: monthlyAmount,
         status: monthlyAmount === 0 ? FeeRecordStatus.PAID : FeeRecordStatus.PENDING,
+        schoolId: student.schoolId,
       })
     }
   }
 
   if (newRecordsData.length > 0) {
-    await tx.feeRecord.createMany({
+    await db.feeRecord.createMany({
       data: newRecordsData,
       skipDuplicates: true,
     })
@@ -379,6 +397,7 @@ export async function generateFeeRecordsForStudent(studentId: string, tx: Prisma
 }
 
 export async function addFeePayment(
+  db: any,
   studentId: string,
   data: {
     amount: number
@@ -400,7 +419,7 @@ export async function addFeePayment(
     throw new ConflictError('Receipt number is mandatory')
   }
 
-  return await prisma.$transaction(async (tx) => {
+  return await db.$transaction(async (tx: any) => {
     // Unique receipt number validation
     const existingPayment = await tx.feePayment.findUnique({
       where: { receiptNumber: data.receiptNumber.trim() },
@@ -409,7 +428,7 @@ export async function addFeePayment(
       throw new ConflictError('Receipt number already exists')
     }
 
-    const unpaidRecords = await tx.feeRecord.findMany({
+    const unpaidRecords = await db.feeRecord.findMany({
       where: {
         studentId,
         status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
@@ -422,7 +441,7 @@ export async function addFeePayment(
 
     let primaryFeeRecordId = unpaidRecords[0]?.id
     if (!primaryFeeRecordId) {
-      const anyRecord = await tx.feeRecord.findFirst({ where: { studentId } })
+      const anyRecord = await db.feeRecord.findFirst({ where: { studentId } })
       if (!anyRecord) {
         throw new NotFoundError('No fee record found for this student.')
       }
@@ -437,14 +456,17 @@ export async function addFeePayment(
       const newBalanceAmount = record.balanceAmount - amountToPay
       const newStatus = newBalanceAmount === 0 ? 'PAID' : 'PARTIAL'
 
-      await tx.feeRecord.update({
+      await db.feeRecord.update({
         where: { id: record.id },
         data: {
           paidAmount: newPaidAmount,
           balanceAmount: newBalanceAmount,
           status: newStatus,
           lastPaymentDate: paymentDateObj,
-          lastPaymentMode: (data.paymentMode === 'UPI' || data.paymentMode === 'CARD') ? 'ONLINE' : (data.paymentMode as PaymentMode),
+          lastPaymentMode:
+            data.paymentMode === 'UPI' || data.paymentMode === 'CARD'
+              ? 'ONLINE'
+              : (data.paymentMode as PaymentMode),
           receiptNumber: data.receiptNumber.trim(),
         },
       })
@@ -454,7 +476,7 @@ export async function addFeePayment(
 
     // Overpayment credit saved to advance balance
     if (remainingAmount > 0) {
-      await tx.student.update({
+      await db.student.update({
         where: { id: studentId },
         data: { advanceBalance: { increment: remainingAmount } },
       })
@@ -466,7 +488,10 @@ export async function addFeePayment(
         studentId,
         amount: Math.round(data.amount * 100),
         paymentDate: paymentDateObj,
-        paymentMode: (data.paymentMode === 'UPI' || data.paymentMode === 'CARD') ? 'ONLINE' : (data.paymentMode as PaymentMode),
+        paymentMode:
+          data.paymentMode === 'UPI' || data.paymentMode === 'CARD'
+            ? 'ONLINE'
+            : (data.paymentMode as PaymentMode),
         receiptNumber: data.receiptNumber.trim(),
         remarks: data.remarks || null,
         transactionRef: data.transactionId || null,
@@ -478,8 +503,8 @@ export async function addFeePayment(
   })
 }
 
-export async function getStudentFeeProfile(studentId: string, sessionId?: string) {
-  const student = await prisma.student.findUnique({
+export async function getStudentFeeProfile(db: any, studentId: string, sessionId?: string) {
+  const student = await db.student.findUnique({
     where: { id: studentId },
     include: {
       session: true,
@@ -501,9 +526,9 @@ export async function getStudentFeeProfile(studentId: string, sessionId?: string
     }
   }
 
-  await generateFeeRecordsForStudent(studentId)
+  await generateFeeRecordsForStudent(db, studentId)
 
-  const records = await prisma.feeRecord.findMany({
+  const records = await db.feeRecord.findMany({
     where: { studentId, sessionId: effectiveSessionId },
     include: {
       payments: {
@@ -515,15 +540,16 @@ export async function getStudentFeeProfile(studentId: string, sessionId?: string
   })
 
   const allPayments = records
-    .flatMap((r) =>
-      r.payments.map((p) => ({
+    .flatMap((r: any) =>
+      r.payments.map((p: any) => ({
         ...p,
         month: r.month,
         year: r.year,
-        monthLabel: ALL_ACADEMIC_MONTHS.find((m) => m.month === r.month)?.label || `Month ${r.month}`,
+        monthLabel:
+          ALL_ACADEMIC_MONTHS.find((m) => m.month === r.month)?.label || `Month ${r.month}`,
       }))
     )
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   const currentDate = new Date()
   const currentMonthNum = currentDate.getMonth() + 1
@@ -534,7 +560,7 @@ export async function getStudentFeeProfile(studentId: string, sessionId?: string
   let pendingAmount = 0
   let firstPendingLabel: string | null = null
 
-  records.forEach((r) => {
+  records.forEach((r: any) => {
     const acadSeq = r.month >= 4 ? r.month - 3 : r.month + 9
     paidAmount += r.paidAmount
     if (acadSeq <= currentAcademicSeq) {
@@ -555,7 +581,7 @@ export async function getStudentFeeProfile(studentId: string, sessionId?: string
         displayText: 'Vacation (No Fee)',
       }
     }
-    const r = records.find((rec) => rec.month === mInfo.month)
+    const r = records.find((rec: any) => rec.month === mInfo.month)
     return {
       month: mInfo.month,
       label: mInfo.label,
@@ -584,7 +610,7 @@ export async function getStudentFeeProfile(studentId: string, sessionId?: string
           }
         : null,
     },
-    records: records.map((r) => ({
+    records: records.map((r: any) => ({
       id: r.id,
       month: r.month,
       year: r.year,

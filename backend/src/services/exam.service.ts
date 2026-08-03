@@ -6,7 +6,6 @@
  * @module services/exam
  */
 
-import prisma from '../database/prisma'
 import { NotFoundError, ConflictError } from '../core/errors'
 import { PublishStatus, Prisma } from '../generated/prisma'
 
@@ -68,8 +67,11 @@ export class ExamService {
   /**
    * List exams by Session and/or Class
    */
-  static async listExams(filters: { sessionId?: string; classId?: string; status?: PublishStatus }) {
-    const exams = await prisma.exam.findMany({
+  static async listExams(
+    db: any,
+    filters: { sessionId?: string; classId?: string; status?: PublishStatus }
+  ) {
+    const exams = await db.exam.findMany({
       where: {
         ...(filters.sessionId && { sessionId: filters.sessionId }),
         ...(filters.classId && { classId: filters.classId }),
@@ -105,9 +107,9 @@ export class ExamService {
       orderBy: { createdAt: 'desc' },
     })
 
-    return exams.map((exam) => ({
+    return exams.map((exam: any) => ({
       ...exam,
-      schedules: (exam.schedules || []).map((s) => ({
+      schedules: (exam.schedules || []).map((s: any) => ({
         ...s,
         day: getDayFromDate(s.examDate),
       })),
@@ -117,8 +119,8 @@ export class ExamService {
   /**
    * Get single exam with schedules (timetable entries with auto-calculated Day)
    */
-  static async getExamById(id: string) {
-    const exam = await prisma.exam.findUnique({
+  static async getExamById(db: any, id: string) {
+    const exam = await db.exam.findUnique({
       where: { id },
       select: {
         id: true,
@@ -148,7 +150,7 @@ export class ExamService {
     if (!exam) throw new NotFoundError('Exam not found')
 
     // Attach calculated Day to each schedule entry
-    const formattedSchedules = exam.schedules.map((s) => ({
+    const formattedSchedules = exam.schedules.map((s: any) => ({
       ...s,
       day: getDayFromDate(s.examDate),
     }))
@@ -162,9 +164,9 @@ export class ExamService {
   /**
    * Create exam for a Session and Class
    */
-  static async createExam(data: CreateExamInput) {
+  static async createExam(db: any, data: CreateExamInput) {
     try {
-      return await prisma.exam.create({
+      return await db.exam.create({
         data: {
           sessionId: data.sessionId,
           classId: data.classId,
@@ -192,17 +194,21 @@ export class ExamService {
   /**
    * Update exam details
    */
-  static async updateExam(id: string, data: UpdateExamInput) {
-    const exam = await prisma.exam.findUnique({ where: { id } })
+  static async updateExam(db: any, id: string, data: UpdateExamInput) {
+    const exam = await db.exam.findUnique({ where: { id } })
     if (!exam) throw new NotFoundError('Exam not found')
 
-    return prisma.exam.update({
+    return db.exam.update({
       where: { id },
       data: {
         ...(data.name && { name: data.name }),
         ...(data.classId !== undefined && { classId: data.classId || null }),
-        ...(data.startDate !== undefined && { startDate: data.startDate ? new Date(data.startDate) : null }),
-        ...(data.endDate !== undefined && { endDate: data.endDate ? new Date(data.endDate) : null }),
+        ...(data.startDate !== undefined && {
+          startDate: data.startDate ? new Date(data.startDate) : null,
+        }),
+        ...(data.endDate !== undefined && {
+          endDate: data.endDate ? new Date(data.endDate) : null,
+        }),
         ...(data.status && { status: data.status }),
       },
     })
@@ -211,22 +217,22 @@ export class ExamService {
   /**
    * Delete exam
    */
-  static async deleteExam(id: string) {
-    const exam = await prisma.exam.findUnique({ where: { id } })
+  static async deleteExam(db: any, id: string) {
+    const exam = await db.exam.findUnique({ where: { id } })
     if (!exam) throw new NotFoundError('Exam not found')
 
-    return prisma.exam.delete({ where: { id } })
+    return db.exam.delete({ where: { id } })
   }
 
   /**
    * Save exam timetable schedules (Admin creates; Date, Time, Subject; Day is auto-calculated)
    */
-  static async saveSchedules(examId: string, schedules: ExamScheduleInput[]) {
-    const exam = await prisma.exam.findUnique({ where: { id: examId } })
+  static async saveSchedules(db: any, examId: string, schedules: ExamScheduleInput[]) {
+    const exam = await db.exam.findUnique({ where: { id: examId } })
     if (!exam) throw new NotFoundError('Exam not found')
 
-    return prisma.$transaction(async (tx) => {
-      const updatedSubjectIds = schedules.map((s) => s.subjectId)
+    return db.$transaction(async (tx: any) => {
+      const updatedSubjectIds = schedules.map((s: any) => s.subjectId)
       await tx.examSchedule.deleteMany({
         where: {
           examId,
@@ -271,20 +277,17 @@ export class ExamService {
   /**
    * Helper: Check student fee clearance up to current month in active session
    */
-  private static async checkStudentFeeClearance(studentId: string, sessionId: string) {
+  private static async checkStudentFeeClearance(db: any, studentId: string, sessionId: string) {
     const currentMonth = new Date().getMonth() + 1
     const currentYear = new Date().getFullYear()
 
-    const unpaidRecord = await prisma.feeRecord.findFirst({
+    const unpaidRecord = await db.feeRecord.findFirst({
       where: {
         studentId,
         sessionId,
         status: { in: ['PENDING', 'PARTIAL', 'OVERDUE'] },
         balanceAmount: { gt: 0 },
-        OR: [
-          { year: { lt: currentYear } },
-          { year: currentYear, month: { lte: currentMonth } },
-        ],
+        OR: [{ year: { lt: currentYear } }, { year: currentYear, month: { lte: currentMonth } }],
       },
       select: { id: true, balanceAmount: true },
     })
@@ -298,8 +301,8 @@ export class ExamService {
   /**
    * Get Admit Card Students List for selected class (includes ALL students from all sections)
    */
-  static async getAdmitCardStudents(sessionId: string, classId: string, examId?: string) {
-    const students = await prisma.student.findMany({
+  static async getAdmitCardStudents(db: any, sessionId: string, classId: string, examId?: string) {
+    const students = await db.student.findMany({
       where: {
         classId,
         isActive: true,
@@ -317,18 +320,18 @@ export class ExamService {
     })
 
     // Fetch existing admit card override records
-    const admitCardRecords = await prisma.admitCard.findMany({
+    const admitCardRecords = await db.admitCard.findMany({
       where: {
         sessionId,
         ...(examId ? { examId } : {}),
       },
     })
-    const cardMap = new Map(admitCardRecords.map((c) => [c.studentId, c]))
+    const cardMap = new Map(admitCardRecords.map((c: any) => [c.studentId, c]))
 
     const studentList = []
     for (const student of students) {
-      const feeCheck = await this.checkStudentFeeClearance(student.id, sessionId)
-      const existingCard = cardMap.get(student.id)
+      const feeCheck = await this.checkStudentFeeClearance(db, student.id, sessionId)
+      const existingCard: any = cardMap.get(student.id) as any
 
       let effectiveStatus = feeCheck.isCleared ? 'RELEASED' : 'HOLD'
       let defaultRemark = feeCheck.isCleared ? 'Cleared' : 'Fees Not Paid'
@@ -336,7 +339,9 @@ export class ExamService {
       if (existingCard) {
         if (existingCard.adminStatus !== 'AUTO') {
           effectiveStatus = existingCard.adminStatus
-          defaultRemark = existingCard.remark || (existingCard.adminStatus === 'HOLD' ? 'Held By Admin' : 'Released By Admin')
+          defaultRemark =
+            existingCard.remark ||
+            (existingCard.adminStatus === 'HOLD' ? 'Held By Admin' : 'Released By Admin')
         } else if (existingCard.teacherStatus === 'HOLD') {
           effectiveStatus = 'HOLD'
           defaultRemark = existingCard.remark || 'Held By Teacher'
@@ -368,17 +373,20 @@ export class ExamService {
   /**
    * Update Admit Card Status (Admin override / Teacher recommendation)
    */
-  static async updateAdmitCardStatus(data: {
-    sessionId: string
-    examId?: string
-    studentId: string
-    status: 'RELEASED' | 'HOLD'
-    remark?: string
-    role: 'ADMIN' | 'TEACHER'
-  }) {
+  static async updateAdmitCardStatus(
+    db: any,
+    data: {
+      sessionId: string
+      examId?: string
+      studentId: string
+      status: 'RELEASED' | 'HOLD'
+      remark?: string
+      role: 'ADMIN' | 'TEACHER'
+    }
+  ) {
     const { sessionId, examId, studentId, status, remark, role } = data
 
-    const existingCard = await prisma.admitCard.findFirst({
+    const existingCard: any = await db.admitCard.findFirst({
       where: {
         sessionId,
         studentId,
@@ -410,12 +418,12 @@ export class ExamService {
       isReleased = false
     } else {
       // AUTO mode: depends on fee clearance and teacher status
-      const feeCheck = await this.checkStudentFeeClearance(studentId, sessionId)
+      const feeCheck = await this.checkStudentFeeClearance(db, studentId, sessionId)
       isReleased = feeCheck.isCleared && teacherStatus !== 'HOLD'
     }
 
     if (existingCard) {
-      return prisma.admitCard.update({
+      return db.admitCard.update({
         where: { id: existingCard.id },
         data: {
           adminStatus,
@@ -426,7 +434,7 @@ export class ExamService {
         },
       })
     } else {
-      return prisma.admitCard.create({
+      return db.admitCard.create({
         data: {
           sessionId,
           examId: examId || null,
@@ -443,14 +451,14 @@ export class ExamService {
   /**
    * Teacher Result Management: Get subject marks list for class
    */
-  static async getSubjectMarks(examId: string, subjectId: string) {
-    const exam = await prisma.exam.findUnique({
+  static async getSubjectMarks(db: any, examId: string, subjectId: string) {
+    const exam = await db.exam.findUnique({
       where: { id: examId },
       include: { class: true },
     })
     if (!exam || !exam.classId) throw new NotFoundError('Exam or class not found')
 
-    const students = await prisma.student.findMany({
+    const students = await db.student.findMany({
       where: {
         classId: exam.classId,
         isActive: true,
@@ -467,10 +475,10 @@ export class ExamService {
       orderBy: [{ section: { name: 'asc' } }, { firstName: 'asc' }],
     })
 
-    const existingMarks = await prisma.examMark.findMany({
+    const existingMarks = await db.examMark.findMany({
       where: { examId, subjectId },
     })
-    const markMap = new Map(existingMarks.map((m) => [m.studentId, m]))
+    const markMap = new Map(existingMarks.map((m: any) => [m.studentId, m]))
 
     let defaultMaxMarks = 100
     if (existingMarks.length > 0) {
@@ -481,8 +489,8 @@ export class ExamService {
       examId,
       subjectId,
       maxMarks: defaultMaxMarks,
-      students: students.map((s) => {
-        const markRecord = markMap.get(s.id)
+      students: students.map((s: any) => {
+        const markRecord: any = markMap.get(s.id)
         return {
           studentId: s.id,
           firstName: s.firstName,
@@ -500,10 +508,10 @@ export class ExamService {
   /**
    * Save subject marks in bulk for a class (Teacher enters single maxMarks at top)
    */
-  static async saveSubjectMarks(input: SaveSubjectMarksInput) {
+  static async saveSubjectMarks(db: any, input: SaveSubjectMarksInput) {
     const { examId, subjectId, maxMarks, marks } = input
 
-    return prisma.$transaction(async (tx) => {
+    return db.$transaction(async (tx: any) => {
       for (const item of marks) {
         await tx.examMark.upsert({
           where: {
@@ -531,8 +539,8 @@ export class ExamService {
   /**
    * Teacher Result Management: Get single student's subject marks table & overall percentage
    */
-  static async getStudentMarks(examId: string, studentId: string) {
-    const exam = await prisma.exam.findUnique({
+  static async getStudentMarks(db: any, examId: string, studentId: string) {
+    const exam = await db.exam.findUnique({
       where: { id: examId },
       include: {
         schedules: {
@@ -542,22 +550,22 @@ export class ExamService {
     })
     if (!exam) throw new NotFoundError('Exam not found')
 
-    const student = await prisma.student.findUnique({
+    const student = await db.student.findUnique({
       where: { id: studentId },
       include: { class: true, section: true },
     })
     if (!student) throw new NotFoundError('Student not found')
 
-    const existingMarks = await prisma.examMark.findMany({
+    const existingMarks = await db.examMark.findMany({
       where: { examId, studentId },
     })
-    const markMap = new Map(existingMarks.map((m) => [m.subjectId, m]))
+    const markMap = new Map(existingMarks.map((m: any) => [m.subjectId, m]))
 
     let totalMax = 0
     let totalObtained = 0
 
-    const subjectRows = exam.schedules.map((sched) => {
-      const m = markMap.get(sched.subjectId)
+    const subjectRows = exam.schedules.map((sched: any) => {
+      const m: any = markMap.get(sched.subjectId)
       const maxMarks = m ? m.maxMarks : 100
       const obtainedMarks = m ? m.obtainedMarks : 0
       const percentage = maxMarks > 0 ? (obtainedMarks / maxMarks) * 100 : 0
@@ -598,10 +606,10 @@ export class ExamService {
   /**
    * Save/update single student marks across all subjects and update ReportCard
    */
-  static async saveStudentMarks(input: SaveStudentMarksInput) {
+  static async saveStudentMarks(db: any, input: SaveStudentMarksInput) {
     const { examId, studentId, marks } = input
 
-    return prisma.$transaction(async (tx) => {
+    return db.$transaction(async (tx: any) => {
       let totalMax = 0
       let totalObtained = 0
 
@@ -659,14 +667,14 @@ export class ExamService {
   /**
    * Admin Result Release Management: List students with fee status & result release status
    */
-  static async getResultStudents(sessionId: string, classId: string, examId: string) {
-    const exam = await prisma.exam.findUnique({
+  static async getResultStudents(db: any, sessionId: string, classId: string, examId: string) {
+    const exam = await db.exam.findUnique({
       where: { id: examId },
       include: { schedules: true },
     })
     if (!exam) throw new NotFoundError('Exam not found')
 
-    const students = await prisma.student.findMany({
+    const students = await db.student.findMany({
       where: { classId, isActive: true, deletedAt: null },
       select: {
         id: true,
@@ -679,12 +687,12 @@ export class ExamService {
       orderBy: [{ section: { name: 'asc' } }, { firstName: 'asc' }],
     })
 
-    const reportCards = await prisma.reportCard.findMany({ where: { examId } })
-    const reportMap = new Map(reportCards.map((r) => [r.studentId, r]))
+    const reportCards = await db.reportCard.findMany({ where: { examId } })
+    const reportMap = new Map(reportCards.map((r: any) => [r.studentId, r]))
 
-    const examMarks = await prisma.examMark.findMany({ where: { examId } })
+    const examMarks = await db.examMark.findMany({ where: { examId } })
     const marksCountMap = new Map<string, number>()
-    examMarks.forEach((m) => {
+    examMarks.forEach((m: any) => {
       marksCountMap.set(m.studentId, (marksCountMap.get(m.studentId) || 0) + 1)
     })
 
@@ -692,8 +700,8 @@ export class ExamService {
 
     const list = []
     for (const student of students) {
-      const feeCheck = await this.checkStudentFeeClearance(student.id, sessionId)
-      const existingReport = reportMap.get(student.id)
+      const feeCheck = await this.checkStudentFeeClearance(db, student.id, sessionId)
+      const existingReport: any = reportMap.get(student.id)
       const enteredSubjectsCount = marksCountMap.get(student.id) || 0
       const isMarksComplete = totalSubjects > 0 && enteredSubjectsCount >= totalSubjects
 
@@ -718,7 +726,9 @@ export class ExamService {
       if (existingReport) {
         if (existingReport.adminStatus !== 'AUTO') {
           effectiveStatus = existingReport.adminStatus
-          remark = existingReport.remarks || (existingReport.adminStatus === 'HOLD' ? 'Held By Admin' : 'Released By Admin')
+          remark =
+            existingReport.remarks ||
+            (existingReport.adminStatus === 'HOLD' ? 'Held By Admin' : 'Released By Admin')
         } else {
           effectiveStatus = defaultStatus
         }
@@ -735,7 +745,7 @@ export class ExamService {
         isMarksComplete,
         status: effectiveStatus,
         adminStatus,
-        isReleased: existingReport?.isReleased ?? (effectiveStatus === 'RELEASED'),
+        isReleased: existingReport?.isReleased ?? effectiveStatus === 'RELEASED',
         remark: existingReport?.remarks || remark,
       })
     }
@@ -746,18 +756,21 @@ export class ExamService {
   /**
    * Admin-Only: Official Release / Hold toggle for Results
    */
-  static async updateResultStatus(data: {
-    examId: string
-    studentId: string
-    status: 'RELEASED' | 'HOLD'
-    remark?: string
-  }) {
+  static async updateResultStatus(
+    db: any,
+    data: {
+      examId: string
+      studentId: string
+      status: 'RELEASED' | 'HOLD'
+      remark?: string
+    }
+  ) {
     const { examId, studentId, status, remark } = data
 
     const isReleased = status === 'RELEASED'
     const finalRemark = remark || (isReleased ? 'Released By Admin' : 'Held By Admin')
 
-    return prisma.reportCard.upsert({
+    return db.reportCard.upsert({
       where: { examId_studentId: { examId, studentId } },
       create: {
         examId,
@@ -777,10 +790,10 @@ export class ExamService {
   /**
    * Get / Save Exam Template (Admit Card / Result)
    */
-  static async getExamTemplate(type: 'ADMIT_CARD' | 'RESULT') {
-    let template = await prisma.examTemplate.findUnique({ where: { type } })
+  static async getExamTemplate(db: any, type: 'ADMIT_CARD' | 'RESULT') {
+    let template = await db.examTemplate.findUnique({ where: { type } })
     if (!template) {
-      template = await prisma.examTemplate.create({
+      template = await db.examTemplate.create({
         data: {
           type,
           schoolName: 'School ERP International',
@@ -792,16 +805,20 @@ export class ExamService {
     return template
   }
 
-  static async saveExamTemplate(type: 'ADMIT_CARD' | 'RESULT', data: {
-    schoolName?: string
-    logoUrl?: string | null
-    headerText?: string | null
-    footerText?: string | null
-    principalSignatureUrl?: string | null
-    schoolStampUrl?: string | null
-    config?: Prisma.InputJsonValue
-  }) {
-    return prisma.examTemplate.upsert({
+  static async saveExamTemplate(
+    db: any,
+    type: 'ADMIT_CARD' | 'RESULT',
+    data: {
+      schoolName?: string
+      logoUrl?: string | null
+      headerText?: string | null
+      footerText?: string | null
+      principalSignatureUrl?: string | null
+      schoolStampUrl?: string | null
+      config?: Prisma.InputJsonValue
+    }
+  ) {
+    return db.examTemplate.upsert({
       where: { type },
       create: {
         type,
@@ -828,8 +845,8 @@ export class ExamService {
   /**
    * Student Portal: Fetch Admit Card Payload
    */
-  static async getStudentAdmitCard(userId: string, sessionId?: string, examId?: string) {
-    const student = await prisma.student.findUnique({
+  static async getStudentAdmitCard(db: any, userId: string, sessionId?: string, examId?: string) {
+    const student = await db.student.findUnique({
       where: { userId },
       include: { class: true, section: true, session: true },
     })
@@ -840,7 +857,7 @@ export class ExamService {
 
     // Find latest or selected exam
     const exam = examId
-      ? await prisma.exam.findUnique({
+      ? await db.exam.findUnique({
           where: { id: examId },
           include: {
             schedules: {
@@ -849,7 +866,7 @@ export class ExamService {
             },
           },
         })
-      : await prisma.exam.findFirst({
+      : await db.exam.findFirst({
           where: { sessionId: effectiveSessionId, classId: student.classId, status: 'PUBLISHED' },
           include: {
             schedules: {
@@ -863,8 +880,8 @@ export class ExamService {
     if (!exam) return { isReleased: false, holdReason: 'No examination scheduled.' }
 
     // Check Admit Card release status
-    const feeCheck = await this.checkStudentFeeClearance(student.id, effectiveSessionId)
-    const card = await prisma.admitCard.findFirst({
+    const feeCheck = await this.checkStudentFeeClearance(db, student.id, effectiveSessionId)
+    const card: any = await db.admitCard.findFirst({
       where: { sessionId: effectiveSessionId, studentId: student.id, examId: exam.id },
     })
 
@@ -888,7 +905,7 @@ export class ExamService {
       return { isReleased: false, holdReason }
     }
 
-    const template = await this.getExamTemplate('ADMIT_CARD')
+    const template = await ExamService.getExamTemplate(db, 'ADMIT_CARD')
 
     return {
       isReleased: true,
@@ -902,7 +919,7 @@ export class ExamService {
         sessionName: student.session?.name || '',
       },
       examName: exam.name,
-      timetable: exam.schedules.map((s) => ({
+      timetable: exam.schedules.map((s: any) => ({
         date: s.examDate.toISOString().slice(0, 10),
         day: getDayFromDate(s.examDate),
         time: `${s.startTime} - ${s.endTime}`,
@@ -916,8 +933,8 @@ export class ExamService {
   /**
    * Student Portal: Fetch Result Payload
    */
-  static async getStudentResult(userId: string, sessionId?: string, examId?: string) {
-    const student = await prisma.student.findUnique({
+  static async getStudentResult(db: any, userId: string, sessionId?: string, examId?: string) {
+    const student = await db.student.findUnique({
       where: { userId },
       include: { class: true, section: true, session: true },
     })
@@ -927,7 +944,7 @@ export class ExamService {
     if (!effectiveSessionId) throw new NotFoundError('Academic session not set')
 
     const exam = examId
-      ? await prisma.exam.findUnique({
+      ? await db.exam.findUnique({
           where: { id: examId },
           include: {
             schedules: {
@@ -935,7 +952,7 @@ export class ExamService {
             },
           },
         })
-      : await prisma.exam.findFirst({
+      : await db.exam.findFirst({
           where: { sessionId: effectiveSessionId, classId: student.classId, status: 'PUBLISHED' },
           include: {
             schedules: {
@@ -948,11 +965,11 @@ export class ExamService {
     if (!exam) return { isReleased: false, holdReason: 'No result published.' }
 
     // Result requires explicit Admin Release
-    const reportCard = await prisma.reportCard.findUnique({
+    const reportCard: any = await db.reportCard.findUnique({
       where: { examId_studentId: { examId: exam.id, studentId: student.id } },
     })
 
-    const feeCheck = await this.checkStudentFeeClearance(student.id, effectiveSessionId)
+    const feeCheck = await this.checkStudentFeeClearance(db, student.id, effectiveSessionId)
 
     const isReleased = reportCard?.isReleased || reportCard?.adminStatus === 'RELEASED'
     let holdReason = reportCard?.remarks || 'Result Not Published'
@@ -965,8 +982,8 @@ export class ExamService {
     }
 
     // Fetch student marks
-    const marksData = await this.getStudentMarks(exam.id, student.id)
-    const template = await this.getExamTemplate('RESULT')
+    const marksData = await ExamService.getStudentMarks(db, exam.id, student.id)
+    const template = await ExamService.getExamTemplate(db, 'RESULT')
 
     return {
       isReleased: true,

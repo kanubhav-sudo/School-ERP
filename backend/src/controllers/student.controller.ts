@@ -32,7 +32,7 @@ export async function listStudents(req: Request, res: Response, next: NextFuncti
       return
     }
 
-    const result = await StudentService.listStudents(parsed.data)
+    const result = await StudentService.listStudents(req.db, parsed.data)
     ApiResponse.success(res, result, 'Students retrieved')
   } catch (err) {
     next(err)
@@ -44,7 +44,7 @@ export async function listStudents(req: Request, res: Response, next: NextFuncti
 export async function getStudent(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = req.params.id as string
-    const student = await StudentService.getStudentById(id)
+    const student = await StudentService.getStudentById(req.db, id)
     ApiResponse.success(res, student, 'Student retrieved')
   } catch (err) {
     next(err)
@@ -65,7 +65,7 @@ export async function createStudent(
       return
     }
 
-    const student = await StudentService.createStudent(parsed.data)
+    const student = await StudentService.createStudent(req.db, parsed.data)
     ApiResponse.created(res, student, 'Student created')
   } catch (err) {
     next(err)
@@ -87,7 +87,7 @@ export async function updateStudent(
       return
     }
 
-    const student = await StudentService.updateStudent(id, parsed.data)
+    const student = await StudentService.updateStudent(req.db, id, parsed.data)
     ApiResponse.success(res, student, 'Student updated')
   } catch (err) {
     next(err)
@@ -103,7 +103,7 @@ export async function deleteStudent(
 ): Promise<void> {
   try {
     const id = req.params.id as string
-    await StudentService.deleteStudent(id)
+    await StudentService.deleteStudent(req.db, id)
     ApiResponse.success(res, null, 'Student archived successfully')
   } catch (err) {
     next(err)

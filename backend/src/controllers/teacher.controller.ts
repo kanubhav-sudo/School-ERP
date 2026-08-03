@@ -38,7 +38,7 @@ export async function updateAssignment(req: Request, res: Response, next: NextFu
       throw new ValidationError('Invalid assignment data', parsed.error.issues)
     }
 
-    const assignment = await TeacherService.updateTeacherAssignment(id, asgId, parsed.data)
+    const assignment = await TeacherService.updateTeacherAssignment(req.db, id, asgId, parsed.data)
     res.json({ success: true, data: assignment })
   } catch (error) {
     next(error)
@@ -53,7 +53,7 @@ export async function listTeachers(req: Request, res: Response, next: NextFuncti
       return
     }
 
-    const result = await TeacherService.listTeachers(parsed.data)
+    const result = await TeacherService.listTeachers(req.db, parsed.data)
     ApiResponse.success(res, result, 'Teachers retrieved')
   } catch (err) {
     next(err)
@@ -69,7 +69,7 @@ export async function getTeacherStats(
 ): Promise<void> {
   try {
     const sessionId = req.query.sessionId as string | undefined
-    const stats = await TeacherService.getTeacherStats(sessionId)
+    const stats = await TeacherService.getTeacherStats(req.db, sessionId)
     ApiResponse.success(res, stats, 'Teacher stats retrieved')
   } catch (err) {
     next(err)
@@ -81,7 +81,7 @@ export async function getTeacherStats(
 export async function getTeacher(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = req.params.id as string
-    const teacher = await TeacherService.getTeacherById(id)
+    const teacher = await TeacherService.getTeacherById(req.db, id)
     ApiResponse.success(res, teacher, 'Teacher retrieved')
   } catch (err) {
     next(err)
@@ -102,7 +102,7 @@ export async function createTeacher(
       return
     }
 
-    const teacher = await TeacherService.createTeacher(parsed.data)
+    const teacher = await TeacherService.createTeacher(req.db, parsed.data)
     ApiResponse.created(res, teacher, 'Teacher created')
   } catch (err) {
     next(err)
@@ -124,7 +124,7 @@ export async function updateTeacher(
       return
     }
 
-    const teacher = await TeacherService.updateTeacher(id, parsed.data)
+    const teacher = await TeacherService.updateTeacher(req.db, id, parsed.data)
     ApiResponse.success(res, teacher, 'Teacher updated')
   } catch (err) {
     next(err)
@@ -140,7 +140,7 @@ export async function deleteTeacher(
 ): Promise<void> {
   try {
     const id = req.params.id as string
-    await TeacherService.deleteTeacher(id)
+    await TeacherService.deleteTeacher(req.db, id)
     ApiResponse.success(res, null, 'Teacher archived successfully')
   } catch (err) {
     next(err)
@@ -162,7 +162,7 @@ export async function addAssignment(
       return
     }
 
-    const assignment = await TeacherService.addTeacherAssignment(id, parsed.data)
+    const assignment = await TeacherService.addTeacherAssignment(req.db, id, parsed.data)
     ApiResponse.created(res, assignment, 'Assignment added')
   } catch (err) {
     next(err)
@@ -178,7 +178,7 @@ export async function removeAssignment(
 ): Promise<void> {
   try {
     const { id, asgId } = req.params as { id: string; asgId: string }
-    await TeacherService.removeTeacherAssignment(id, asgId)
+    await TeacherService.removeTeacherAssignment(req.db, id, asgId)
     ApiResponse.success(res, null, 'Assignment removed')
   } catch (err) {
     next(err)
@@ -195,7 +195,7 @@ export async function getTeacherTimetable(
   try {
     const id = req.params.id as string
     const sessionId = req.query.sessionId as string | undefined
-    const timetable = await TeacherService.getTeacherTimetable(id, sessionId)
+    const timetable = await TeacherService.getTeacherTimetable(req.db, id, sessionId)
     ApiResponse.success(res, timetable, 'Teacher timetable retrieved')
   } catch (err) {
     next(err)
@@ -210,7 +210,7 @@ export async function getTeacherSections(
   try {
     const id = req.params.id as string
     const sessionId = req.query.sessionId as string | undefined
-    const sections = await TeacherService.getTeacherSections(id, sessionId)
+    const sections = await TeacherService.getTeacherSections(req.db, id, sessionId)
     ApiResponse.success(res, sections, 'Teacher sections retrieved')
   } catch (err) {
     next(err)
