@@ -3,6 +3,9 @@
  *
  * Manages the global authentication state.
  * - Calls /auth/refresh on app load to restore session
+ * - After login or refresh, enriches the user object via /auth/me
+ *   so that profile fields (dateOfBirth, profileName, firstName, lastName)
+ *   are always available — these are not returned by /auth/login or /auth/refresh.
  * - Exposes login(), logout(), and the current user
  * - Access token lives in-memory (via axios.ts)
  *
@@ -25,6 +28,22 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+/**
+ * Fetch the fully-enriched user profile from /auth/me.
+ * /auth/login and /auth/refresh return only a minimal user object
+ * (id, username, email, role, schoolId, mustChangePassword).
+ * The enriched fields — dateOfBirth, profileName, firstName, lastName —
+ * are only available from /auth/me and are required for birthday detection.
+ */
+async function fetchEnrichedUser(): Promise<AuthUser | null> {
+  try {
+    const { data } = await apiClient.get('/auth/me')
+    return data.data as AuthUser
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -38,7 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // does not require an access token (it uses the httpOnly cookie).
         const { data } = await axios.post('/api/v1/auth/refresh', {}, { withCredentials: true })
         setAccessToken(data.data.accessToken)
-        setUser(data.data.user)
+        // Enrich with profile fields (dateOfBirth etc.) from /auth/me
+        const enriched = await fetchEnrichedUser()
+        setUser(enriched ?? data.data.user)
       } catch {
         // No valid session — user needs to log in
         setUser(null)
@@ -53,7 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (payload: LoginPayload) => {
     const { data } = await apiClient.post('/auth/login', payload)
     setAccessToken(data.data.accessToken)
-    setUser(data.data.user)
+    // Enrich with profile fields (dateOfBirth etc.) from /auth/me
+    const enriched = await fetchEnrichedUser()
+    setUser(enriched ?? data.data.user)
   }, [])
 
   const logout = useCallback(async () => {
@@ -96,3 +119,4 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
 }
+
