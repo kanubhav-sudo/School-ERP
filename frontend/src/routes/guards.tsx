@@ -68,15 +68,13 @@ export function RoleRoute({ children, roles }: { children: React.ReactNode; role
 export function getDashboardPath(role: UserRole): string {
   switch (role) {
     case 'SUPER_ADMIN':
-      return '/super-admin/dashboard'
     case 'ADMIN':
       return '/admin/dashboard'
     case 'TEACHER':
       return '/teacher/dashboard'
+    case 'PARENT':
     case 'STUDENT':
       return '/student/dashboard'
-    case 'PARENT':
-      return '/parent/dashboard'
     default:
       return '/login'
   }

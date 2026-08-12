@@ -20,7 +20,6 @@ import { fetchSubjects } from '../../subjects/api'
 import { fetchSessions } from '../../academic-sessions/api'
 import { fetchPeriodMasters } from '../../period-master/api'
 
-
 const formSchema = z.object({
   sessionId: z.string().min(1, 'Session is required'),
   teacherId: z.string().min(1, 'Teacher is required'),
@@ -40,7 +39,6 @@ interface TimetableFormProps {
   classId: string
   onClose: () => void
 }
-
 
 export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableFormProps) {
   const queryClient = useQueryClient()
@@ -76,7 +74,9 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
           periodNumber: entry.periodNumber,
           room: entry.room ?? '',
           isOverride: entry.isOverride ?? false,
-          overrideDate: entry.overrideDate ? new Date(entry.overrideDate).toISOString().split('T')[0] : '',
+          overrideDate: entry.overrideDate
+            ? new Date(entry.overrideDate).toISOString().split('T')[0]
+            : '',
         }
       : {
           sessionId: activeSessionId,
@@ -89,16 +89,32 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
   })
 
   // Watch values for select components
+  // eslint-disable-next-line react-hooks/incompatible-library
   const dayOfWeek = watch('dayOfWeek')
   const teacherId = watch('teacherId')
   const subjectId = watch('subjectId')
   const sessionId = watch('sessionId')
   const isOverride = watch('isOverride')
+  const periodNumber = watch('periodNumber')
 
   // Filter teachers by selected session + class (only show assigned teachers when possible)
   const { data: teachersData } = useQuery({
-    queryKey: ['teachers', { isActive: true, limit: 100, sessionId: sessionId || undefined, classId: classId || undefined }],
-    queryFn: () => fetchTeachers({ isActive: true, limit: 100, sessionId: sessionId || undefined, classId: classId || undefined }),
+    queryKey: [
+      'teachers',
+      {
+        isActive: true,
+        limit: 100,
+        sessionId: sessionId || undefined,
+        classId: classId || undefined,
+      },
+    ],
+    queryFn: () =>
+      fetchTeachers({
+        isActive: true,
+        limit: 100,
+        sessionId: sessionId || undefined,
+        classId: classId || undefined,
+      }),
   })
 
   // Load Period Master for selected session
@@ -178,7 +194,11 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
         </div>
 
         <div className="p-6 overflow-y-auto">
-          <form id="timetable-form" onSubmit={handleSubmit(onSubmit as SubmitHandler<FormData>)} className="space-y-4">
+          <form
+            id="timetable-form"
+            onSubmit={handleSubmit(onSubmit as SubmitHandler<FormData>)}
+            className="space-y-4"
+          >
             <div className="space-y-2">
               <label className="text-sm font-medium">Academic Session</label>
               <Select
@@ -187,9 +207,7 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
               >
                 <SelectTrigger className={errors.sessionId ? 'border-destructive' : ''}>
                   <SelectValue placeholder="Select Session">
-                    {sessionId
-                      ? sessionsData?.find((s) => s.id === sessionId)?.name
-                      : undefined}
+                    {sessionId ? sessionsData?.find((s) => s.id === sessionId)?.name : undefined}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -204,7 +222,6 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
                 <p className="text-xs text-destructive">{errors.sessionId.message}</p>
               )}
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Day of Week</label>
@@ -214,9 +231,7 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
                   onValueChange={(val) => setValue('dayOfWeek', val as any)}
                 >
                   <SelectTrigger className={errors.dayOfWeek ? 'border-destructive' : ''}>
-                    <SelectValue placeholder="Select Day">
-                      {dayOfWeek}
-                    </SelectValue>
+                    <SelectValue placeholder="Select Day">{dayOfWeek}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'].map(
@@ -240,14 +255,17 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
                   onValueChange={(val) => setValue('periodNumber', parseInt(val as string))}
                 >
                   <SelectTrigger className={errors.periodNumber ? 'border-destructive' : ''}>
-                    <SelectValue placeholder={sortedPeriods.length === 0 ? 'No periods configured' : 'Select Period'}>
-                      {watch('periodNumber')
+                    <SelectValue
+                      placeholder={
+                        sortedPeriods.length === 0 ? 'No periods configured' : 'Select Period'
+                      }
+                    >
+                      {periodNumber
                         ? (() => {
-                            // eslint-disable-next-line react-hooks/incompatible-library
-                            const pm = sortedPeriods.find((p) => p.periodNumber === watch('periodNumber'))
+                            const pm = sortedPeriods.find((p) => p.periodNumber === periodNumber)
                             return pm
                               ? `Period ${pm.periodNumber} (${pm.startTime}–${pm.endTime})`
-                              : `Period ${watch('periodNumber')}`
+                              : `Period ${periodNumber}`
                           })()
                         : undefined}
                     </SelectValue>
@@ -271,7 +289,6 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
                 )}
               </div>
             </div>
-
             <div className="space-y-4 rounded-md border border-border p-4 bg-muted/50">
               <div className="flex items-center space-x-2">
                 <input
@@ -284,7 +301,7 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
                   Apply to this date only (Today only / Override)
                 </label>
               </div>
-              
+
               {isOverride && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Override Date</label>
@@ -306,7 +323,8 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
                   )}
                 </div>
               )}
-            </div>            <div className="space-y-2">
+            </div>{' '}
+            <div className="space-y-2">
               <label className="text-sm font-medium">Teacher</label>
               <Select
                 value={teacherId || ''}
@@ -334,7 +352,6 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
                 <p className="text-xs text-destructive">{errors.teacherId.message}</p>
               )}
             </div>
-
             <div className="space-y-2">
               <label className="text-sm font-medium">Subject</label>
               <Select
@@ -363,7 +380,6 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
                 <p className="text-xs text-destructive">{errors.subjectId.message}</p>
               )}
             </div>
-
             <div className="space-y-2">
               <label className="text-sm font-medium">Room (Optional)</label>
               <Input

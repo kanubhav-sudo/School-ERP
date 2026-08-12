@@ -94,118 +94,117 @@ function App() {
       <TenantProvider>
         <TenantSlugSyncer />
         <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Base Redirect */}
-            <Route path="/" element={<RootRedirect />} />
+          <BrowserRouter>
+            <Routes>
+              {/* Base Redirect */}
+              <Route path="/" element={<RootRedirect />} />
 
-            {/* Public / Guest Routes */}
-            <Route
-              path="/login"
-              element={
-                <GuestRoute>
-                  <LoginPage />
-                </GuestRoute>
-              }
-            />
+              {/* Public / Guest Routes */}
+              <Route
+                path="/login"
+                element={
+                  <GuestRoute>
+                    <LoginPage />
+                  </GuestRoute>
+                }
+              />
 
-            {/* Protected Change Password Route */}
-            <Route
-              path="/change-password"
-              element={
-                <ProtectedRoute>
-                  <ChangePasswordPage />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected Change Password Route */}
+              <Route
+                path="/change-password"
+                element={
+                  <ProtectedRoute>
+                    <ChangePasswordPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Protected Admin Routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <RoleRoute roles={['ADMIN']}>
-                    <AdminLayout />
-                  </RoleRoute>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="academic-sessions" element={<AcademicSessionsPage />} />
-              <Route path="classes" element={<ClassesPage />} />
-              <Route path="sections" element={<SectionsPage />} />
-              <Route path="subjects" element={<SubjectsPage />} />
-              <Route path="teachers" element={<TeachersPage />} />
-              <Route path="teachers/:id" element={<TeacherDetailPage />} />
-              <Route path="students" element={<StudentsPage />} />
-              <Route path="students/:id" element={<StudentDetailPage />} />
-              <Route path="timetable" element={<TimetablePage />} />
-              <Route path="period-master" element={<PeriodMasterPage />} />
-              <Route path="attendance" element={<AttendancePage />} />
-              <Route path="notices" element={<NoticesPage />} />
-              <Route path="finance/fee-plans" element={<FeePlansPage />} />
-              <Route path="finance/fee-records" element={<FeeRecordsPage />} />
-              <Route path="homework" element={<AdminHomeworkPage />} />
-              <Route path="exams" element={<ExamsPage />} />
-              <Route path="documents" element={<DocumentEnginePage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
+              {/* Protected Admin Routes */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <RoleRoute roles={['ADMIN', 'SUPER_ADMIN']}>
+                      <AdminLayout />
+                    </RoleRoute>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="academic-sessions" element={<AcademicSessionsPage />} />
+                <Route path="classes" element={<ClassesPage />} />
+                <Route path="sections" element={<SectionsPage />} />
+                <Route path="subjects" element={<SubjectsPage />} />
+                <Route path="teachers" element={<TeachersPage />} />
+                <Route path="teachers/:id" element={<TeacherDetailPage />} />
+                <Route path="students" element={<StudentsPage />} />
+                <Route path="students/:id" element={<StudentDetailPage />} />
+                <Route path="timetable" element={<TimetablePage />} />
+                <Route path="period-master" element={<PeriodMasterPage />} />
+                <Route path="attendance" element={<AttendancePage />} />
+                <Route path="notices" element={<NoticesPage />} />
+                <Route path="finance/fee-plans" element={<FeePlansPage />} />
+                <Route path="finance/fee-records" element={<FeeRecordsPage />} />
+                <Route path="homework" element={<AdminHomeworkPage />} />
+                <Route path="exams" element={<ExamsPage />} />
+                <Route path="documents" element={<DocumentEnginePage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
 
-            {/* Protected Teacher Routes */}
-            <Route
-              path="/teacher"
-              element={
-                <ProtectedRoute>
-                  <RoleRoute roles={['TEACHER']}>
-                    <TeacherLayout />
-                  </RoleRoute>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<TeacherDashboard />} />
-              <Route path="my-classes" element={<MyClassesPage />} />
-              <Route path="homework" element={<TeacherHomeworkPage />} />
-              <Route path="attendance" element={<TeacherAttendancePage />} />
-              <Route path="timetable" element={<TeacherTimetablePage />} />
-              <Route path="notices" element={<TeacherNoticesPage />} />
-              <Route path="announcements" element={<TeacherAnnouncementsPage />} />
-              <Route path="exams" element={<TeacherExamsPage />} />
-            </Route>
+              {/* Protected Teacher Routes */}
+              <Route
+                path="/teacher"
+                element={
+                  <ProtectedRoute>
+                    <RoleRoute roles={['TEACHER']}>
+                      <TeacherLayout />
+                    </RoleRoute>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<TeacherDashboard />} />
+                <Route path="my-classes" element={<MyClassesPage />} />
+                <Route path="homework" element={<TeacherHomeworkPage />} />
+                <Route path="attendance" element={<TeacherAttendancePage />} />
+                <Route path="timetable" element={<TeacherTimetablePage />} />
+                <Route path="notices" element={<TeacherNoticesPage />} />
+                <Route path="announcements" element={<TeacherAnnouncementsPage />} />
+                <Route path="exams" element={<TeacherExamsPage />} />
+              </Route>
 
+              {/* Protected Student Routes */}
+              <Route
+                path="/student"
+                element={
+                  <ProtectedRoute>
+                    <RoleRoute roles={['STUDENT', 'PARENT']}>
+                      <StudentLayout />
+                    </RoleRoute>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<StudentDashboard />} />
+                <Route path="profile" element={<StudentProfilePage />} />
+                <Route path="attendance" element={<StudentAttendancePage />} />
+                <Route path="timetable" element={<StudentTimetablePage />} />
+                <Route path="fees" element={<StudentFeesPage />} />
+                <Route path="exams" element={<StudentExamsPage />} />
+                <Route path="homework" element={<StudentHomeworkPage />} />
+                <Route path="notices" element={<StudentNoticesPage />} />
+                <Route path="announcements" element={<StudentAnnouncementsPage />} />
+              </Route>
 
-            {/* Protected Student Routes */}
-            <Route
-              path="/student"
-              element={
-                <ProtectedRoute>
-                  <RoleRoute roles={['STUDENT']}>
-                    <StudentLayout />
-                  </RoleRoute>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<StudentDashboard />} />
-              <Route path="profile" element={<StudentProfilePage />} />
-              <Route path="attendance" element={<StudentAttendancePage />} />
-              <Route path="timetable" element={<StudentTimetablePage />} />
-              <Route path="fees" element={<StudentFeesPage />} />
-              <Route path="exams" element={<StudentExamsPage />} />
-              <Route path="homework" element={<StudentHomeworkPage />} />
-              <Route path="notices" element={<StudentNoticesPage />} />
-              <Route path="announcements" element={<StudentAnnouncementsPage />} />
-            </Route>
+              {/* Public Document Verification (No Auth Required) */}
+              <Route path="/verify/:verificationId" element={<PublicVerifyPage />} />
 
-            {/* Public Document Verification (No Auth Required) */}
-            <Route path="/verify/:verificationId" element={<PublicVerifyPage />} />
-
-            {/* Error Pages */}
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              {/* Error Pages */}
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
         </AuthProvider>
       </TenantProvider>
     </QueryClientProvider>
