@@ -1,17 +1,44 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import {
   fetchDashboardStats,
   fetchTeacherTimetable,
   fetchAnnouncements,
   fetchMyClasses,
 } from '../teacher-portal.api'
+import { useAuth } from '@/context/AuthContext'
+import { useTenant } from '@/context/TenantContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Clock, CalendarDays, BellRing, Users, CheckCircle } from 'lucide-react'
+import { GreetingBanner } from '@/components/GreetingBanner'
+import { DailyMotivation } from '@/components/DailyMotivation'
+import { BirthdayWidget } from '@/components/BirthdayWidget'
+import { BirthdayCardModal } from '@/components/BirthdayCardModal'
+import { UpcomingEventsWidget } from '@/components/UpcomingEventsWidget'
+import {
+  Clock,
+  CalendarDays,
+  BellRing,
+  Users,
+  CheckCircle,
+  CalendarCheck,
+  BookOpen,
+  Megaphone,
+  FileText,
+} from 'lucide-react'
 import { format } from 'date-fns'
 
 export function TeacherDashboard() {
+  const { user } = useAuth()
+  const { schoolSlug } = useTenant()
+  const [showBirthdayCard, setShowBirthdayCard] = useState(false)
+
+  const schoolDisplayName = schoolSlug
+    ? schoolSlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+    : 'Your School'
+
   const {
     data: stats,
     isLoading: statsLoading,
@@ -40,7 +67,7 @@ export function TeacherDashboard() {
 
   // Get today's day of week: MONDAY, TUESDAY etc.
   const todayDayOfWeek = format(new Date(), 'EEEE').toUpperCase()
-  
+
   const todayClasses =
     timetable
       ?.filter((t) => t.dayOfWeek === todayDayOfWeek)
@@ -68,8 +95,29 @@ export function TeacherDashboard() {
   )
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+    <div className="space-y-5">
+      {/* Greeting Banner */}
+      <GreetingBanner
+        profileName={user?.profileName || user?.username || 'Teacher'}
+        schoolName={schoolDisplayName}
+        dateOfBirth={user?.dateOfBirth}
+        role="TEACHER"
+        onViewBirthdayCard={() => setShowBirthdayCard(true)}
+      />
+
+      {/* Daily Motivation */}
+      <DailyMotivation />
+
+      {/* Birthday Card Modal */}
+      <BirthdayCardModal
+        open={showBirthdayCard}
+        onClose={() => setShowBirthdayCard(false)}
+        name={user?.profileName || user?.username || 'Teacher'}
+        role="TEACHER"
+        schoolName={schoolDisplayName}
+      />
+
+      {/* Stat Cards */}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {renderStatCard(
@@ -118,8 +166,12 @@ export function TeacherDashboard() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex flex-col items-center justify-center bg-muted/50 rounded-lg p-2 min-w-[80px]">
-                        <span className="text-sm font-semibold">{item.period?.startTime || '-'}</span>
-                        <span className="text-xs text-muted-foreground">{item.period?.endTime || '-'}</span>
+                        <span className="text-sm font-semibold">
+                          {item.period?.startTime || '-'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {item.period?.endTime || '-'}
+                        </span>
                       </div>
                       <div>
                         <p className="font-medium">{item.subject.name}</p>
@@ -227,6 +279,68 @@ export function TeacherDashboard() {
               )}
             </CardContent>
           </Card>
+        </div>
+      </div>
+
+      {/* Birthday Widgets + Upcoming Events */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <BirthdayWidget apiPrefix="teacher-portal" mode="today" />
+        <BirthdayWidget apiPrefix="teacher-portal" mode="upcoming" />
+        <UpcomingEventsWidget portal="teacher" />
+      </div>
+
+      {/* Quick Actions */}
+      <div className="p-5 bg-card rounded-xl border shadow-xs space-y-3">
+        <h3 className="text-sm font-bold text-foreground">Quick Actions</h3>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Link
+            to="/teacher/attendance"
+            className="p-4 rounded-xl border bg-muted/30 hover:bg-accent transition-colors flex items-center gap-3"
+          >
+            <div className="p-2.5 rounded-lg bg-teal-500/10 text-teal-600">
+              <CalendarCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Take Attendance</p>
+              <p className="text-xs text-muted-foreground">Mark today's records</p>
+            </div>
+          </Link>
+          <Link
+            to="/teacher/homework"
+            className="p-4 rounded-xl border bg-muted/30 hover:bg-accent transition-colors flex items-center gap-3"
+          >
+            <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-600">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Add Homework</p>
+              <p className="text-xs text-muted-foreground">Assign to a section</p>
+            </div>
+          </Link>
+          <Link
+            to="/teacher/exams"
+            className="p-4 rounded-xl border bg-muted/30 hover:bg-accent transition-colors flex items-center gap-3"
+          >
+            <div className="p-2.5 rounded-lg bg-purple-500/10 text-purple-600">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Enter Marks</p>
+              <p className="text-xs text-muted-foreground">Upload exam results</p>
+            </div>
+          </Link>
+          <Link
+            to="/teacher/announcements"
+            className="p-4 rounded-xl border bg-muted/30 hover:bg-accent transition-colors flex items-center gap-3"
+          >
+            <div className="p-2.5 rounded-lg bg-rose-500/10 text-rose-600">
+              <Megaphone className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Post Announcement</p>
+              <p className="text-xs text-muted-foreground">Notify your class</p>
+            </div>
+          </Link>
         </div>
       </div>
     </div>

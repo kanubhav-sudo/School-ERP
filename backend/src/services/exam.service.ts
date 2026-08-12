@@ -245,7 +245,12 @@ export class ExamService {
       for (const item of schedules) {
         const schedule = await tx.examSchedule.upsert({
           where: {
-            examId_subjectId: { examId, subjectId: item.subjectId },
+            // Schema: @@unique([schoolId, examId, subjectId])
+            schoolId_examId_subjectId: {
+              schoolId: exam.schoolId,
+              examId,
+              subjectId: item.subjectId,
+            },
           },
           create: {
             examId,
@@ -516,7 +521,13 @@ export class ExamService {
       for (const item of marks) {
         await tx.examMark.upsert({
           where: {
-            examId_studentId_subjectId: { examId, studentId: item.studentId, subjectId },
+            // Schema: @@unique([schoolId, examId, studentId, subjectId])
+            schoolId_examId_studentId_subjectId: {
+              schoolId: (db as any).schoolId,
+              examId,
+              studentId: item.studentId,
+              subjectId,
+            },
           },
           create: {
             examId,
@@ -620,7 +631,13 @@ export class ExamService {
 
         await tx.examMark.upsert({
           where: {
-            examId_studentId_subjectId: { examId, studentId, subjectId: item.subjectId },
+            // Schema: @@unique([schoolId, examId, studentId, subjectId])
+            schoolId_examId_studentId_subjectId: {
+              schoolId: (db as any).schoolId,
+              examId,
+              studentId,
+              subjectId: item.subjectId,
+            },
           },
           create: {
             examId,
@@ -642,7 +659,7 @@ export class ExamService {
 
       // Update ReportCard summary
       await tx.reportCard.upsert({
-        where: { examId_studentId: { examId, studentId } },
+        where: { schoolId_examId_studentId: { schoolId: (db as any).schoolId, examId, studentId } }, // Schema: @@unique([schoolId, examId, studentId])
         create: {
           examId,
           studentId,

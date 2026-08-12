@@ -82,7 +82,25 @@ export function StudentsPage() {
     }
   }
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+          <div className="h-9 w-28 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="flex gap-3">
+          <div className="h-9 w-72 bg-muted rounded animate-pulse" />
+          <div className="h-9 w-20 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="bg-card rounded-xl border shadow-xs animate-pulse">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-14 border-b last:border-0 bg-muted/20" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

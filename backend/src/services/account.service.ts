@@ -49,11 +49,13 @@ export async function generateTeacherUsername(
   tx?: Prisma.TransactionClient
 ): Promise<string> {
   const client = tx ?? db
-  void client
   const prefix = 'TCH'
+  const schoolId = db?.schoolId || client?.schoolId
 
-  const seq = await db.usernameSequence.upsert({
-    where: { prefix },
+  const where = schoolId ? { schoolId_prefix: { schoolId, prefix } } : { prefix }
+
+  const seq = await client.usernameSequence.upsert({
+    where,
     update: { lastSeq: { increment: 1 } },
     create: { prefix, lastSeq: 1 },
   })
@@ -70,11 +72,13 @@ export async function generateStudentUsername(
   tx?: Prisma.TransactionClient
 ): Promise<string> {
   const client = tx ?? db
-  void client
   const prefix = `STU${admissionYear}`
+  const schoolId = db?.schoolId || client?.schoolId
 
-  const seq = await db.usernameSequence.upsert({
-    where: { prefix },
+  const where = schoolId ? { schoolId_prefix: { schoolId, prefix } } : { prefix }
+
+  const seq = await client.usernameSequence.upsert({
+    where,
     update: { lastSeq: { increment: 1 } },
     create: { prefix, lastSeq: 1 },
   })
@@ -99,10 +103,12 @@ export async function createUserForTeacher(
   const temporaryPassword = generateTemporaryPassword()
   const passwordHash = await bcrypt.hash(temporaryPassword, 12)
 
+  const email = teacher.email || `${username.toLowerCase()}@teacher.internal`
+
   const user = await client.user.create({
     data: {
       username,
-      email: teacher.email, // Use teacher's email
+      email,
       passwordHash,
       role: 'TEACHER',
       accountStatus: 'ACTIVE',
@@ -159,10 +165,12 @@ export async function createUserForStudent(
   const temporaryPassword = generateTemporaryPassword()
   const passwordHash = await bcrypt.hash(temporaryPassword, 12)
 
+  const email = student.email || `${username.toLowerCase()}@student.internal`
+
   const user = await client.user.create({
     data: {
       username,
-      email: student.email || null,
+      email,
       passwordHash,
       role: 'STUDENT',
       accountStatus: 'ACTIVE',

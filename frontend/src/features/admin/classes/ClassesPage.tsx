@@ -39,7 +39,21 @@ export function ClassesPage() {
     setIsFormOpen(true)
   }
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+          <div className="h-9 w-28 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="bg-card rounded-xl border border-border shadow-xs p-4 space-y-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-12 bg-muted/40 rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

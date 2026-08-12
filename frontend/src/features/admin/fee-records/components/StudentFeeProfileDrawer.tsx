@@ -20,11 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  AlertCircle,
-  CreditCard,
-  Receipt,
-} from 'lucide-react'
+import { AlertCircle, CreditCard, Receipt } from 'lucide-react'
 import { format } from 'date-fns'
 
 interface Props {
@@ -99,14 +95,32 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
   }
 
   const fmt = (paise: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(
-      (paise || 0) / 100
-    )
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format((paise || 0) / 100)
 
   const summary = data?.summary
   const student = data?.student
-  const payments = (data?.payments || []) as Array<{ id: string; receiptNumber: string; amount: number; paymentDate?: string; paymentMode: string; remarks?: string; createdAt?: string }>
-  const timeline = (data?.timeline || []) as Array<{ month: number; label: string; status: string; netAmount: number; paidAmount: number; balanceAmount: number; displayText?: string }>
+  const payments = (data?.payments || []) as Array<{
+    id: string
+    receiptNumber: string
+    amount: number
+    paymentDate?: string
+    paymentMode: string
+    remarks?: string
+    createdAt?: string
+  }>
+  const timeline = (data?.timeline || []) as Array<{
+    month: number
+    label: string
+    status: string
+    netAmount: number
+    paidAmount: number
+    balanceAmount: number
+    displayText?: string
+  }>
 
   return (
     <>
@@ -151,7 +165,8 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
               {student?.feePlan && (
                 <div className="p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground flex flex-wrap gap-4 items-center border border-border">
                   <div>
-                    Fee Plan: <span className="font-semibold text-foreground">{student.feePlan.name}</span>
+                    Fee Plan:{' '}
+                    <span className="font-semibold text-foreground">{student.feePlan.name}</span>
                   </div>
                   <div>
                     Monthly Fee:{' '}
@@ -172,11 +187,15 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3.5 bg-card rounded-xl border border-border text-center">
                   <p className="text-xs text-muted-foreground font-medium">Total Fee (Current)</p>
-                  <p className="text-lg font-bold mt-1 text-foreground">{fmt(summary?.totalFees || 0)}</p>
+                  <p className="text-lg font-bold mt-1 text-foreground">
+                    {fmt(summary?.totalFees || 0)}
+                  </p>
                 </div>
                 <div className="p-3.5 bg-card rounded-xl border border-border text-center">
                   <p className="text-xs text-muted-foreground font-medium">Paid Amount</p>
-                  <p className="text-lg font-bold mt-1 text-emerald-600">{fmt(summary?.paidAmount || 0)}</p>
+                  <p className="text-lg font-bold mt-1 text-emerald-600">
+                    {fmt(summary?.paidAmount || 0)}
+                  </p>
                 </div>
                 <div className="p-3.5 bg-card rounded-xl border border-border text-center">
                   <p className="text-xs text-muted-foreground font-medium">Pending Amount</p>
@@ -262,7 +281,10 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
                           </div>
                         </div>
                         <div className="text-right text-xs text-muted-foreground">
-                          {format(new Date(p.paymentDate || p.createdAt || new Date()), 'dd MMM yyyy')}
+                          {format(
+                            new Date(p.paymentDate || p.createdAt || new Date()),
+                            'dd MMM yyyy'
+                          )}
                         </div>
                       </div>
                     ))}
@@ -345,7 +367,12 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
                 <Label htmlFor="pay-mode" className="text-xs font-semibold">
                   Payment Mode
                 </Label>
-                <Select value={payMode} onValueChange={(v) => setPayMode(v as any)}>
+                <Select
+                  value={payMode}
+                  onValueChange={(v) =>
+                    setPayMode(v as 'CASH' | 'CHEQUE' | 'BANK_TRANSFER' | 'ONLINE' | 'UPI' | 'CARD')
+                  }
+                >
                   <SelectTrigger id="pay-mode">
                     <SelectValue />
                   </SelectTrigger>
@@ -384,7 +411,10 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={payMutation.isPending || !payAmount || !receiptNumber}>
+              <Button
+                type="submit"
+                disabled={payMutation.isPending || !payAmount || !receiptNumber}
+              >
                 {payMutation.isPending ? 'Processing...' : 'Collect Payment'}
               </Button>
             </DialogFooter>

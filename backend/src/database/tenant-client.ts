@@ -29,8 +29,11 @@ export function createTenantClient(prisma: PrismaClient, schoolId: string) {
     throw new Error('Tenant context requirement violated: schoolId is missing')
   }
 
-  return prisma.$extends({
+  const client = prisma.$extends({
     name: 'tenantScopeExtension',
+    client: {
+      schoolId,
+    },
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
@@ -41,7 +44,39 @@ export function createTenantClient(prisma: PrismaClient, schoolId: string) {
 
           const modelArgs = (args || {}) as Record<string, any>
 
-          // 1. Read Operations: findMany, findFirst, findUnique, count, aggregate, groupBy
+          // Helper: skip schoolId injection when the where clause already uses a unique selector.
+          // Covers:
+          //   1. Plain primary key `id`
+          //   2. schoolId_* compound selectors (e.g. schoolId_prefix, schoolId_sectionId_date)
+          //   3. Any compound object key whose value is a plain object (e.g. attendanceId_studentId: {...})
+          // Ownership is guaranteed by the preceding getById/findFirst (tenant-filtered) call.
+          const hasPrimaryOrCompoundSelector = (whereObj?: Record<string, any>): boolean => {
+            if (!whereObj) return false
+            // Plain primary key
+            if (whereObj.id !== undefined) return true
+            // Compound unique selector (schoolId_* or any other multi-field unique key)
+            return Object.entries(whereObj).some(([k, v]) => {
+              // schoolId_* pattern
+              if (k.startsWith('schoolId_')) return true
+              // Any compound key: key contains underscore AND value is a plain object (not array/null)
+              if (k.includes('_') && v !== null && typeof v === 'object' && !Array.isArray(v))
+                return true
+              return false
+            })
+          }
+
+          // Special mapping for UsernameSequence if prefix is passed directly
+          if (model === 'UsernameSequence') {
+            if (['upsert', 'findUnique', 'update', 'delete'].includes(operation)) {
+              if (modelArgs.where && modelArgs.where.prefix && !modelArgs.where.schoolId_prefix) {
+                const prefixVal = modelArgs.where.prefix
+                delete modelArgs.where.prefix
+                modelArgs.where.schoolId_prefix = { schoolId, prefix: prefixVal }
+              }
+            }
+          }
+
+          // 1. Read Operations: findMany, findFirst, count, aggregate, groupBy
           if (['findMany', 'findFirst', 'count', 'aggregate', 'groupBy'].includes(operation)) {
             modelArgs.where = {
               ...(modelArgs.where || {}),
@@ -73,9 +108,11 @@ export function createTenantClient(prisma: PrismaClient, schoolId: string) {
 
           // 2. Single Mutations with filters: update, delete
           if (['update', 'delete'].includes(operation)) {
-            modelArgs.where = {
-              ...(modelArgs.where || {}),
-              schoolId,
+            if (!hasPrimaryOrCompoundSelector(modelArgs.where)) {
+              modelArgs.where = {
+                ...(modelArgs.where || {}),
+                schoolId,
+              }
             }
           }
 
@@ -112,9 +149,11 @@ export function createTenantClient(prisma: PrismaClient, schoolId: string) {
 
           // 6. Upsert Operation
           if (operation === 'upsert') {
-            modelArgs.where = {
-              ...(modelArgs.where || {}),
-              schoolId,
+            if (!hasPrimaryOrCompoundSelector(modelArgs.where)) {
+              modelArgs.where = {
+                ...(modelArgs.where || {}),
+                schoolId,
+              }
             }
             modelArgs.create = {
               ...(modelArgs.create || {}),
@@ -131,4 +170,6 @@ export function createTenantClient(prisma: PrismaClient, schoolId: string) {
       },
     },
   })
+
+  return client
 }

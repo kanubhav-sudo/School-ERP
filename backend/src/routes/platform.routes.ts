@@ -35,6 +35,7 @@ import {
   changeSchoolStatusController,
   getAuditLogsController,
   globalSearchController,
+  resetSchoolAdminPasswordController,
 } from '../controllers/platform.controller'
 
 const router = Router()
@@ -54,8 +55,10 @@ router.post('/schools/:schoolId/reprovision', reprovisionSchoolController)
 router.patch('/schools/:schoolId/status', changeSchoolStatusController)
 router.put('/schools/:schoolId/settings', updateSchoolSettingsController)
 router.put('/schools/:schoolId/features', updateSchoolFeaturesController)
+router.post('/schools/:schoolId/reset-admin-password', resetSchoolAdminPasswordController)
 
 // ── Audit Logs ────────────────────────────────────────────────
+
 router.get('/audit-logs', getAuditLogsController)
 
 // ── Global Search ─────────────────────────────────────────────

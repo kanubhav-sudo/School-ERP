@@ -152,8 +152,6 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
     },
   })
 
-
-
   const watchSessionId = watch('sessionId')
   const watchClassId = watch('classId')
   const watchFeeCategory = watch('feeCategory')
@@ -205,7 +203,7 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
 
   const mutation = useMutation({
     mutationFn: (data: StudentFormValues) => {
-      const payload: any = { ...data }
+      const payload = { ...data } as Record<string, unknown>
       // Clean up empty strings to undefined for all fields
       for (const key of Object.keys(payload)) {
         if (payload[key] === '') {
@@ -214,9 +212,9 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
       }
 
       if (payload.siblingFeeAmount) {
-        payload.siblingFeeAmount = Math.round(payload.siblingFeeAmount * 100)
+        payload.siblingFeeAmount = Math.round((payload.siblingFeeAmount as number) * 100)
       }
-      
+
       // Additional specific cleanup if needed
       if (payload.feeCategory === 'SIBLING') {
         payload.feePlanId = undefined
@@ -228,7 +226,8 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
       if (isEditing) {
         return updateStudent({ id: student!.id, payload })
       }
-      return createStudent(payload)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return createStudent(payload as any)
     },
     onSuccess: (response: Student | import('../api').CreateStudentResponse) => {
       queryClient.invalidateQueries({ queryKey: ['students'] })
@@ -625,8 +624,11 @@ export function StudentForm({ student, onClose, onSuccess }: Props) {
           {mutation.isError && (
             <p className="text-sm text-red-500">
               {(() => {
-                const err = mutation.error as { response?: { data?: { error?: { message?: string } } }; message?: string };
-                return err.response?.data?.error?.message || err.message || 'An error occurred';
+                const err = mutation.error as {
+                  response?: { data?: { error?: { message?: string } } }
+                  message?: string
+                }
+                return err.response?.data?.error?.message || err.message || 'An error occurred'
               })()}
             </p>
           )}

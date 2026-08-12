@@ -192,3 +192,12 @@ export const auditLogFilterSchema = z.object({
 export const globalSearchSchema = z.object({
   q: z.string().min(2, 'Search query must be at least 2 characters').max(100),
 })
+
+// ─── Reset School Admin Password ──────────────────────────────
+
+export const resetSchoolAdminPasswordSchema = z.object({
+  adminUserId: z.string().uuid('Invalid admin user ID'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+})
+
+export type ResetSchoolAdminPasswordInput = z.infer<typeof resetSchoolAdminPasswordSchema>

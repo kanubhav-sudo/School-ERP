@@ -16,3 +16,31 @@ export async function getDashboardStats(
     next(err)
   }
 }
+
+export async function getTodaysBirthdays(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const birthdays = await AdminDashboardService.getTodaysBirthdays(req.db)
+    ApiResponse.success(res, birthdays, "Today's birthdays retrieved")
+  } catch (err) {
+    logger.error({ err }, 'Admin dashboard getTodaysBirthdays error')
+    next(err)
+  }
+}
+
+export async function getUpcomingBirthdays(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const birthdays = await AdminDashboardService.getUpcomingBirthdays(req.db)
+    ApiResponse.success(res, birthdays, 'Upcoming birthdays retrieved')
+  } catch (err) {
+    logger.error({ err }, 'Admin dashboard getUpcomingBirthdays error')
+    next(err)
+  }
+}

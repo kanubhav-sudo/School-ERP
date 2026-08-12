@@ -27,7 +27,22 @@ export function StudentAnnouncementsPage() {
   const announcements = (data?.announcements ?? []) as unknown as AnnouncementItem[]
   const pagination = data?.pagination
 
-  if (isLoading) return <div>Loading announcements...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-52 bg-muted rounded animate-pulse" />
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="p-6 bg-card rounded-xl border animate-pulse space-y-3">
+              <div className="h-5 bg-muted rounded w-1/3" />
+              <div className="h-4 bg-muted rounded w-full" />
+              <div className="h-4 bg-muted rounded w-3/4" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -48,7 +63,9 @@ export function StudentAnnouncementsPage() {
                 <div>
                   <h3 className="font-semibold text-lg">{announcement.title}</h3>
                   <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
-                    <span>{announcement.author.firstName} {announcement.author.lastName}</span>
+                    <span>
+                      {announcement.author.firstName} {announcement.author.lastName}
+                    </span>
                     <span>•</span>
                     <span>{new Date(announcement.createdAt).toLocaleDateString()}</span>
                   </p>
@@ -56,7 +73,7 @@ export function StudentAnnouncementsPage() {
               </div>
               <div className="mt-4 text-sm text-foreground whitespace-pre-wrap pl-12">
                 {announcement.content}
-                
+
                 {announcement.attachments && announcement.attachments.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {announcement.attachments.map((url: string, i: number) => (

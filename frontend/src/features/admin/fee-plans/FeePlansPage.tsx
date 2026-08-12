@@ -70,7 +70,28 @@ export function FeePlansPage() {
     }
   }
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+          <div className="h-9 w-28 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="p-6 bg-card rounded-xl border border-border shadow-xs animate-pulse space-y-3"
+            >
+              <div className="h-4 bg-muted rounded w-3/4" />
+              <div className="h-6 bg-muted rounded w-1/2" />
+              <div className="h-3 bg-muted rounded w-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

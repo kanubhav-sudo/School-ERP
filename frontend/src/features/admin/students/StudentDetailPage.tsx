@@ -21,7 +21,32 @@ export function StudentDetailPage() {
     enabled: !!id,
   })
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6 max-w-5xl mx-auto">
+        <div className="flex items-center gap-4">
+          <div className="h-9 w-20 bg-muted rounded animate-pulse" />
+          <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="p-6 bg-card rounded-xl border animate-pulse space-y-3">
+            <div className="h-20 w-20 rounded-full bg-muted mx-auto" />
+            <div className="h-5 bg-muted rounded w-3/4 mx-auto" />
+            <div className="h-4 bg-muted rounded w-1/2 mx-auto" />
+          </div>
+          <div className="md:col-span-2 p-6 bg-card rounded-xl border animate-pulse space-y-4">
+            <div className="h-4 bg-muted rounded w-1/4" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-10 bg-muted/50 rounded" />
+              <div className="h-10 bg-muted/50 rounded" />
+              <div className="h-10 bg-muted/50 rounded" />
+              <div className="h-10 bg-muted/50 rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
   if (error || !student) return <div>Student not found</div>
 
   return (

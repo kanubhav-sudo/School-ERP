@@ -326,3 +326,37 @@ export async function globalSearchController(
     next(err)
   }
 }
+
+// ─── Reset School Admin Password ──────────────────────────────
+
+import { resetSchoolAdminPasswordSchema } from '../validators/platform.validator'
+import { resetSchoolAdminPassword } from '../services/platform-school.service'
+
+export async function resetSchoolAdminPasswordController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const schoolId = param(req, 'schoolId')
+    const { adminUserId, newPassword } = resetSchoolAdminPasswordSchema.parse(req.body)
+
+    const updatedUser = await resetSchoolAdminPassword(schoolId, adminUserId, newPassword)
+
+    await auditPlatformEvent(req, 'SCHOOL_ADMIN_PASSWORD_RESET', 'User', adminUserId, {
+      newValue: { schoolId, username: updatedUser.username },
+    })
+
+    R.success(
+      res,
+      { id: updatedUser.id, username: updatedUser.username, schoolId: updatedUser.schoolId },
+      `Password reset successfully for School Admin "${updatedUser.username}"`
+    )
+  } catch (err) {
+    if (err instanceof ZodError) {
+      R.badRequest(res, 'Validation failed', parseZodError(err))
+      return
+    }
+    next(err)
+  }
+}

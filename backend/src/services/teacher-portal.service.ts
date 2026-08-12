@@ -553,3 +553,113 @@ export async function uploadReportCard(
     },
   })
 }
+
+// ─── Birthday Helpers ──────────────────────────────────────────
+
+function buildBirthdayMDRange(startOffset: number, endOffset: number): string[] {
+  const dates: string[] = []
+  for (let i = startOffset; i <= endOffset; i++) {
+    const d = new Date()
+    d.setDate(d.getDate() + i)
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    dates.push(`${mm}-${dd}`)
+  }
+  return dates
+}
+
+function matchesBirthdayMD(dateOfBirth: Date | null | undefined, mdSet: string[]): boolean {
+  if (!dateOfBirth) return false
+  const mm = String(dateOfBirth.getMonth() + 1).padStart(2, '0')
+  const dd = String(dateOfBirth.getDate()).padStart(2, '0')
+  return mdSet.includes(`${mm}-${dd}`)
+}
+
+function getDaysUntilBirthday(dob: Date): number {
+  const today = new Date()
+  const birthday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate())
+  if (birthday < today) birthday.setFullYear(today.getFullYear() + 1)
+  const diffMs = birthday.getTime() - today.getTime()
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+}
+
+// ─── Today's Birthdays (scoped to teacher's assigned sections) ─
+
+export async function getTodaysBirthdays(db: any, userId: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  const assignments = await db.teacherAssignment.findMany({
+    where: { teacherId },
+    select: { sectionId: true },
+  })
+  const sectionIds = [...new Set(assignments.map((a: any) => a.sectionId))]
+  const todayMD = buildBirthdayMDRange(0, 0)
+
+  const students = await db.student.findMany({
+    where: {
+      isActive: true,
+      deletedAt: null,
+      dateOfBirth: { not: null },
+      sectionId: { in: sectionIds },
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      dateOfBirth: true,
+      class: { select: { name: true } },
+      section: { select: { name: true } },
+    },
+  })
+
+  return students
+    .filter((s: any) => matchesBirthdayMD(s.dateOfBirth, todayMD))
+    .map((s: any) => ({
+      id: s.id,
+      name: `${s.firstName} ${s.lastName}`,
+      role: 'STUDENT' as const,
+      class: s.class ? `${s.class.name}${s.section ? ` - ${s.section.name}` : ''}` : null,
+      dateOfBirth: s.dateOfBirth,
+    }))
+}
+
+// ─── Upcoming Birthdays (next 7 days, scoped to teacher's sections) ─
+
+export async function getUpcomingBirthdays(db: any, userId: string) {
+  const teacherId = await getTeacherIdForUser(db, userId)
+  const assignments = await db.teacherAssignment.findMany({
+    where: { teacherId },
+    select: { sectionId: true },
+  })
+  const sectionIds = [...new Set(assignments.map((a: any) => a.sectionId))]
+  const upcomingMDs = buildBirthdayMDRange(1, 7)
+
+  const students = await db.student.findMany({
+    where: {
+      isActive: true,
+      deletedAt: null,
+      dateOfBirth: { not: null },
+      sectionId: { in: sectionIds },
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      dateOfBirth: true,
+      class: { select: { name: true } },
+      section: { select: { name: true } },
+    },
+  })
+
+  return students
+    .filter((s: any) => matchesBirthdayMD(s.dateOfBirth, upcomingMDs))
+    .map((s: any) => ({
+      id: s.id,
+      name: `${s.firstName} ${s.lastName}`,
+      role: 'STUDENT' as const,
+      class: s.class ? `${s.class.name}${s.section ? ` - ${s.section.name}` : ''}` : null,
+      dateOfBirth: s.dateOfBirth,
+    }))
+    .sort(
+      (a: any, b: any) => getDaysUntilBirthday(a.dateOfBirth) - getDaysUntilBirthday(b.dateOfBirth)
+    )
+}

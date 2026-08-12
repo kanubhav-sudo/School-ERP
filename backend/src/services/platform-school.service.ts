@@ -314,3 +314,41 @@ export async function getPlatformDashboardMetrics() {
     },
   }
 }
+
+// ─── Reset School Admin Password (Platform Recovery) ─────────
+
+import bcrypt from 'bcryptjs'
+
+export async function resetSchoolAdminPassword(
+  schoolId: string,
+  adminUserId: string,
+  newPasswordPlain: string
+) {
+  const school = await prisma.school.findUnique({ where: { id: schoolId } })
+  if (!school) throw new NotFoundError('School not found')
+
+  const user = await prisma.user.findUnique({ where: { id: adminUserId } })
+  if (!user) throw new NotFoundError('User not found')
+
+  if (user.schoolId !== schoolId) {
+    throw new ValidationError('User does not belong to the specified school')
+  }
+
+  if (user.role !== 'ADMIN') {
+    throw new ValidationError('Target user is not a School Admin')
+  }
+
+  const passwordHash = await bcrypt.hash(newPasswordPlain, 12)
+
+  return prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      mustChangePassword: false,
+      lockedUntil: null,
+      failedLoginAttempts: 0,
+      accountStatus: 'ACTIVE',
+      refreshTokenVersion: { increment: 1 },
+    },
+  })
+}

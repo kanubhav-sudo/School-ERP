@@ -178,7 +178,7 @@ export async function createStudent(db: any, data: CreateStudentInput) {
   })
 
   // Generate fee records
-  await generateFeeRecordsForStudent(student.id, db)
+  await generateFeeRecordsForStudent(db, student.id)
 
   return { student: finalStudent!, credentials }
 }

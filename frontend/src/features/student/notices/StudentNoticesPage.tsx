@@ -4,6 +4,14 @@ import { studentPortalApi } from '../api/student-portal.api'
 import { Bell, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+interface NoticeItem {
+  id: string
+  title: string
+  content: string
+  publishedAt: string
+  priority?: string
+}
+
 export function StudentNoticesPage() {
   const [page, setPage] = useState(1)
 
@@ -12,10 +20,22 @@ export function StudentNoticesPage() {
     queryFn: () => studentPortalApi.getNotices({ page, limit: 20 }),
   })
 
-  const notices: any[] = data?.notices ?? []
+  const notices: NoticeItem[] = (data?.notices ?? []) as unknown as NoticeItem[]
   const pagination = data?.pagination
 
-  if (isLoading) return <div>Loading notices...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-8 w-40 bg-muted rounded animate-pulse" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="p-6 bg-card rounded-xl border animate-pulse space-y-3">
+            <div className="h-4 bg-muted rounded w-3/4" />
+            <div className="h-3 bg-muted rounded w-full" />
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -27,7 +47,7 @@ export function StudentNoticesPage() {
             No notices available.
           </div>
         ) : (
-          notices.map((notice: any) => (
+          notices.map((notice: NoticeItem) => (
             <div key={notice.id} className="p-6 bg-card rounded-xl border shadow-sm">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">

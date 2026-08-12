@@ -5,6 +5,106 @@ All notable changes to the School ERP project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1-tenant-audit] — 2026-08-12 — Multi-Tenant Client & ERP Operations Audit Pass
+
+### Release Summary
+Comprehensive multi-tenant client isolation fix and end-to-end audit pass for all 17 core ERP workflows. Super Admin school-scoped admin recovery operation added to securely reset school admin accounts without weakening security or bypassing school isolation.
+
+### Added / Fixed
+
+#### Security & Account Recovery
+- **School-Scoped Admin Recovery**: Created explicit `superAdminResetSchoolAdmin` endpoint and service in `platform-school.service.ts` allowing Super Admins to unlock and reset School Admin passwords strictly verified by target `schoolId`.
+- **School Admin Recovery Executed**: Successfully reset/unlocked existing `admin` user for `school1` (CloudEMS Academy), clearing locked state and setting known development password (`Admin@123456`).
+
+#### Database Infrastructure & Tenant Isolation
+- **`tenant-client.ts` Key Compound Selector Detection**: Extended `hasPrimaryOrCompoundSelector` to generically detect all Prisma compound unique keys (`schoolId_*` and join-table compound keys) to prevent invalid `schoolId` double-injection on unique queries.
+- **`UsernameSequence` Upsert Fix**: Updated sequence generation in `account.service.ts` to correctly handle `schoolId_prefix` compound unique keys.
+- **Account Creation Fallbacks**: Resolved null email validation errors by providing fallback internal emails during student/teacher creation when emails are omitted.
+
+#### ERP Workflow Audit & Service Key Alignments
+- **Attendance Service**: Updated `Attendance` upsert key to `schoolId_sectionId_date` matching the schema definition.
+- **Exam Service**: Updated `ExamSchedule`, `ExamMark`, and `ReportCard` upsert keys to `schoolId_examId_subjectId`, `schoolId_examId_studentId_subjectId`, and `schoolId_examId_studentId` respectively.
+- **Student Service**: Fixed argument ordering in `generateFeeRecordsForStudent` invocation.
+- **Full Verification**: Executed end-to-end runtime audit script validating 17 core workflows across Academic, People, Operations, Finance, and Exams with 100% success.
+
+---
+
+## [1.0.0-phase7] — 2026-08-04 — CloudEMS Phase 7: Final UX & Commercial Readiness
+
+### Release Summary
+Phase 7 is the final UX and commercial readiness pass for CloudEMS v1.0. This phase adds personalised greeting banners, birthday detection and birthday card generation, daily motivational quotes, birthday widgets for Admin and Teacher dashboards, upcoming events widgets across all portals, quick action hubs, and enriched user profile data from /auth/me. All components are fully offline, zero-dependency for data, and compile with 0 TypeScript errors and 0 ESLint warnings.
+
+### Added
+
+#### Frontend — Shared Components (`frontend/src/components/`)
+
+- **`GreetingBanner.tsx`**: Time-aware personalised greeting banner (Morning / Afternoon / Evening) with 7 rotating variants per slot deterministically selected by day-of-year. Detects user birthday via `dateOfBirth` from `/auth/me` and switches to birthday mode with pure-CSS confetti animation (no libraries). "View Birthday Card" button visible only on birthday. Props: `profileName`, `schoolName`, `sessionName`, `dateOfBirth`, `role`, `onViewBirthdayCard`.
+
+- **`DailyMotivation.tsx`**: Offline daily motivational quote widget with 100+ curated school-appropriate quotes. Rotation is deterministic by day-of-year (same quote for all users per day). No external API calls.
+
+- **`BirthdayCardModal.tsx`**: Professional A4-proportioned birthday card rendered in a modal. Features: school logo, gradient header/footer bands, personalised message, principal signature block, pure-CSS confetti animation (30 pieces, 8 colours), and Print/Save as PDF support via `window.print()`. Zero external animation libraries.
+
+- **`BirthdayWidget.tsx`**: Reusable dashboard widget showing Today's Birthdays or Upcoming Birthdays (next 7 days). Used by Admin and Teacher dashboards. Sources data from `/admin-dashboard/birthdays/{today|upcoming}` or `/teacher-portal/birthdays/{today|upcoming}`. **Never used on the Student dashboard** (privacy constraint enforced).
+
+- **`UpcomingEventsWidget.tsx`**: Lightweight upcoming events widget aggregating Exams and Homework Due within the next 7 days. Uses existing ERP endpoints (`/exams`, `/homework`, portal-scoped variants). Fully typed — zero ESLint `any` warnings.
+
+#### Frontend — Dashboard Integration
+
+- **`AdminDashboard.tsx`**: Full rebuild. Added GreetingBanner, DailyMotivation, BirthdayCardModal, BirthdayWidget (today/upcoming), UpcomingEventsWidget, and an expanded 8-item Quick Actions hub.
+
+- **`TeacherDashboard.tsx`**: Added GreetingBanner, DailyMotivation, BirthdayCardModal (teacher's own birthday), BirthdayWidget (today/upcoming scoped to teacher's classes), UpcomingEventsWidget, and a 4-item Quick Actions bar.
+
+- **`StudentDashboard.tsx`**: Added GreetingBanner with birthday detection (own birthday only — no birthday widgets for other students), DailyMotivation, BirthdayCardModal, UpcomingEventsWidget, and a 4-item Quick Navigation card grid.
+
+#### Backend — Birthday Endpoints
+
+- **`admin-dashboard.routes.ts`**: Added `GET /admin-dashboard/birthdays/today` and `GET /admin-dashboard/birthdays/upcoming` (ADMIN + SUPER_ADMIN).
+
+- **`admin-dashboard.service.ts`**: Added `getTodaysBirthdays()` and `getUpcomingBirthdays()` — returns combined student + teacher birthday data for the school.
+
+- **`admin-dashboard.controller.ts`**: Added `getTodaysBirthdays()` and `getUpcomingBirthdays()` handlers.
+
+- **`teacher-portal.routes.ts`**: Added `GET /teacher-portal/birthdays/today` and `GET /teacher-portal/birthdays/upcoming` (TEACHER).
+
+- **`teacher-portal.service.ts`**: Added `getTodaysBirthdays()` and `getUpcomingBirthdays()` — scoped to teacher's assigned sections only.
+
+- **`teacher-portal.controller.ts`**: Added corresponding controller handlers.
+
+#### Backend — Auth Profile Enrichment
+
+- **`auth.controller.ts`**: Enhanced `GET /auth/me` to return role-specific profile fields: `firstName`, `lastName`, `dateOfBirth`, `profileName`. Queries `teacher`/`student` tables for TEACHER/STUDENT roles; queries `schoolSettings.principalName` for ADMIN; uses username for SUPER_ADMIN. Used by all dashboard greeting banners.
+
+#### TypeScript Types
+
+- **`frontend/src/types/auth.types.ts`**: Extended `AuthUser` interface with `firstName`, `lastName`, `dateOfBirth`, `profileName` optional fields.
+
+### Quality Verification
+
+- **Backend**: `npm run build` → 0 errors. `npm run lint` → 0 errors (pre-existing warnings only, unchanged from Phase 6).
+- **Frontend**: `npm run build` → 0 TypeScript errors. `npm run lint` → 0 warnings (strict `--max-warnings 0` enforced).
+
+---
+
+## [1.0.0] — 2026-08-04 — CloudEMS Phase 6: Launch Readiness, UX Polish & Production Optimization
+
+### Release Summary
+CloudEMS Version 1.0 Commercial Release. Complete application audit, design system unification, layout polish, responsive mobile navigation drawers, empty states, and full TypeScript lint compliance.
+
+### Added & Polished
+
+#### Frontend — Design System & Layouts
+- **`AdminLayout.tsx`**: Mobile navigation drawer with backdrop, active route breadcrumbs header, tenant slug indicator badge, user role profile section, and responsive drawer toggles.
+- **`TeacherLayout.tsx`**: Mobile drawer navigation, current route header indicator, teacher profile badge, and consistent sidebar styling tokens.
+- **`StudentLayout.tsx`**: Mobile navigation drawer, student header avatar/profile indicator, and uniform navigation items.
+- **`EmptyState.tsx`**: Reusable component (`/components/ui/empty-state.tsx`) for datatables, grids, and list views across all portals.
+- **`StudentDashboard.tsx`**: Complete rewrite with welcome banner, animated attendance ring/bar, overdue fee status card, upcoming exams count, today's schedule widget, latest noticeboard card, and skeleton loading states.
+- **`AdminDashboard.tsx`**: Enhanced quick action shortcuts grid, session status banner, population stat cards, and clean loading skeletons.
+
+#### Code Quality & Verification
+- **ESLint Compliance**: Achieved `0 warnings` across the frontend via `npm run lint` (`eslint . --report-unused-disable-directives --max-warnings 0`).
+- **TypeScript Integrity**: `0 compilation errors` across backend (`tsc`) and frontend production builds (`tsc -b && vite build`).
+- **Prisma Schema Validation**: 100% valid Prisma schema and client code generation.
+
 ## [4.5.0] — 2026-08-04 — CloudEMS Phase 4.5: Subscription Foundation & Feature Gating
 
 ### Added

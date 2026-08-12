@@ -46,7 +46,32 @@ export function NoticesPage() {
     setEditingNotice(undefined)
   }
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="space-y-1">
+            <div className="h-8 w-40 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-60 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="h-9 w-28 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="p-6 bg-card rounded-xl border shadow-sm animate-pulse space-y-3"
+            >
+              <div className="h-4 bg-muted rounded w-3/4" />
+              <div className="h-3 bg-muted rounded w-full" />
+              <div className="h-3 bg-muted rounded w-5/6" />
+              <div className="h-3 bg-muted rounded w-2/3" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -55,10 +80,12 @@ export function NoticesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Noticeboard</h1>
           <p className="text-muted-foreground">Manage school announcements and notices</p>
         </div>
-        <Button onClick={() => {
-          setEditingNotice(undefined)
-          setIsFormOpen(true)
-        }}>
+        <Button
+          onClick={() => {
+            setEditingNotice(undefined)
+            setIsFormOpen(true)
+          }}
+        >
           <Plus className="mr-2 h-4 w-4" /> Add Notice
         </Button>
       </div>
@@ -152,7 +179,11 @@ export function NoticesPage() {
           <DialogHeader>
             <DialogTitle>{editingNotice ? 'Edit Notice' : 'Create Notice'}</DialogTitle>
           </DialogHeader>
-          <NoticeForm key={editingNotice?.id || 'new'} notice={editingNotice} onClose={handleCloseForm} />
+          <NoticeForm
+            key={editingNotice?.id || 'new'}
+            notice={editingNotice}
+            onClose={handleCloseForm}
+          />
         </DialogContent>
       </Dialog>
     </div>

@@ -55,4 +55,8 @@ router.post('/homework', upload.single('attachment'), HomeworkController.createH
 router.put('/homework/:id', upload.single('attachment'), HomeworkController.updateHomework)
 router.delete('/homework/:id', HomeworkController.deleteHomework)
 
+// Birthdays
+router.get('/birthdays/today', TeacherPortalController.getTodaysBirthdays)
+router.get('/birthdays/upcoming', TeacherPortalController.getUpcomingBirthdays)
+
 export default router

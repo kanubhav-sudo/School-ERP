@@ -7,8 +7,10 @@ const router = Router()
 
 // Only ADMIN can access
 router.use(authenticate)
-router.use(authorize('ADMIN', 'SUPERADMIN'))
+router.use(authorize('ADMIN', 'SUPER_ADMIN'))
 
 router.get('/stats', AdminDashboardController.getDashboardStats)
+router.get('/birthdays/today', AdminDashboardController.getTodaysBirthdays)
+router.get('/birthdays/upcoming', AdminDashboardController.getUpcomingBirthdays)
 
 export default router

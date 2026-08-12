@@ -73,9 +73,11 @@ export async function markAttendance(db: any, input: MarkAttendanceInput, userId
   }
 
   // 3. Upsert the parent Attendance row
+  // Schema uses @@unique([schoolId, sectionId, date]) → key name: schoolId_sectionId_date
+  const schoolId = (db as any).schoolId as string
   const attendance = await db.attendance.upsert({
     where: {
-      sectionId_date: { sectionId, date: parsedDate },
+      schoolId_sectionId_date: { schoolId, sectionId, date: parsedDate },
     },
     create: {
       date: parsedDate,

@@ -16,6 +16,12 @@ export interface AuthUser {
   schoolId: string | null
   mustChangePassword: boolean
   lastLoginAt?: string | null
+  /** Populated for TEACHER and STUDENT roles from their linked profile */
+  firstName?: string | null
+  lastName?: string | null
+  dateOfBirth?: string | null
+  /** Display name: full name for teacher/student, principalName or username for admin */
+  profileName?: string | null
 }
 
 export interface AuthState {

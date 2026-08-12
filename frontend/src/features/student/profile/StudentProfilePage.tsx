@@ -8,7 +8,29 @@ export function StudentProfilePage() {
     queryFn: studentPortalApi.getProfile,
   })
 
-  if (isLoading) return <div>Loading profile...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-36 bg-muted rounded animate-pulse" />
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="md:col-span-1 bg-card border rounded-xl p-6 flex flex-col items-center animate-pulse space-y-4">
+            <div className="h-32 w-32 rounded-full bg-muted" />
+            <div className="h-5 bg-muted rounded w-3/4" />
+            <div className="h-4 bg-muted rounded w-1/2" />
+          </div>
+          <div className="md:col-span-2 bg-card border rounded-xl p-6 animate-pulse space-y-4">
+            <div className="h-4 bg-muted rounded w-1/3" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-12 bg-muted/40 rounded" />
+              <div className="h-12 bg-muted/40 rounded" />
+              <div className="h-12 bg-muted/40 rounded" />
+              <div className="h-12 bg-muted/40 rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -24,7 +46,9 @@ export function StudentProfilePage() {
                 <User className="h-16 w-16 text-muted-foreground" />
               )}
             </div>
-            <h2 className="text-xl font-bold">{profile?.firstName} {profile?.lastName}</h2>
+            <h2 className="text-xl font-bold">
+              {profile?.firstName} {profile?.lastName}
+            </h2>
             <p className="text-muted-foreground">{profile?.admissionNumber}</p>
             <div className="mt-4 w-full bg-primary/10 text-primary py-2 rounded-lg font-medium">
               Class {profile?.class?.name} - {profile?.section?.name}
@@ -43,7 +67,9 @@ export function StudentProfilePage() {
                 <p className="text-sm text-muted-foreground">Date of Birth</p>
                 <p className="font-medium flex items-center gap-2">
                   <CalendarIcon className="h-4 w-4" />
-                  {profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : 'N/A'}
+                  {profile?.dateOfBirth
+                    ? new Date(profile.dateOfBirth).toLocaleDateString()
+                    : 'N/A'}
                 </p>
               </div>
               <div>

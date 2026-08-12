@@ -1,7 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { studentPortalApi } from '../api/student-portal.api'
 import { CheckCircle2, XCircle, Clock } from 'lucide-react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 interface AttendanceRecordItem {
   id: string
@@ -16,7 +23,29 @@ export function StudentAttendancePage() {
     queryFn: studentPortalApi.getAttendance,
   })
 
-  if (isLoading) return <div>Loading attendance records...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-40 bg-muted rounded animate-pulse" />
+        <div className="grid gap-4 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="p-6 bg-card rounded-xl border shadow-sm animate-pulse space-y-2"
+            >
+              <div className="h-3 bg-muted rounded w-32" />
+              <div className="h-8 bg-muted rounded w-20" />
+            </div>
+          ))}
+        </div>
+        <div className="bg-card border rounded-xl shadow-sm animate-pulse p-4 space-y-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-10 bg-muted rounded" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   const records = (data?.records || []) as AttendanceRecordItem[]
 
@@ -27,18 +56,22 @@ export function StudentAttendancePage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="p-6 bg-card rounded-xl border shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground">Overall Percentage</h3>
-          <div className={`text-3xl font-bold mt-2 ${data?.summary?.percentage >= 75 ? 'text-green-600' : 'text-red-500'}`}>
+          <div
+            className={`text-3xl font-bold mt-2 ${data?.summary?.percentage >= 75 ? 'text-green-600' : 'text-red-500'}`}
+          >
             {data?.summary?.percentage}%
           </div>
         </div>
         <div className="p-6 bg-card rounded-xl border shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground">Total Present</h3>
-          <div className="text-3xl font-bold mt-2 text-green-600">{data?.summary?.present ?? 0}</div>
+          <div className="text-3xl font-bold mt-2 text-green-600">
+            {data?.summary?.present ?? 0}
+          </div>
         </div>
         <div className="p-6 bg-card rounded-xl border shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground">Total Absent</h3>
           <div className="text-3xl font-bold mt-2 text-red-500">
-            {data?.summary?.absent ?? ((data?.summary?.total || 0) - (data?.summary?.present || 0))}
+            {data?.summary?.absent ?? (data?.summary?.total || 0) - (data?.summary?.present || 0)}
           </div>
         </div>
       </div>
@@ -89,9 +122,7 @@ export function StudentAttendancePage() {
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {record.remarks || '-'}
-                  </TableCell>
+                  <TableCell className="text-muted-foreground">{record.remarks || '-'}</TableCell>
                 </TableRow>
               ))
             )}

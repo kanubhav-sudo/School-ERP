@@ -26,15 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
-import {
-  Calendar,
-  Eye,
-  Plus,
-  Trash2,
-  Save,
-  Settings,
-  FileCheck,
-} from 'lucide-react'
+import { Calendar, Eye, Plus, Trash2, Save, Settings, FileCheck } from 'lucide-react'
 import { AdmitCardModal } from './components/AdmitCardModal'
 import { ResultCardModal } from './components/ResultCardModal'
 import { ExamTemplateModal } from './components/ExamTemplateModal'
@@ -43,6 +35,23 @@ import { ReportCardRenderer } from '../../document-engine/components/ReportCardR
 import { documentEngineApi } from '../../document-engine/document-engine.api'
 import type { CompiledDocumentPayload } from '../../document-engine/document-engine.types'
 import { Link } from 'react-router-dom'
+
+// ── Shared student item type for Admit Card / Result tables ──────────────────
+interface ExamStudentItem {
+  studentId: string
+  firstName?: string
+  lastName?: string
+  admissionNumber: string
+  rollNumber?: string
+  sectionName?: string
+  feeStatus?: 'PAID' | 'PENDING' | string
+  status?: 'RELEASED' | 'HOLD' | string
+  remark?: string
+  // optional fields passed to legacy modal
+  name?: string
+  className?: string
+  sessionName?: string
+}
 
 function getDayFromDateString(dateStr: string): string {
   if (!dateStr) return ''
@@ -54,18 +63,18 @@ function getDayFromDateString(dateStr: string): string {
 export function ExamsPage() {
   const queryClient = useQueryClient()
 
-  // Common Entry State
-  const [selectedSessionId, setSelectedSessionId] = useState<string>('')
-  const [selectedClassId, setSelectedClassId] = useState<string>('')
+  // Navigation & Primary Module Switcher
+  const [mainModule, setMainModule] = useState<'SCHEDULING' | 'ADMIT_CARD' | 'RESULT'>('SCHEDULING')
 
-  // Main Toggle: Admit Card | Result
-  const [mainModule, setMainModule] = useState<'ADMIT_CARD' | 'RESULT'>('ADMIT_CARD')
-
-  // Admit Card Inner Toggle: Exam Table | Students
+  // Sub-tabs
   const [admitCardTab, setAdmitCardTab] = useState<'EXAM_TABLE' | 'STUDENTS'>('EXAM_TABLE')
 
-  // Exam Table Timetable State
+  // Filters
+  const [selectedSessionId, setSelectedSessionId] = useState<string>('')
+  const [selectedClassId, setSelectedClassId] = useState<string>('')
   const [examName, setExamName] = useState<string>('Mid Term')
+
+  // Schedule Rows State
   const [scheduleRows, setScheduleRows] = useState<
     Array<{
       subjectId: string
@@ -78,14 +87,20 @@ export function ExamsPage() {
 
   // Modal States
   const [templateModalOpen, setTemplateModalOpen] = useState(false)
-  const templateType: 'ADMIT_CARD' | 'RESULT' = mainModule === 'ADMIT_CARD' ? 'ADMIT_CARD' : 'RESULT'
+  const templateType: 'ADMIT_CARD' | 'RESULT' =
+    mainModule === 'ADMIT_CARD' ? 'ADMIT_CARD' : 'RESULT'
 
   const [admitCardModalOpen, setAdmitCardModalOpen] = useState(false)
-  const [selectedAdmitCardStudent, setSelectedAdmitCardStudent] = useState<any>(null)
+  const [selectedAdmitCardStudent, setSelectedAdmitCardStudent] = useState<ExamStudentItem | null>(
+    null
+  )
 
   const [resultCardModalOpen, setResultCardModalOpen] = useState(false)
-  const [selectedResultStudent, setSelectedResultStudent] = useState<any>(null)
-  const [selectedResultMarksData, setSelectedResultMarksData] = useState<any>(null)
+  const [selectedResultStudent, setSelectedResultStudent] = useState<ExamStudentItem | null>(null)
+  const [selectedResultMarksData, setSelectedResultMarksData] = useState<Record<
+    string,
+    unknown
+  > | null>(null)
 
   // Document Engine — Powered Modal States
   const [engineAdmitOpen, setEngineAdmitOpen] = useState(false)
@@ -93,7 +108,9 @@ export function ExamsPage() {
   const [engineAdmitLoading, setEngineAdmitLoading] = useState(false)
 
   const [engineResultOpen, setEngineResultOpen] = useState(false)
-  const [engineResultPayload, setEngineResultPayload] = useState<CompiledDocumentPayload | null>(null)
+  const [engineResultPayload, setEngineResultPayload] = useState<CompiledDocumentPayload | null>(
+    null
+  )
   const [engineResultLoading, setEngineResultLoading] = useState(false)
 
   // Fetch Master Data
@@ -113,7 +130,8 @@ export function ExamsPage() {
   })
 
   // Auto-select active/first session — derived so no cascading setState
-  const effectiveSessionId = selectedSessionId || (sessions.find((s) => s.isActive) || sessions[0])?.id || ''
+  const effectiveSessionId =
+    selectedSessionId || (sessions.find((s) => s.isActive) || sessions[0])?.id || ''
   const effectiveClassId = selectedClassId || classes[0]?.id || ''
 
   // Fetch current exams for selected Session & Class
@@ -132,33 +150,44 @@ export function ExamsPage() {
   // Sync scheduleRows when currentExam changes
   useEffect(() => {
     const rows = currentExam?.schedules
-      ? currentExam.schedules.map((s: any) => ({
-          subjectId: s.subjectId,
-          examDate: s.examDate ? s.examDate.slice(0, 10) : '',
-          startTime: s.startTime || '09:00 AM',
-          endTime: s.endTime || '12:00 PM',
-          room: s.room || 'Main Hall',
-        }))
+      ? currentExam.schedules.map(
+          (s: {
+            subjectId: string
+            examDate?: string
+            startTime?: string
+            endTime?: string
+            room?: string
+          }) => ({
+            subjectId: s.subjectId,
+            examDate: s.examDate ? s.examDate.slice(0, 10) : '',
+            startTime: s.startTime || '09:00 AM',
+            endTime: s.endTime || '12:00 PM',
+            room: s.room || 'Main Hall',
+          })
+        )
       : []
     const t = setTimeout(() => setScheduleRows(rows), 0)
     return () => clearTimeout(t)
-  }, [currentExam?.id, currentExam?.schedules?.length])
+  }, [currentExam?.id, currentExam?.schedules])
 
   // Admit Card Students Query
   const { data: admitCardStudents = [], refetch: refetchAdmitCardStudents } = useQuery({
     queryKey: ['admit-card-students', effectiveSessionId, effectiveClassId, currentExam?.id],
-    queryFn: () =>
-      fetchAdmitCardStudents(effectiveSessionId, effectiveClassId, currentExam?.id),
-    enabled: !!effectiveSessionId && !!effectiveClassId && mainModule === 'ADMIT_CARD' && admitCardTab === 'STUDENTS',
+    queryFn: () => fetchAdmitCardStudents(effectiveSessionId, effectiveClassId, currentExam?.id),
+    enabled:
+      !!effectiveSessionId &&
+      !!effectiveClassId &&
+      mainModule === 'ADMIT_CARD' &&
+      admitCardTab === 'STUDENTS',
     staleTime: 0,
   })
 
   // Result Students Query
   const { data: resultStudents = [], refetch: refetchResultStudents } = useQuery({
     queryKey: ['result-students', effectiveSessionId, effectiveClassId, currentExam?.id],
-    queryFn: () =>
-      fetchResultStudents(effectiveSessionId, effectiveClassId, currentExam?.id || ''),
-    enabled: !!effectiveSessionId && !!effectiveClassId && !!currentExam?.id && mainModule === 'RESULT',
+    queryFn: () => fetchResultStudents(effectiveSessionId, effectiveClassId, currentExam?.id || ''),
+    enabled:
+      !!effectiveSessionId && !!effectiveClassId && !!currentExam?.id && mainModule === 'RESULT',
     staleTime: 0,
   })
 
@@ -234,7 +263,7 @@ export function ExamsPage() {
   }
 
   // Handle open student admit card preview — Document Engine powered
-  const handleViewAdmitCard = async (student: any) => {
+  const handleViewAdmitCard = async (student: ExamStudentItem) => {
     if (!currentExam?.id) {
       // Fallback to legacy modal if no exam exists
       setSelectedAdmitCardStudent(student)
@@ -246,7 +275,7 @@ export function ExamsPage() {
     setEngineAdmitPayload(null)
     try {
       const payload = await documentEngineApi.getLivePreview('ADMIT_CARD', {
-        studentId: student.studentId,
+        studentId: String(student.studentId || ''),
         examId: currentExam.id,
       })
       setEngineAdmitPayload(payload)
@@ -261,7 +290,7 @@ export function ExamsPage() {
   }
 
   // Handle open student result card preview — Document Engine powered
-  const handleViewResult = async (student: any) => {
+  const handleViewResult = async (student: ExamStudentItem) => {
     if (!currentExam?.id) return
     setEngineResultOpen(true)
     setEngineResultLoading(true)
@@ -435,7 +464,8 @@ export function ExamsPage() {
                     {scheduleRows.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                          No subjects added to timetable yet. Click &quot;Add Subject Slot&quot; to begin.
+                          No subjects added to timetable yet. Click &quot;Add Subject Slot&quot; to
+                          begin.
                         </td>
                       </tr>
                     ) : (
@@ -538,7 +568,7 @@ export function ExamsPage() {
                       </td>
                     </tr>
                   ) : (
-                    admitCardStudents.map((st: any) => (
+                    admitCardStudents.map((st: ExamStudentItem) => (
                       <tr key={st.studentId} className="hover:bg-muted/40 transition-colors">
                         <td className="px-4 py-3 font-semibold text-foreground">
                           {st.firstName} {st.lastName}
@@ -590,12 +620,12 @@ export function ExamsPage() {
                             size="sm"
                             onClick={() =>
                               handleViewAdmitCard({
-                                name: `${st.firstName} ${st.lastName}`,
-                                admissionNumber: st.admissionNumber,
-                                rollNumber: st.rollNumber,
-                                className: classes.find((c) => c.id === effectiveClassId)?.name || '',
-                                sectionName: st.sectionName,
-                                sessionName: sessions.find((s) => s.id === effectiveSessionId)?.name,
+                                ...st,
+                                name: `${st.firstName ?? ''} ${st.lastName ?? ''}`.trim(),
+                                className:
+                                  classes.find((c) => c.id === effectiveClassId)?.name || '',
+                                sessionName: sessions.find((s) => s.id === effectiveSessionId)
+                                  ?.name,
                               })
                             }
                           >
@@ -617,7 +647,8 @@ export function ExamsPage() {
         <div className="space-y-4">
           <div className="p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground flex items-center justify-between border border-border">
             <span>
-              Official Result Release Control: Only Admin can officially release or withhold results.
+              Official Result Release Control: Only Admin can officially release or withhold
+              results.
             </span>
           </div>
 
@@ -641,7 +672,7 @@ export function ExamsPage() {
                     </td>
                   </tr>
                 ) : (
-                  resultStudents.map((st: any) => (
+                  resultStudents.map((st: ExamStudentItem) => (
                     <tr key={st.studentId} className="hover:bg-muted/40 transition-colors">
                       <td className="px-4 py-3 font-semibold text-foreground">
                         {st.firstName} {st.lastName}
@@ -720,7 +751,15 @@ export function ExamsPage() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[850px]">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="font-semibold text-gray-900">Admit Card — Document Engine</h2>
-              <button onClick={() => { setEngineAdmitOpen(false); setEngineAdmitPayload(null) }} className="text-gray-400 hover:text-gray-700 text-2xl leading-none cursor-pointer">×</button>
+              <button
+                onClick={() => {
+                  setEngineAdmitOpen(false)
+                  setEngineAdmitPayload(null)
+                }}
+                className="text-gray-400 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+              >
+                ×
+              </button>
             </div>
             <div className="p-4 overflow-y-auto max-h-[80vh]">
               {engineAdmitLoading && (
@@ -729,7 +768,9 @@ export function ExamsPage() {
                   <span className="text-sm">Compiling Admit Card…</span>
                 </div>
               )}
-              {engineAdmitPayload && <AdmitCardRenderer payload={engineAdmitPayload} showPrintButton={true} />}
+              {engineAdmitPayload && (
+                <AdmitCardRenderer payload={engineAdmitPayload} showPrintButton={true} />
+              )}
             </div>
           </div>
         </div>
@@ -741,7 +782,15 @@ export function ExamsPage() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[850px]">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="font-semibold text-gray-900">Report Card — Document Engine</h2>
-              <button onClick={() => { setEngineResultOpen(false); setEngineResultPayload(null) }} className="text-gray-400 hover:text-gray-700 text-2xl leading-none cursor-pointer">×</button>
+              <button
+                onClick={() => {
+                  setEngineResultOpen(false)
+                  setEngineResultPayload(null)
+                }}
+                className="text-gray-400 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+              >
+                ×
+              </button>
             </div>
             <div className="p-4 overflow-y-auto max-h-[80vh]">
               {engineResultLoading && (
@@ -750,7 +799,9 @@ export function ExamsPage() {
                   <span className="text-sm">Compiling Report Card…</span>
                 </div>
               )}
-              {engineResultPayload && <ReportCardRenderer payload={engineResultPayload} showPrintButton={true} />}
+              {engineResultPayload && (
+                <ReportCardRenderer payload={engineResultPayload} showPrintButton={true} />
+              )}
             </div>
           </div>
         </div>
@@ -761,7 +812,16 @@ export function ExamsPage() {
         <AdmitCardModal
           open={admitCardModalOpen}
           onOpenChange={setAdmitCardModalOpen}
-          student={selectedAdmitCardStudent}
+          student={
+            selectedAdmitCardStudent as unknown as {
+              name: string
+              admissionNumber: string
+              rollNumber?: string
+              className: string
+              sectionName?: string
+              sessionName?: string
+            }
+          }
           examName={examName}
           timetable={scheduleRows.map((r) => ({
             date: r.examDate,
@@ -779,12 +839,35 @@ export function ExamsPage() {
         <ResultCardModal
           open={resultCardModalOpen}
           onOpenChange={setResultCardModalOpen}
-          student={selectedResultStudent}
+          student={
+            selectedResultStudent as unknown as {
+              name: string
+              admissionNumber: string
+              rollNumber?: string
+              className: string
+              sectionName?: string
+              sessionName?: string
+            }
+          }
           examName={examName}
-          subjects={selectedResultMarksData.subjects || []}
-          totalMaxMarks={selectedResultMarksData.totalMaxMarks || 0}
-          totalObtainedMarks={selectedResultMarksData.totalObtainedMarks || 0}
-          overallPercentage={selectedResultMarksData.overallPercentage || 0}
+          subjects={
+            ((selectedResultMarksData as Record<string, unknown>).subjects as {
+              subjectName: string
+              maxMarks: number
+              obtainedMarks: number
+              percentage: number
+              remarks?: string
+            }[]) || []
+          }
+          totalMaxMarks={
+            Number((selectedResultMarksData as Record<string, unknown>).totalMaxMarks) || 0
+          }
+          totalObtainedMarks={
+            Number((selectedResultMarksData as Record<string, unknown>).totalObtainedMarks) || 0
+          }
+          overallPercentage={
+            Number((selectedResultMarksData as Record<string, unknown>).overallPercentage) || 0
+          }
           template={resultTemplate}
         />
       )}

@@ -268,3 +268,31 @@ export async function uploadReportCard(req: Request, res: Response, next: NextFu
     next(error)
   }
 }
+
+export async function getTodaysBirthdays(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = requireUser(req)
+    const birthdays = await TeacherPortalService.getTodaysBirthdays(req.db, userId)
+    ApiResponse.success(res, birthdays, "Today's birthdays retrieved")
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function getUpcomingBirthdays(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = requireUser(req)
+    const birthdays = await TeacherPortalService.getUpcomingBirthdays(req.db, userId)
+    ApiResponse.success(res, birthdays, 'Upcoming birthdays retrieved')
+  } catch (err) {
+    next(err)
+  }
+}

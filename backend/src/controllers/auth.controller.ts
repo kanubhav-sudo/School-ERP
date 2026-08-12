@@ -143,12 +143,64 @@ export async function logout(req: Request, res: Response, next: NextFunction): P
 // GET /api/v1/auth/me — requires authenticate middleware
 export async function me(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    // req.user is set by the authenticate middleware
     const userId = (req as Request & { user?: { sub: string } }).user?.sub
     if (!userId) throw new UnauthorizedError()
 
     const user = await getUserById(userId)
     if (!user) throw new UnauthorizedError('User not found')
+
+    // Build enriched profile based on role
+    let firstName: string | null = null
+    let lastName: string | null = null
+    let dateOfBirth: Date | null = null
+    let profileName: string | null = null
+
+    const db = (req as any).db
+
+    if (db) {
+      if (user.role === 'TEACHER') {
+        const teacher = await db.teacher
+          .findUnique({
+            where: { userId: user.id },
+            select: { firstName: true, lastName: true, dateOfBirth: true },
+          })
+          .catch(() => null)
+        if (teacher) {
+          firstName = teacher.firstName
+          lastName = teacher.lastName
+          dateOfBirth = teacher.dateOfBirth
+          profileName = `${teacher.firstName} ${teacher.lastName}`
+        }
+      } else if (user.role === 'STUDENT') {
+        const student = await db.student
+          .findUnique({
+            where: { userId: user.id },
+            select: { firstName: true, lastName: true, dateOfBirth: true },
+          })
+          .catch(() => null)
+        if (student) {
+          firstName = student.firstName
+          lastName = student.lastName
+          dateOfBirth = student.dateOfBirth
+          profileName = `${student.firstName} ${student.lastName}`
+        }
+      } else if (user.role === 'ADMIN' && user.schoolId) {
+        const settings = await db.schoolSettings
+          .findUnique({
+            where: { schoolId: user.schoolId },
+            select: { principalName: true },
+          })
+          .catch(() => null)
+        profileName = settings?.principalName || user.username
+      } else if (user.role === 'SUPER_ADMIN') {
+        profileName = user.username
+      }
+    }
+
+    if (!profileName) {
+      // Capitalize username as fallback
+      profileName = user.username.charAt(0).toUpperCase() + user.username.slice(1)
+    }
 
     ApiResponse.success(
       res,
@@ -160,6 +212,10 @@ export async function me(req: Request, res: Response, next: NextFunction): Promi
         schoolId: user.schoolId ?? null,
         mustChangePassword: user.mustChangePassword,
         lastLoginAt: user.lastLoginAt,
+        firstName,
+        lastName,
+        dateOfBirth,
+        profileName,
       },
       'Current user fetched'
     )

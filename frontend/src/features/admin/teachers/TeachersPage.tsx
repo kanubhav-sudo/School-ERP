@@ -96,7 +96,32 @@ export function TeachersPage() {
     }
   }
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+          <div className="h-9 w-28 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="p-5 bg-card rounded-xl border shadow-xs animate-pulse space-y-2"
+            >
+              <div className="h-3 bg-muted rounded w-24" />
+              <div className="h-7 bg-muted rounded w-16" />
+            </div>
+          ))}
+        </div>
+        <div className="bg-card rounded-xl border shadow-xs animate-pulse">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-14 border-b last:border-0 bg-muted/20 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
