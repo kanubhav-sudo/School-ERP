@@ -592,3 +592,59 @@ export async function submitHomework(
     })
   }
 }
+
+// ─── Birthday Helpers ──────────────────────────────────────────
+
+function buildBirthdayMDRange(startOffset: number, endOffset: number): string[] {
+  const dates: string[] = []
+  for (let i = startOffset; i <= endOffset; i++) {
+    const d = new Date()
+    d.setDate(d.getDate() + i)
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    dates.push(`${mm}-${dd}`)
+  }
+  return dates
+}
+
+function matchesBirthdayMD(dateOfBirth: Date | null | undefined, mdSet: string[]): boolean {
+  if (!dateOfBirth) return false
+  const mm = String(dateOfBirth.getMonth() + 1).padStart(2, '0')
+  const dd = String(dateOfBirth.getDate()).padStart(2, '0')
+  return mdSet.includes(`${mm}-${dd}`)
+}
+
+export async function getTodaysBirthdays(db: any, userId: string) {
+  const currentStudent = await getStudentByUserId(db, userId)
+  if (!currentStudent.sectionId) return []
+
+  const todayMD = buildBirthdayMDRange(0, 0)
+
+  const classmates = await db.student.findMany({
+    where: {
+      isActive: true,
+      deletedAt: null,
+      dateOfBirth: { not: null },
+      sectionId: currentStudent.sectionId,
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      dateOfBirth: true,
+      class: { select: { name: true } },
+      section: { select: { name: true } },
+    },
+  })
+
+  return classmates
+    .filter((s: any) => matchesBirthdayMD(s.dateOfBirth, todayMD))
+    .map((s: any) => ({
+      id: s.id,
+      name: `${s.firstName} ${s.lastName}`,
+      role: 'STUDENT' as const,
+      class: s.class ? `${s.class.name}${s.section ? ` - ${s.section.name}` : ''}` : null,
+      dateOfBirth: new Date().toISOString(), // Obfuscates exact birth year/DOB for classmate privacy
+    }))
+}
+
