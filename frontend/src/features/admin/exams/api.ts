@@ -152,7 +152,10 @@ export async function fetchExamTemplate(type: 'ADMIT_CARD' | 'RESULT') {
   return data.data
 }
 
-export async function saveExamTemplate(type: 'ADMIT_CARD' | 'RESULT', payload: Record<string, unknown>) {
+export async function saveExamTemplate(
+  type: 'ADMIT_CARD' | 'RESULT',
+  payload: Record<string, unknown>
+) {
   const { data } = await api.post(`/exams/templates/${type}`, payload)
   return data.data
 }

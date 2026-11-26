@@ -69,14 +69,20 @@ export const AdmitCardRenderer: React.FC<AdmitCardRendererProps> = ({
               </div>
             )}
             <div>
-              <h1 className="text-2xl font-black uppercase tracking-tight" style={{ color: primaryColor }}>
+              <h1
+                className="text-2xl font-black uppercase tracking-tight"
+                style={{ color: primaryColor }}
+              >
                 {branding.schoolName || school.name}
               </h1>
               <p className="text-xs text-gray-600 font-medium">
-                {school.address ? `${school.address}, ${school.city || ''} ${school.state || ''}` : 'Affiliated to CBSE, New Delhi'}
+                {school.address
+                  ? `${school.address}, ${school.city || ''} ${school.state || ''}`
+                  : 'Affiliated to CBSE, New Delhi'}
               </p>
               <p className="text-xs text-gray-500">
-                Email: {school.contactEmail || 'info@school.edu'} | Phone: {school.contactPhone || '+91 98765 43210'}
+                Email: {school.contactEmail || 'info@school.edu'} | Phone:{' '}
+                {school.contactPhone || '+91 98765 43210'}
               </p>
             </div>
           </div>
@@ -167,9 +173,16 @@ export const AdmitCardRenderer: React.FC<AdmitCardRendererProps> = ({
             ) : (
               <div className="w-24 h-28 bg-gray-100 rounded border border-gray-300 flex flex-col items-center justify-center p-2 text-gray-400">
                 <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
                 </svg>
-                <span className="text-[9px] leading-tight font-medium text-gray-500">PASTE RECENT PHOTOGRAPH</span>
+                <span className="text-[9px] leading-tight font-medium text-gray-500">
+                  PASTE RECENT PHOTOGRAPH
+                </span>
               </div>
             )}
             <span className="text-[9px] text-gray-400 mt-1 font-mono">Attested Photo</span>
@@ -178,8 +191,14 @@ export const AdmitCardRenderer: React.FC<AdmitCardRendererProps> = ({
 
         {/* 4. Exam Timetable Table */}
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center" style={{ color: primaryColor }}>
-            <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: accentColor }}></span>
+          <h3
+            className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center"
+            style={{ color: primaryColor }}
+          >
+            <span
+              className="w-2.5 h-2.5 rounded-full mr-2"
+              style={{ backgroundColor: accentColor }}
+            ></span>
             Examination Schedule & Timetable
           </h3>
           <table className="w-full text-left border-collapse text-xs border border-gray-300">
@@ -198,13 +217,25 @@ export const AdmitCardRenderer: React.FC<AdmitCardRendererProps> = ({
               {exam?.schedules && exam.schedules.length > 0 ? (
                 exam.schedules.map((sched, idx) => (
                   <tr key={sched.subjectId} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="p-2 border border-gray-300 text-center font-medium">{idx + 1}</td>
-                    <td className="p-2 border border-gray-300 font-mono text-gray-700">{sched.subjectCode}</td>
-                    <td className="p-2 border border-gray-300 font-bold text-gray-900">{sched.subjectName}</td>
+                    <td className="p-2 border border-gray-300 text-center font-medium">
+                      {idx + 1}
+                    </td>
+                    <td className="p-2 border border-gray-300 font-mono text-gray-700">
+                      {sched.subjectCode}
+                    </td>
+                    <td className="p-2 border border-gray-300 font-bold text-gray-900">
+                      {sched.subjectName}
+                    </td>
                     <td className="p-2 border border-gray-300">{formatDate(sched.examDate)}</td>
-                    <td className="p-2 border border-gray-300 font-medium text-gray-700">{getDayName(sched.examDate)}</td>
-                    <td className="p-2 border border-gray-300 text-gray-800">{sched.startTime} - {sched.endTime}</td>
-                    <td className="p-2 border border-gray-300 text-center font-semibold text-blue-900">{sched.room || 'Main Hall'}</td>
+                    <td className="p-2 border border-gray-300 font-medium text-gray-700">
+                      {getDayName(sched.examDate)}
+                    </td>
+                    <td className="p-2 border border-gray-300 text-gray-800">
+                      {sched.startTime} - {sched.endTime}
+                    </td>
+                    <td className="p-2 border border-gray-300 text-center font-semibold text-blue-900">
+                      {sched.room || 'Main Hall'}
+                    </td>
                   </tr>
                 ))
               ) : (
@@ -221,12 +252,17 @@ export const AdmitCardRenderer: React.FC<AdmitCardRendererProps> = ({
         {/* 5. Candidate Instructions */}
         {config.instructions && config.instructions.length > 0 && (
           <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 text-xs">
-            <h4 className="font-bold uppercase tracking-wider text-[11px] mb-1.5" style={{ color: primaryColor }}>
+            <h4
+              className="font-bold uppercase tracking-wider text-[11px] mb-1.5"
+              style={{ color: primaryColor }}
+            >
               Important Candidate Instructions
             </h4>
             <ol className="list-decimal list-inside space-y-1 text-gray-700 text-[11px]">
               {config.instructions.map((inst, i) => (
-                <li key={i} className="leading-snug">{inst}</li>
+                <li key={i} className="leading-snug">
+                  {inst}
+                </li>
               ))}
             </ol>
           </div>
@@ -237,7 +273,9 @@ export const AdmitCardRenderer: React.FC<AdmitCardRendererProps> = ({
           {sigs.showCandidate && (
             <div className="border-t border-gray-400 pt-2">
               <div className="h-10"></div>
-              <p className="font-semibold text-gray-800">{sigs.candidateLabel || 'Candidate Signature'}</p>
+              <p className="font-semibold text-gray-800">
+                {sigs.candidateLabel || 'Candidate Signature'}
+              </p>
             </div>
           )}
 
@@ -251,22 +289,34 @@ export const AdmitCardRenderer: React.FC<AdmitCardRendererProps> = ({
           {sigs.showExamController && (
             <div className="border-t border-gray-400 pt-2">
               {sigs.examControllerSignatureUrl ? (
-                <img src={sigs.examControllerSignatureUrl} alt="Controller Sign" className="h-10 mx-auto object-contain" />
+                <img
+                  src={sigs.examControllerSignatureUrl}
+                  alt="Controller Sign"
+                  className="h-10 mx-auto object-contain"
+                />
               ) : (
                 <div className="h-10"></div>
               )}
-              <p className="font-semibold text-gray-800">{sigs.examControllerLabel || 'Exam Controller'}</p>
+              <p className="font-semibold text-gray-800">
+                {sigs.examControllerLabel || 'Exam Controller'}
+              </p>
             </div>
           )}
 
           {sigs.showPrincipal && (
             <div className="border-t border-gray-400 pt-2">
               {sigs.principalSignatureUrl ? (
-                <img src={sigs.principalSignatureUrl} alt="Principal Sign" className="h-10 mx-auto object-contain" />
+                <img
+                  src={sigs.principalSignatureUrl}
+                  alt="Principal Sign"
+                  className="h-10 mx-auto object-contain"
+                />
               ) : (
                 <div className="h-10"></div>
               )}
-              <p className="font-semibold text-gray-800">{sigs.principalLabel || 'Principal Signature'}</p>
+              <p className="font-semibold text-gray-800">
+                {sigs.principalLabel || 'Principal Signature'}
+              </p>
             </div>
           )}
         </div>

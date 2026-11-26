@@ -60,12 +60,7 @@ export const DocumentEngine: React.FC<DocumentEngineProps> = ({
             onClick={handlePrint}
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-colors cursor-pointer"
           >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -83,7 +78,14 @@ export const DocumentEngine: React.FC<DocumentEngineProps> = ({
         id="printable-document"
         className="relative w-[210mm] min-h-[297mm] bg-white text-gray-900 shadow-xl print:shadow-none print:m-0 print:w-full print:min-h-0 border border-gray-300 print:border-none p-8 flex flex-col justify-between overflow-hidden"
         style={{
-          fontFamily: branding.fontFamily === 'Roboto' ? 'Roboto, sans-serif' : branding.fontFamily === 'Outfit' ? 'Outfit, sans-serif' : branding.fontFamily === 'Playfair' ? 'Georgia, serif' : 'Inter, sans-serif',
+          fontFamily:
+            branding.fontFamily === 'Roboto'
+              ? 'Roboto, sans-serif'
+              : branding.fontFamily === 'Outfit'
+                ? 'Outfit, sans-serif'
+                : branding.fontFamily === 'Playfair'
+                  ? 'Georgia, serif'
+                  : 'Inter, sans-serif',
         }}
       >
         {/* Watermark Overlay */}
@@ -118,8 +120,8 @@ export const DocumentEngine: React.FC<DocumentEngineProps> = ({
                 })}
               </p>
               <p className="text-[9px] font-mono text-gray-400">
-                VERIFICATION ID: <span className="font-bold text-gray-800">{verificationId}</span> | SHA-256:{' '}
-                {payload.checksum.substring(0, 16)}...
+                VERIFICATION ID: <span className="font-bold text-gray-800">{verificationId}</span> |
+                SHA-256: {payload.checksum.substring(0, 16)}...
               </p>
             </div>
 

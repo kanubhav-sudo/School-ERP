@@ -53,7 +53,9 @@ export class CalculationEngineService {
    * D:  33 - 40
    * E:  0 - 32 (Needs Improvement)
    */
-  static calculateCBSEGrade(percentage: number): 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'D' | 'E' {
+  static calculateCBSEGrade(
+    percentage: number
+  ): 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'D' | 'E' {
     const val = Math.round(percentage)
     if (val >= 91) return 'A1'
     if (val >= 81) return 'A2'
@@ -135,7 +137,10 @@ export class CalculationEngineService {
   /**
    * Calculate Attendance summary percentage
    */
-  static calculateAttendance(attendance?: { totalDays: number; presentDays: number }): AttendanceCalculation {
+  static calculateAttendance(attendance?: {
+    totalDays: number
+    presentDays: number
+  }): AttendanceCalculation {
     const totalDays = attendance?.totalDays || 180
     const presentDays = attendance?.presentDays || 165
     const pct = totalDays > 0 ? (presentDays / totalDays) * 100 : 0

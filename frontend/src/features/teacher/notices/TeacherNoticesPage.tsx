@@ -6,7 +6,11 @@ import { CalendarDays, AlertCircle } from 'lucide-react'
 import { format } from 'date-fns'
 
 export function TeacherNoticesPage() {
-  const { data: notices, isLoading, isError } = useQuery({
+  const {
+    data: notices,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['teacher-notices'],
     queryFn: fetchNotices,
   })
@@ -24,7 +28,9 @@ export function TeacherNoticesPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Notices</h1>
-          <p className="text-sm text-muted-foreground mt-1">Official notices from the administration.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Official notices from the administration.
+          </p>
         </div>
         <div className="p-12 text-center text-muted-foreground border rounded-xl border-dashed">
           No notices available at the moment.
@@ -44,7 +50,10 @@ export function TeacherNoticesPage() {
 
       <div className="grid gap-4">
         {notices.map((notice) => (
-          <Card key={notice.id} className={notice.priority === 'HIGH' ? 'border-destructive/50' : ''}>
+          <Card
+            key={notice.id}
+            className={notice.priority === 'HIGH' ? 'border-destructive/50' : ''}
+          >
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
                 <div>
@@ -68,8 +77,8 @@ export function TeacherNoticesPage() {
                     notice.priority === 'HIGH'
                       ? 'destructive'
                       : notice.priority === 'MEDIUM'
-                      ? 'default'
-                      : 'secondary'
+                        ? 'default'
+                        : 'secondary'
                   }
                 >
                   {notice.priority}
@@ -81,7 +90,11 @@ export function TeacherNoticesPage() {
               {notice.attachments && notice.attachments.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {notice.attachments.map((_, i) => (
-                    <Badge key={i} variant="outline" className="text-xs bg-muted/50 cursor-pointer hover:bg-muted">
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="text-xs bg-muted/50 cursor-pointer hover:bg-muted"
+                    >
                       📎 Attachment {i + 1}
                     </Badge>
                   ))}

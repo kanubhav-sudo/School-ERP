@@ -18,7 +18,9 @@ export function BrandingTab() {
             </div>
             <div>
               <p className="font-semibold">Official School Logo</p>
-              <p className="text-xs text-muted-foreground">Appears on document templates, admit cards, and report cards.</p>
+              <p className="text-xs text-muted-foreground">
+                Appears on document templates, admit cards, and report cards.
+              </p>
             </div>
           </div>
 

@@ -34,12 +34,13 @@ router.get(
 
 // Write routes require ADMIN role
 router.post('/', authorize('ADMIN'), AcademicSessionController.createAcademicSession)
-router.patch('/:id', authorize('ADMIN'), AcademicSessionController.updateAcademicSession)
 router.patch(
   '/:id/set-active',
   authorize('ADMIN'),
   AcademicSessionController.setActiveAcademicSession
 )
+router.patch('/:id', authorize('ADMIN'), AcademicSessionController.updateAcademicSession)
 router.delete('/:id', authorize('ADMIN'), AcademicSessionController.deleteAcademicSession)
+
 
 export default router

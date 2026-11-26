@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -42,7 +37,10 @@ export function FeePaymentDialog({
   const mutation = useMutation({
     mutationFn: (data: AddFeePaymentParams) => addFeePayment(data),
     onError: (error: unknown) => {
-      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string }
+      const err = error as {
+        response?: { data?: { error?: { message?: string } } }
+        message?: string
+      }
       alert(err.response?.data?.error?.message || err.message || 'Payment failed')
     },
     onSuccess: () => {
@@ -120,7 +118,7 @@ export function FeePaymentDialog({
             </Select>
           </div>
 
-          {(paymentMode !== 'CASH') && (
+          {paymentMode !== 'CASH' && (
             <div className="space-y-2">
               <Label htmlFor="transactionId">Transaction / Reference ID</Label>
               <Input
@@ -134,19 +132,11 @@ export function FeePaymentDialog({
 
           <div className="space-y-2">
             <Label htmlFor="remarks">Remarks (Optional)</Label>
-            <Input
-              id="remarks"
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-            />
+            <Input id="remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={mutation.isPending}>

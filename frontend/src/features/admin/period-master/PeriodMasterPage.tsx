@@ -119,7 +119,6 @@ export function PeriodMasterPage() {
     return () => clearTimeout(t)
   }, [selectedSessionId])
 
-
   const mutation = useMutation({
     mutationFn: (data: FormValues) =>
       setPeriodMasters({
@@ -140,7 +139,10 @@ export function PeriodMasterPage() {
       setTimeout(() => setSaveSuccess(false), 4000)
     },
     onError: (error: unknown) => {
-      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string }
+      const err = error as {
+        response?: { data?: { error?: { message?: string } } }
+        message?: string
+      }
       alert(err.response?.data?.error?.message || err.message || 'Operation failed')
     },
   })
@@ -285,9 +287,7 @@ export function PeriodMasterPage() {
                             type="text"
                             placeholder="09:15 AM"
                             {...register(`periods.${index}.endTime` as const)}
-                            className={
-                              errors.periods?.[index]?.endTime ? 'border-destructive' : ''
-                            }
+                            className={errors.periods?.[index]?.endTime ? 'border-destructive' : ''}
                           />
                           {errors.periods?.[index]?.endTime && (
                             <p className="text-xs text-destructive">

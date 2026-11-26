@@ -39,7 +39,8 @@ export function SettingsPage() {
             School Settings
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage school profile, branding, academic configuration, commercial subscription, and security.
+            Manage school profile, branding, academic configuration, commercial subscription, and
+            security.
           </p>
         </div>
       </div>

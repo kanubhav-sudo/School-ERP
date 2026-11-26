@@ -20,7 +20,12 @@ export async function resolveTenantMiddleware(
   try {
     // 1. Skip tenant resolution for Super Admin routes.
     // Platform routes and super-admin auth routes bypass the tenant check.
-    const PLATFORM_PATHS = ['/super-admin', '/platform', '/auth/super-admin', '/documents/public/verify']
+    const PLATFORM_PATHS = [
+      '/super-admin',
+      '/platform',
+      '/auth/super-admin',
+      '/documents/public/verify',
+    ]
     const shouldSkip = PLATFORM_PATHS.some(
       (prefix) => req.path.startsWith(prefix) || req.originalUrl.includes(prefix)
     )
@@ -32,9 +37,10 @@ export async function resolveTenantMiddleware(
     let slug = req.headers['x-school-slug'] as string
 
     if (!slug) {
-      const host = req.headers.host || ''
+      const host = (req.headers.host || '').split(':')[0]
+      const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(host) || host === 'localhost' || host.includes(':')
       const parts = host.split('.')
-      if (parts.length >= 3 || (parts.length === 2 && parts[1].includes('localhost'))) {
+      if (!isIp && (parts.length >= 3 || (parts.length === 2 && parts[1].includes('localhost')))) {
         slug = parts[0]
       }
     }

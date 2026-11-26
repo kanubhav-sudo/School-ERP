@@ -206,7 +206,9 @@ export class DataProviderService {
 
     if (attendanceRecords && attendanceRecords.length > 0) {
       const totalDays = attendanceRecords.length
-      const presentDays = attendanceRecords.filter((r: any) => r.status === 'PRESENT' || r.status === 'LATE').length
+      const presentDays = attendanceRecords.filter(
+        (r: any) => r.status === 'PRESENT' || r.status === 'LATE'
+      ).length
       attendanceData = { totalDays, presentDays }
     } else {
       // Default placeholder attendance if records not initialized

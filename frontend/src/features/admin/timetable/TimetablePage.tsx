@@ -49,7 +49,7 @@ export function TimetablePage() {
     queryKey: ['sessions'],
     queryFn: fetchSessions,
   })
-  
+
   const activeSessionId = sessionsData?.find((s) => s.isActive)?.id
 
   const { data: periodMasters, isLoading: periodsLoading } = useQuery({
@@ -66,7 +66,6 @@ export function TimetablePage() {
       queryClient.invalidateQueries({ queryKey: ['timetable'] })
     },
   })
-
 
   const handleEdit = (entry: TimetableEntry) => {
     setEditingEntry(entry)
@@ -148,11 +147,16 @@ export function TimetablePage() {
 
       {/* Period Master warning */}
       {activeSessionId && (periodMasters ?? []).length === 0 && !periodsLoading && (
-        <Alert variant="destructive" className="border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-700">
+        <Alert
+          variant="destructive"
+          className="border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-700"
+        >
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             No periods configured for the active session.{' '}
-            <a href="/admin/period-master" className="underline font-medium">Configure Period Master</a>{' '}
+            <a href="/admin/period-master" className="underline font-medium">
+              Configure Period Master
+            </a>{' '}
             before creating timetable entries.
           </AlertDescription>
         </Alert>

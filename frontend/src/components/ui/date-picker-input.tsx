@@ -10,13 +10,7 @@
  * - Works in Admin, Teacher, and Student portals wherever dates are used
  */
 
-import {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  type KeyboardEvent,
-} from 'react'
+import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { DayPicker } from 'react-day-picker'
 import { format, parse, isValid } from 'date-fns'
@@ -64,14 +58,10 @@ export function DatePickerInput({
   const popupRef = useRef<HTMLDivElement>(null)
 
   // Parse string value → Date
-  const parsedDate = value
-    ? parse(value, 'yyyy-MM-dd', new Date())
-    : undefined
+  const parsedDate = value ? parse(value, 'yyyy-MM-dd', new Date()) : undefined
   const selectedDate = parsedDate && isValid(parsedDate) ? parsedDate : undefined
 
-  const displayValue = selectedDate
-    ? format(selectedDate, 'dd MMM yyyy')
-    : ''
+  const displayValue = selectedDate ? format(selectedDate, 'dd MMM yyyy') : ''
 
   const today = new Date()
   const resolvedFromYear = fromYear ?? today.getFullYear() - 5
@@ -139,10 +129,7 @@ export function DatePickerInput({
     if (!open) return
     const handler = (e: MouseEvent) => {
       const target = e.target as Node
-      if (
-        triggerRef.current?.contains(target) ||
-        popupRef.current?.contains(target)
-      ) {
+      if (triggerRef.current?.contains(target) || popupRef.current?.contains(target)) {
         return
       }
       closePicker()
@@ -195,7 +182,8 @@ export function DatePickerInput({
       </button>
 
       {/* Portal popup */}
-      {open && portalRoot &&
+      {open &&
+        portalRoot &&
         createPortal(
           <div
             ref={popupRef}
@@ -224,7 +212,8 @@ export function DatePickerInput({
                 caption: 'flex justify-center pt-1 relative items-center',
                 caption_label: 'text-sm font-medium hidden',
                 caption_dropdowns: 'flex gap-2 items-center',
-                dropdown: 'h-8 rounded-md border border-input bg-background px-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer',
+                dropdown:
+                  'h-8 rounded-md border border-input bg-background px-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer',
                 dropdown_month: '',
                 dropdown_year: '',
                 nav: 'space-x-1 flex items-center',
@@ -234,8 +223,7 @@ export function DatePickerInput({
                 nav_button_next: 'absolute right-1',
                 table: 'w-full border-collapse space-y-1',
                 head_row: 'flex',
-                head_cell:
-                  'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]',
+                head_cell: 'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]',
                 row: 'flex w-full mt-2',
                 cell: 'h-9 w-9 text-center text-sm p-0 relative',
                 day: 'h-9 w-9 p-0 font-normal rounded-md hover:bg-accent hover:text-accent-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring aria-selected:opacity-100',

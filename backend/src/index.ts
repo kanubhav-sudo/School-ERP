@@ -27,7 +27,14 @@ app.use(requestLoggerMiddleware)
 app.use(helmet())
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl) or any origin in development / local LAN
+      if (!origin || env.NODE_ENV === 'development' || origin === env.CORS_ORIGIN) {
+        callback(null, true)
+      } else {
+        callback(null, true)
+      }
+    },
     credentials: true,
   })
 )
@@ -52,6 +59,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 app.use(errorHandler)
 
 // Start Server
-app.listen(env.PORT, () => {
-  logger.info(`🚀 [${env.NODE_ENV}] Server running on port ${env.PORT}`)
+app.listen(env.PORT, '0.0.0.0', () => {
+  logger.info(`🚀 [${env.NODE_ENV}] Server running on port ${env.PORT} (0.0.0.0)`)
 })
+

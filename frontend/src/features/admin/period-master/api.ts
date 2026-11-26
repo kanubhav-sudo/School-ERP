@@ -24,7 +24,9 @@ export async function fetchPeriodMasters(sessionId: string): Promise<PeriodMaste
   return data.data
 }
 
-export async function setPeriodMasters(payload: SetPeriodMasterPayload): Promise<PeriodMasterEntry[]> {
+export async function setPeriodMasters(
+  payload: SetPeriodMasterPayload
+): Promise<PeriodMasterEntry[]> {
   const { data } = await api.post('/period-master', payload)
   return data.data
 }

@@ -11,12 +11,7 @@
  * @module context/TenantContext
  */
 
-import {
-  createContext,
-  useContext,
-  useMemo,
-  type ReactNode,
-} from 'react'
+import { createContext, useContext, useMemo, type ReactNode } from 'react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -30,11 +25,12 @@ export interface TenantContextValue {
 function resolveSchoolSlug(): string {
   const hostname = window.location.hostname
 
+  // Check if hostname is an IP address (IPv4/IPv6) or localhost
+  const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname === 'localhost' || hostname.includes(':')
+
   // Detect subdomain (e.g. "myschool" from "myschool.cloudems.com" or "myschool.localhost")
   const parts = hostname.split('.')
-  const isSubdomain =
-    parts.length >= 3 ||
-    (parts.length === 2 && parts[1].startsWith('localhost'))
+  const isSubdomain = !isIp && (parts.length >= 3 || (parts.length === 2 && parts[1].startsWith('localhost')))
 
   if (isSubdomain) {
     const subdomain = parts[0]
@@ -59,11 +55,7 @@ const TenantContext = createContext<TenantContextValue | null>(null)
 export function TenantProvider({ children }: { children: ReactNode }) {
   const schoolSlug = useMemo(() => resolveSchoolSlug(), [])
 
-  return (
-    <TenantContext.Provider value={{ schoolSlug }}>
-      {children}
-    </TenantContext.Provider>
-  )
+  return <TenantContext.Provider value={{ schoolSlug }}>{children}</TenantContext.Provider>
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

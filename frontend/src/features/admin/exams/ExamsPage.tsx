@@ -27,7 +27,6 @@ import {
 } from '@/components/ui/select'
 import { DatePickerInput } from '@/components/ui/date-picker-input'
 import { Calendar, Eye, Plus, Trash2, Save, Settings, FileCheck } from 'lucide-react'
-import { AdmitCardModal } from './components/AdmitCardModal'
 import { ResultCardModal } from './components/ResultCardModal'
 import { ExamTemplateModal } from './components/ExamTemplateModal'
 import { AdmitCardRenderer } from '../../document-engine/components/AdmitCardRenderer'
@@ -72,7 +71,7 @@ export function ExamsPage() {
   // Filters
   const [selectedSessionId, setSelectedSessionId] = useState<string>('')
   const [selectedClassId, setSelectedClassId] = useState<string>('')
-  const [examName, setExamName] = useState<string>('Mid Term')
+  const [examName, setExamName] = useState<string>('Mid-Term Examination')
 
   // Schedule Rows State
   const [scheduleRows, setScheduleRows] = useState<
@@ -89,11 +88,6 @@ export function ExamsPage() {
   const [templateModalOpen, setTemplateModalOpen] = useState(false)
   const templateType: 'ADMIT_CARD' | 'RESULT' =
     mainModule === 'ADMIT_CARD' ? 'ADMIT_CARD' : 'RESULT'
-
-  const [admitCardModalOpen, setAdmitCardModalOpen] = useState(false)
-  const [selectedAdmitCardStudent, setSelectedAdmitCardStudent] = useState<ExamStudentItem | null>(
-    null
-  )
 
   const [resultCardModalOpen, setResultCardModalOpen] = useState(false)
   const [selectedResultStudent, setSelectedResultStudent] = useState<ExamStudentItem | null>(null)
@@ -191,11 +185,6 @@ export function ExamsPage() {
     staleTime: 0,
   })
 
-  // Admit Card Template Query
-  const { data: admitCardTemplate } = useQuery({
-    queryKey: ['exam-template', 'ADMIT_CARD'],
-    queryFn: () => fetchExamTemplate('ADMIT_CARD'),
-  })
 
   // Result Template Query
   const { data: resultTemplate } = useQuery({
@@ -265,9 +254,7 @@ export function ExamsPage() {
   // Handle open student admit card preview — Document Engine powered
   const handleViewAdmitCard = async (student: ExamStudentItem) => {
     if (!currentExam?.id) {
-      // Fallback to legacy modal if no exam exists
-      setSelectedAdmitCardStudent(student)
-      setAdmitCardModalOpen(true)
+      alert('No examination scheduled for the selected class.')
       return
     }
     setEngineAdmitOpen(true)
@@ -279,11 +266,10 @@ export function ExamsPage() {
         examId: currentExam.id,
       })
       setEngineAdmitPayload(payload)
-    } catch {
-      // Fallback to legacy modal on error
+    } catch (err: unknown) {
       setEngineAdmitOpen(false)
-      setSelectedAdmitCardStudent(student)
-      setAdmitCardModalOpen(true)
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      alert('Failed to load Document Engine Admit Card: ' + message)
     } finally {
       setEngineAdmitLoading(false)
     }
@@ -338,9 +324,15 @@ export function ExamsPage() {
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Academic Session
           </Label>
-          <Select value={selectedSessionId} onValueChange={(v) => setSelectedSessionId(v ?? '')}>
+          <Select value={effectiveSessionId} onValueChange={(v) => setSelectedSessionId(v ?? '')}>
             <SelectTrigger className="h-10">
-              <SelectValue placeholder="Select Session" />
+              <SelectValue placeholder="Select Session">
+                {sessions.find((s) => s.id === effectiveSessionId)
+                  ? `${sessions.find((s) => s.id === effectiveSessionId)?.name}${
+                      sessions.find((s) => s.id === effectiveSessionId)?.isActive ? ' (Active)' : ''
+                    }`
+                  : undefined}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {sessions.map((s) => (
@@ -356,9 +348,11 @@ export function ExamsPage() {
           <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Class (Includes ALL Students Across All Sections)
           </Label>
-          <Select value={selectedClassId} onValueChange={(v) => setSelectedClassId(v ?? '')}>
+          <Select value={effectiveClassId} onValueChange={(v) => setSelectedClassId(v ?? '')}>
             <SelectTrigger className="h-10">
-              <SelectValue placeholder="Select Class" />
+              <SelectValue placeholder="Select Class">
+                {classes.find((c) => c.id === effectiveClassId)?.name}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {classes.map((c) => (
@@ -807,32 +801,6 @@ export function ExamsPage() {
         </div>
       )}
 
-      {/* Legacy Fallback Admit Card Modal (kept for backward compat) */}
-      {selectedAdmitCardStudent && (
-        <AdmitCardModal
-          open={admitCardModalOpen}
-          onOpenChange={setAdmitCardModalOpen}
-          student={
-            selectedAdmitCardStudent as unknown as {
-              name: string
-              admissionNumber: string
-              rollNumber?: string
-              className: string
-              sectionName?: string
-              sessionName?: string
-            }
-          }
-          examName={examName}
-          timetable={scheduleRows.map((r) => ({
-            date: r.examDate,
-            day: getDayFromDateString(r.examDate),
-            time: r.startTime,
-            subject: subjects.find((s) => s.id === r.subjectId)?.name || 'Subject',
-            room: r.room,
-          }))}
-          template={admitCardTemplate}
-        />
-      )}
 
       {/* Legacy Fallback Result Card Modal (kept for backward compat) */}
       {selectedResultStudent && selectedResultMarksData && (

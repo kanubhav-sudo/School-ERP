@@ -54,7 +54,6 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config
 })
 
-
 // Response interceptor: handle 401 by refreshing the token
 let isRefreshing = false
 let failedQueue: Array<{

@@ -13,7 +13,10 @@ import * as R from '../core/response'
 import { SubscriptionService } from '../services/subscription.service'
 import { FeatureResolutionService } from '../services/feature-resolution.service'
 import { UpgradeRequestService } from '../services/upgrade-request.service'
-import { upgradeRequestSchema, updateSubscriptionSchema } from '../validators/subscription.validator'
+import {
+  upgradeRequestSchema,
+  updateSubscriptionSchema,
+} from '../validators/subscription.validator'
 
 function parseZodError(err: ZodError) {
   return err.issues.map((e) => ({ field: e.path.join('.'), message: e.message }))
@@ -23,7 +26,11 @@ function parseZodError(err: ZodError) {
  * GET /api/v1/subscription
  * Get current school's subscription details, feature catalog, and pending upgrade request state.
  */
-export async function getSubscriptionController(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getSubscriptionController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const schoolId = req.school?.id || req.user?.schoolId
     if (!schoolId) {
@@ -42,7 +49,11 @@ export async function getSubscriptionController(req: Request, res: Response, nex
  * GET /api/v1/subscription/features
  * Get resolved feature map for current school tenant.
  */
-export async function getSchoolFeaturesController(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getSchoolFeaturesController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const schoolId = req.school?.id || req.user?.schoolId
     if (!schoolId) {
@@ -61,7 +72,11 @@ export async function getSchoolFeaturesController(req: Request, res: Response, n
  * POST /api/v1/subscription/upgrade-request
  * Submit a request to upgrade to Premium plan (no payment processing).
  */
-export async function requestUpgradeController(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function requestUpgradeController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const schoolId = req.school?.id || req.user?.schoolId
     if (!schoolId) {
@@ -95,7 +110,11 @@ export async function requestUpgradeController(req: Request, res: Response, next
 /**
  * PUT /api/v1/subscription (Admin / Super Admin update pricing/plan per school)
  */
-export async function updateSubscriptionController(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateSubscriptionController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   try {
     const schoolId = req.school?.id || req.user?.schoolId
     if (!schoolId) {

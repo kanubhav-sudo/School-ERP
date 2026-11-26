@@ -38,7 +38,9 @@ export function SecurityTab() {
               </div>
               <div>
                 <p className="font-semibold">Security Audit Log</p>
-                <p className="text-xs text-muted-foreground">Review login history and security events</p>
+                <p className="text-xs text-muted-foreground">
+                  Review login history and security events
+                </p>
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => navigate('/admin/accounts')}>
@@ -48,7 +50,10 @@ export function SecurityTab() {
 
           <div className="flex items-center gap-3 pt-2 text-xs text-muted-foreground">
             <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
-            <span>Multi-factor authentication (MFA) enforcement can be enabled via CloudEMS platform settings.</span>
+            <span>
+              Multi-factor authentication (MFA) enforcement can be enabled via CloudEMS platform
+              settings.
+            </span>
           </div>
         </CardContent>
       </Card>

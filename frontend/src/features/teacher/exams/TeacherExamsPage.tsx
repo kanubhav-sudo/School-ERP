@@ -174,15 +174,21 @@ export function TeacherExamsPage() {
 
   // Fetch Admit Card Students (filtered by section if selected)
   const { data: rawAdmitCardStudents = [], refetch: refetchAdmitCardStudents } = useQuery({
-    queryKey: ['teacher-admit-card-students', effectiveSessionId, effectiveClassId, currentExam?.id],
-    queryFn: () =>
-      fetchAdmitCardStudents(effectiveSessionId, effectiveClassId, currentExam?.id),
+    queryKey: [
+      'teacher-admit-card-students',
+      effectiveSessionId,
+      effectiveClassId,
+      currentExam?.id,
+    ],
+    queryFn: () => fetchAdmitCardStudents(effectiveSessionId, effectiveClassId, currentExam?.id),
     enabled: !!effectiveSessionId && !!effectiveClassId,
   })
 
   const admitCardStudents = useMemo(() => {
     if (!effectiveSectionId) return rawAdmitCardStudents
-    return rawAdmitCardStudents.filter((st: any) => st.sectionId === effectiveSectionId || !st.sectionId)
+    return rawAdmitCardStudents.filter(
+      (st: any) => st.sectionId === effectiveSectionId || !st.sectionId
+    )
   }, [rawAdmitCardStudents, effectiveSectionId])
 
   // Fetch Subject Marks
@@ -190,7 +196,11 @@ export function TeacherExamsPage() {
   const { data: subjectMarksData, refetch: refetchSubjectMarks } = useQuery({
     queryKey: ['subject-marks', currentExam?.id, effectiveSubjectId],
     queryFn: () => fetchSubjectMarks(currentExam!.id, effectiveSubjectId),
-    enabled: !!currentExam?.id && !!effectiveSubjectId && mainModule === 'RESULT' && resultTab === 'SUBJECTS',
+    enabled:
+      !!currentExam?.id &&
+      !!effectiveSubjectId &&
+      mainModule === 'RESULT' &&
+      resultTab === 'SUBJECTS',
   })
 
   const [prevSubjectMarksData, setPrevSubjectMarksData] = useState(subjectMarksData)
@@ -230,12 +240,16 @@ export function TeacherExamsPage() {
   // Save Single Student Marks Mutation
   const saveStudentMarksMutation = useMutation({
     mutationFn: () =>
-      saveStudentMarks(currentExam!.id, selectedStudentId, singleStudentMarks.subjects.map((s: any) => ({
-        subjectId: s.subjectId,
-        maxMarks: Number(s.maxMarks) || 100,
-        obtainedMarks: Number(s.obtainedMarks) || 0,
-        remarks: s.remarks,
-      }))),
+      saveStudentMarks(
+        currentExam!.id,
+        selectedStudentId,
+        singleStudentMarks.subjects.map((s: any) => ({
+          subjectId: s.subjectId,
+          maxMarks: Number(s.maxMarks) || 100,
+          obtainedMarks: Number(s.obtainedMarks) || 0,
+          remarks: s.remarks,
+        }))
+      ),
     onSuccess: () => {
       alert('Student marks updated successfully!')
       handleOpenStudentMarks(selectedStudentId)
@@ -256,7 +270,8 @@ export function TeacherExamsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Exams &amp; Marks Entry</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Teacher evaluation interface: View timetables, recommend admit cards, and enter subject marks.
+          Teacher evaluation interface: View timetables, recommend admit cards, and enter subject
+          marks.
         </p>
       </div>
 
@@ -447,7 +462,8 @@ export function TeacherExamsPage() {
           {admitCardTab === 'STUDENTS' && (
             <div className="space-y-4">
               <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300 rounded-lg text-xs">
-                Teacher recommendation can always be overridden by Admin. Admin remains the final releasing authority.
+                Teacher recommendation can always be overridden by Admin. Admin remains the final
+                releasing authority.
               </div>
 
               <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
@@ -471,7 +487,9 @@ export function TeacherExamsPage() {
                     ) : (
                       admitCardStudents.map((st: any) => (
                         <tr key={st.studentId} className="hover:bg-muted/40 transition-colors">
-                          <td className="px-4 py-3 font-semibold">{st.firstName} {st.lastName}</td>
+                          <td className="px-4 py-3 font-semibold">
+                            {st.firstName} {st.lastName}
+                          </td>
                           <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                             {st.admissionNumber}
                           </td>
@@ -506,9 +524,7 @@ export function TeacherExamsPage() {
                               <option value="HOLD">Hold</option>
                             </select>
                           </td>
-                          <td className="px-4 py-3 text-xs text-muted-foreground">
-                            {st.remark}
-                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground">{st.remark}</td>
                         </tr>
                       ))
                     )}
@@ -674,7 +690,9 @@ export function TeacherExamsPage() {
               {/* Student Selector */}
               {!singleStudentMarks && (
                 <div className="p-4 bg-muted/40 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground mb-3 font-semibold">Select a student to view / edit their marks:</p>
+                  <p className="text-xs text-muted-foreground mb-3 font-semibold">
+                    Select a student to view / edit their marks:
+                  </p>
                   <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
                     <table className="w-full text-sm text-left">
                       <thead className="text-xs text-muted-foreground uppercase bg-muted/60 border-b">
@@ -694,10 +712,18 @@ export function TeacherExamsPage() {
                         ) : (
                           admitCardStudents.map((st: any) => (
                             <tr key={st.studentId} className="hover:bg-muted/40">
-                              <td className="px-4 py-3 font-semibold">{st.firstName} {st.lastName}</td>
-                              <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{st.admissionNumber}</td>
+                              <td className="px-4 py-3 font-semibold">
+                                {st.firstName} {st.lastName}
+                              </td>
+                              <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                                {st.admissionNumber}
+                              </td>
                               <td className="px-4 py-3 text-right">
-                                <Button size="sm" variant="outline" onClick={() => handleOpenStudentMarks(st.studentId)}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenStudentMarks(st.studentId)}
+                                >
                                   <Edit3 className="h-3.5 w-3.5 mr-1" /> Edit Marks
                                 </Button>
                               </td>
@@ -714,9 +740,12 @@ export function TeacherExamsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between bg-card p-4 rounded-xl border border-border shadow-sm">
                     <div>
-                      <h3 className="font-bold text-lg">{singleStudentMarks.student.firstName} {singleStudentMarks.student.lastName}</h3>
+                      <h3 className="font-bold text-lg">
+                        {singleStudentMarks.student.firstName} {singleStudentMarks.student.lastName}
+                      </h3>
                       <p className="text-xs text-muted-foreground">
-                        Admission: {singleStudentMarks.student.admissionNumber} · Class: {singleStudentMarks.student.className}
+                        Admission: {singleStudentMarks.student.admissionNumber} · Class:{' '}
+                        {singleStudentMarks.student.className}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
@@ -782,7 +811,10 @@ export function TeacherExamsPage() {
                               />
                             </td>
                             <td className="px-4 py-3 text-center font-mono font-bold text-primary">
-                              {sub.maxMarks > 0 ? Math.round((sub.obtainedMarks / sub.maxMarks) * 1000) / 10 : 0}%
+                              {sub.maxMarks > 0
+                                ? Math.round((sub.obtainedMarks / sub.maxMarks) * 1000) / 10
+                                : 0}
+                              %
                             </td>
                           </tr>
                         ))}

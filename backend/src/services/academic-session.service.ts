@@ -65,8 +65,10 @@ export async function getActiveAcademicSession(db: any) {
 // ─── Create ───────────────────────────────────────────────────
 
 export async function createAcademicSession(db: any, data: CreateAcademicSessionInput) {
-  // Check for duplicate name
-  const existing = await db.academicSession.findFirst({ where: { name: data.name } })
+  // Check for duplicate name (case-insensitive)
+  const existing = await db.academicSession.findFirst({
+    where: { name: { equals: data.name, mode: 'insensitive' } },
+  })
   if (existing) throw new ConflictError(`Academic session "${data.name}" already exists`)
 
   // If setting as active, deactivate all others first
@@ -74,14 +76,21 @@ export async function createAcademicSession(db: any, data: CreateAcademicSession
     await db.academicSession.updateMany({ data: { isActive: false } })
   }
 
-  return db.academicSession.create({
-    data: {
-      name: data.name,
-      startDate: new Date(data.startDate),
-      endDate: new Date(data.endDate),
-      isActive: data.isActive ?? false,
-    },
-  })
+  try {
+    return await db.academicSession.create({
+      data: {
+        name: data.name,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
+        isActive: data.isActive ?? false,
+      },
+    })
+  } catch (err: any) {
+    if (err?.code === 'P2002') {
+      throw new ConflictError(`Academic session "${data.name}" already exists`)
+    }
+    throw err
+  }
 }
 
 // ─── Update ───────────────────────────────────────────────────
@@ -90,10 +99,10 @@ export async function updateAcademicSession(db: any, id: string, data: UpdateAca
   // Ensure the session exists
   await getAcademicSessionById(db, id)
 
-  // Check for duplicate name (exclude the current session)
+  // Check for duplicate name (case-insensitive, exclude current session)
   if (data.name) {
     const duplicate = await db.academicSession.findFirst({
-      where: { name: data.name, NOT: { id } },
+      where: { name: { equals: data.name, mode: 'insensitive' }, NOT: { id } },
     })
     if (duplicate) throw new ConflictError(`Academic session "${data.name}" already exists`)
   }
@@ -106,15 +115,22 @@ export async function updateAcademicSession(db: any, id: string, data: UpdateAca
     })
   }
 
-  return db.academicSession.update({
-    where: { id },
-    data: {
-      ...(data.name !== undefined && { name: data.name }),
-      ...(data.startDate !== undefined && { startDate: new Date(data.startDate) }),
-      ...(data.endDate !== undefined && { endDate: new Date(data.endDate) }),
-      ...(data.isActive !== undefined && { isActive: data.isActive }),
-    },
-  })
+  try {
+    return await db.academicSession.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.startDate !== undefined && { startDate: new Date(data.startDate) }),
+        ...(data.endDate !== undefined && { endDate: new Date(data.endDate) }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+      },
+    })
+  } catch (err: any) {
+    if (err?.code === 'P2002') {
+      throw new ConflictError(`Academic session "${data.name}" already exists`)
+    }
+    throw err
+  }
 }
 
 // ─── Set Active ───────────────────────────────────────────────

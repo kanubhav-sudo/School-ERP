@@ -123,7 +123,7 @@ export function FeeRecordsPage() {
                 <th className="px-4 py-3 font-semibold">Paid</th>
                 <th className="px-4 py-3 font-semibold">Current Pending</th>
                 <th className="px-4 py-3 font-semibold">Yearly Pending</th>
-                <th className="px-4 py-3 font-semibold">Balance</th>
+                <th className="px-4 py-3 font-semibold">Advance Bal</th>
                 <th className="px-4 py-3 font-semibold">Pending From</th>
                 <th className="px-4 py-3 font-semibold text-center">Monthly Timeline</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>

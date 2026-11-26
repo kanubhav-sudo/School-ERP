@@ -32,11 +32,20 @@ function StatusBadge({ status, dueDate }: { status: string; dueDate: string }) {
   const overdue = isPast(new Date(dueDate)) && status === 'ASSIGNED'
   if (overdue) return <Badge variant="destructive">Overdue</Badge>
   switch (status) {
-    case 'ASSIGNED': return <Badge variant="outline" className="text-yellow-600 border-yellow-500">Pending</Badge>
-    case 'SUBMITTED': return <Badge className="bg-blue-500 hover:bg-blue-600">Submitted</Badge>
-    case 'GRADED': return <Badge className="bg-green-500 hover:bg-green-600">Graded</Badge>
-    case 'LATE': return <Badge variant="destructive">Late</Badge>
-    default: return <Badge variant="secondary">{status}</Badge>
+    case 'ASSIGNED':
+      return (
+        <Badge variant="outline" className="text-yellow-600 border-yellow-500">
+          Pending
+        </Badge>
+      )
+    case 'SUBMITTED':
+      return <Badge className="bg-blue-500 hover:bg-blue-600">Submitted</Badge>
+    case 'GRADED':
+      return <Badge className="bg-green-500 hover:bg-green-600">Graded</Badge>
+    case 'LATE':
+      return <Badge variant="destructive">Late</Badge>
+    default:
+      return <Badge variant="secondary">{status}</Badge>
   }
 }
 
@@ -59,7 +68,7 @@ export function StudentHomeworkPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student-homework'] })
       closeSubmitForm()
-    }
+    },
   })
 
   function closeSubmitForm() {
@@ -81,14 +90,20 @@ export function StudentHomeworkPage() {
     )
   }
 
-  const pending = data.filter(h => h.submissionStatus === 'ASSIGNED' || h.submissionStatus === 'LATE')
-  const submitted = data.filter(h => h.submissionStatus === 'SUBMITTED' || h.submissionStatus === 'GRADED')
+  const pending = data.filter(
+    (h) => h.submissionStatus === 'ASSIGNED' || h.submissionStatus === 'LATE'
+  )
+  const submitted = data.filter(
+    (h) => h.submissionStatus === 'SUBMITTED' || h.submissionStatus === 'GRADED'
+  )
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Homework & Assignments</h1>
-        <p className="text-sm text-muted-foreground mt-1">View all assignments for your class and section.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          View all assignments for your class and section.
+        </p>
       </div>
 
       {/* Summary */}
@@ -147,7 +162,8 @@ export function StudentHomeworkPage() {
                 <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    Due: <span className={`font-medium ml-0.5 ${isOverdue ? 'text-red-500' : ''}`}>
+                    Due:{' '}
+                    <span className={`font-medium ml-0.5 ${isOverdue ? 'text-red-500' : ''}`}>
                       {format(new Date(hw.dueDate), 'dd MMM yyyy')}
                     </span>
                   </span>
@@ -187,15 +203,13 @@ export function StudentHomeworkPage() {
                     Teacher remarks: {hw.submissionRemarks}
                   </div>
                 )}
-                
+
                 {/* Submit Button */}
-                {(!hw.submittedAt || hw.submissionStatus === 'ASSIGNED' || hw.submissionStatus === 'LATE') && (
+                {(!hw.submittedAt ||
+                  hw.submissionStatus === 'ASSIGNED' ||
+                  hw.submissionStatus === 'LATE') && (
                   <div className="pt-2 border-t mt-2">
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => setSubmittingHw(hw)}
-                    >
+                    <Button size="sm" className="w-full" onClick={() => setSubmittingHw(hw)}>
                       {hw.submittedAt ? 'Resubmit Solution' : 'Submit Solution'}
                     </Button>
                   </div>
@@ -230,7 +244,9 @@ export function StudentHomeworkPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeSubmitForm}>Cancel</Button>
+            <Button variant="outline" onClick={closeSubmitForm}>
+              Cancel
+            </Button>
             <Button
               onClick={handleSubmitSolution}
               disabled={!solutionFile || submitMutation.isPending}

@@ -1,5 +1,9 @@
 import { apiClient } from '@/lib/axios'
-import type { SubscriptionPayload, ResolvedFeatures, PendingUpgradeRequest } from './subscription.types'
+import type {
+  SubscriptionPayload,
+  ResolvedFeatures,
+  PendingUpgradeRequest,
+} from './subscription.types'
 
 export async function fetchSubscription(): Promise<SubscriptionPayload> {
   const res = await apiClient.get('/subscription')

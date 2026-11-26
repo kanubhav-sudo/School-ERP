@@ -58,6 +58,22 @@ export function SessionForm({ session, onClose }: Props) {
     },
   })
 
+  // Extract a user-friendly error message from the server response or fallback to error.message
+  const errorMessage = mutation.isError
+    ? (() => {
+        const err = mutation.error as {
+          response?: { data?: { error?: { message?: string }; message?: string } }
+          message?: string
+        }
+        return (
+          err?.response?.data?.error?.message ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'An unexpected error occurred'
+        )
+      })()
+    : null
+
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
@@ -111,18 +127,22 @@ export function SessionForm({ session, onClose }: Props) {
             </div>
           </div>
 
-          {mutation.isError && (
-            <p className="text-sm text-red-500">
-              {mutation.error instanceof Error ? mutation.error.message : 'An error occurred'}
-            </p>
+          {errorMessage && (
+            <p className="text-sm text-red-500">{errorMessage}</p>
           )}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={mutation.isPending}>
               Cancel
             </Button>
             <Button type="submit" disabled={mutation.isPending}>
-              {isEditing ? 'Save Changes' : 'Create Session'}
+              {mutation.isPending
+                ? isEditing
+                  ? 'Saving...'
+                  : 'Creating...'
+                : isEditing
+                  ? 'Save Changes'
+                  : 'Create Session'}
             </Button>
           </div>
         </form>

@@ -4,20 +4,23 @@ import { studentPortalApi } from '../api/student-portal.api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import {
-  Lock,
-  Award,
-  Printer,
-  CheckCircle2,
-} from 'lucide-react'
-import { AdmitCardModal } from '@/features/admin/exams/components/AdmitCardModal'
-import { ResultCardModal } from '@/features/admin/exams/components/ResultCardModal'
+import { Lock, Award, Printer, CheckCircle2 } from 'lucide-react'
+import { AdmitCardRenderer } from '@/features/document-engine/components/AdmitCardRenderer'
+import { ReportCardRenderer } from '@/features/document-engine/components/ReportCardRenderer'
+import { documentEngineApi } from '@/features/document-engine/document-engine.api'
+import type { CompiledDocumentPayload } from '@/features/document-engine/document-engine.types'
 
 export function StudentExamsPage() {
   const [activeTab, setActiveTab] = useState<'ADMIT_CARD' | 'RESULT'>('ADMIT_CARD')
 
-  const [admitCardModalOpen, setAdmitCardModalOpen] = useState(false)
-  const [resultCardModalOpen, setResultCardModalOpen] = useState(false)
+  // Document Engine Powered Modal States
+  const [engineAdmitOpen, setEngineAdmitOpen] = useState(false)
+  const [engineAdmitPayload, setEngineAdmitPayload] = useState<CompiledDocumentPayload | null>(null)
+  const [engineAdmitLoading, setEngineAdmitLoading] = useState(false)
+
+  const [engineResultOpen, setEngineResultOpen] = useState(false)
+  const [engineResultPayload, setEngineResultPayload] = useState<CompiledDocumentPayload | null>(null)
+  const [engineResultLoading, setEngineResultLoading] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['student-exams'],
@@ -25,7 +28,6 @@ export function StudentExamsPage() {
     staleTime: 0,
     refetchOnWindowFocus: true,
   })
-
 
   if (isLoading) {
     return (
@@ -43,6 +45,42 @@ export function StudentExamsPage() {
   const latestAdmitCard = admitCards[0] || null
   const latestReportCard = reportCards[0] || null
   const currentExam = exams[0] || null
+
+  const handleOpenAdmitCard = async () => {
+    setEngineAdmitOpen(true)
+    setEngineAdmitLoading(true)
+    setEngineAdmitPayload(null)
+    try {
+      const payload = await documentEngineApi.getLivePreview('ADMIT_CARD', {
+        examId: currentExam?.id,
+      })
+      setEngineAdmitPayload(payload)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch Admit Card'
+      alert('Error compiling Admit Card: ' + message)
+      setEngineAdmitOpen(false)
+    } finally {
+      setEngineAdmitLoading(false)
+    }
+  }
+
+  const handleOpenResultCard = async () => {
+    setEngineResultOpen(true)
+    setEngineResultLoading(true)
+    setEngineResultPayload(null)
+    try {
+      const payload = await documentEngineApi.getLivePreview('REPORT_CARD', {
+        examId: latestReportCard?.examId || currentExam?.id,
+      })
+      setEngineResultPayload(payload)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch Report Card'
+      alert('Error compiling Report Card: ' + message)
+      setEngineResultOpen(false)
+    } finally {
+      setEngineResultLoading(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -94,7 +132,8 @@ export function StudentExamsPage() {
                     : 'Held By Administration / School Verification Pending')}
               </p>
               <p className="text-xs text-muted-foreground pt-1">
-                If fees are pending, please clear dues with administration to download your Admit Card.
+                If fees are pending, please clear dues with administration to download your Admit
+                Card.
               </p>
             </div>
           ) : (
@@ -109,7 +148,7 @@ export function StudentExamsPage() {
                     Your official examination admit card has been released and verified.
                   </p>
                 </div>
-                <Button onClick={() => setAdmitCardModalOpen(true)}>
+                <Button onClick={handleOpenAdmitCard}>
                   <Printer className="h-4 w-4 mr-1.5" /> View & Print PDF
                 </Button>
               </CardHeader>
@@ -123,7 +162,10 @@ export function StudentExamsPage() {
                   </div>
                   <div>
                     Status:{' '}
-                    <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                    <Badge
+                      variant="outline"
+                      className="bg-emerald-100 text-emerald-800 border-emerald-300"
+                    >
                       RELEASED
                     </Badge>
                   </div>
@@ -148,22 +190,30 @@ export function StudentExamsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {currentExam.schedules.map((s: { id?: string; examDate?: string; startTime?: string; endTime?: string; subject?: { name: string } }) => {
-                    const dateStr = s.examDate ? s.examDate.slice(0, 10) : ''
-                    const dayStr = dateStr
-                      ? new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long' })
-                      : ''
-                    return (
-                      <tr key={s.id} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 font-mono font-medium">{dateStr}</td>
-                        <td className="px-4 py-3 font-semibold text-primary">{dayStr}</td>
-                        <td className="px-4 py-3">
-                          {s.startTime} - {s.endTime}
-                        </td>
-                        <td className="px-4 py-3 font-semibold">{s.subject?.name}</td>
-                      </tr>
-                    )
-                  })}
+                  {currentExam.schedules.map(
+                    (s: {
+                      id?: string
+                      examDate?: string
+                      startTime?: string
+                      endTime?: string
+                      subject?: { name: string }
+                    }) => {
+                      const dateStr = s.examDate ? s.examDate.slice(0, 10) : ''
+                      const dayStr = dateStr
+                        ? new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long' })
+                        : ''
+                      return (
+                        <tr key={s.id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 font-mono font-medium">{dateStr}</td>
+                          <td className="px-4 py-3 font-semibold text-primary">{dayStr}</td>
+                          <td className="px-4 py-3">
+                            {s.startTime} - {s.endTime}
+                          </td>
+                          <td className="px-4 py-3 font-semibold">{s.subject?.name}</td>
+                        </tr>
+                      )
+                    }
+                  )}
                 </tbody>
               </table>
             </div>
@@ -188,7 +238,8 @@ export function StudentExamsPage() {
                     : 'Held By Admin / Result Marks Entry In Progress')}
               </p>
               <p className="text-xs text-muted-foreground pt-1">
-                Results are published by school administration once marks entry is complete and all fee dues are cleared.
+                Results are published by school administration once marks entry is complete and all
+                fee dues are cleared.
               </p>
             </div>
           ) : (
@@ -203,7 +254,7 @@ export function StudentExamsPage() {
                     Your official result performance report has been declared.
                   </p>
                 </div>
-                <Button onClick={() => setResultCardModalOpen(true)}>
+                <Button onClick={handleOpenResultCard}>
                   <Printer className="h-4 w-4 mr-1.5" /> View & Print Result PDF
                 </Button>
               </CardHeader>
@@ -220,14 +271,19 @@ export function StudentExamsPage() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block font-medium">Overall Percentage</span>
+                    <span className="text-muted-foreground block font-medium">
+                      Overall Percentage
+                    </span>
                     <span className="font-mono font-bold text-primary">
                       {latestReportCard.percentage}%
                     </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block font-medium">Grade</span>
-                    <Badge variant="outline" className="font-bold text-xs bg-emerald-100 text-emerald-800 border-emerald-300">
+                    <Badge
+                      variant="outline"
+                      className="font-bold text-xs bg-emerald-100 text-emerald-800 border-emerald-300"
+                    >
                       {latestReportCard.grade || 'PASSED'}
                     </Badge>
                   </div>
@@ -238,48 +294,66 @@ export function StudentExamsPage() {
         </div>
       )}
 
-      {/* Modal Previews */}
-      {latestAdmitCard && !latestAdmitCard.isBlocked && (
-        <AdmitCardModal
-          open={admitCardModalOpen}
-          onOpenChange={setAdmitCardModalOpen}
-          student={{
-            name: `${latestAdmitCard.student?.firstName || ''} ${latestAdmitCard.student?.lastName || ''}`,
-            admissionNumber: latestAdmitCard.student?.admissionNumber || '',
-            rollNumber: latestAdmitCard.student?.rollNumber || '-',
-            className: latestAdmitCard.student?.class?.name || '',
-            sectionName: latestAdmitCard.student?.section?.name || '',
-            sessionName: latestAdmitCard.student?.session?.name || '',
-          }}
-          examName={latestAdmitCard.exam?.name || 'Examination'}
-          timetable={(currentExam?.schedules || []).map((s: { examDate?: string; startTime?: string; endTime?: string; subject?: { name: string }; room?: string }) => ({
-            date: s.examDate ? s.examDate.slice(0, 10) : '',
-            day: s.examDate ? new Date(s.examDate.slice(0, 10)).toLocaleDateString('en-US', { weekday: 'long' }) : '',
-            time: `${s.startTime} - ${s.endTime}`,
-            subject: s.subject?.name || 'Subject',
-            room: s.room,
-          }))}
-        />
+      {/* ── Document Engine Admit Card Modal ──────────────────── */}
+      {engineAdmitOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto py-8 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[850px]">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="font-semibold text-gray-900">Admit Card — Document Engine</h2>
+              <button
+                onClick={() => {
+                  setEngineAdmitOpen(false)
+                  setEngineAdmitPayload(null)
+                }}
+                className="text-gray-400 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[80vh]">
+              {engineAdmitLoading && (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Compiling Admit Card…</span>
+                </div>
+              )}
+              {engineAdmitPayload && (
+                <AdmitCardRenderer payload={engineAdmitPayload} showPrintButton={true} />
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
-      {latestReportCard && !latestReportCard.isBlocked && (
-        <ResultCardModal
-          open={resultCardModalOpen}
-          onOpenChange={setResultCardModalOpen}
-          student={{
-            name: `${latestReportCard.student?.firstName || ''} ${latestReportCard.student?.lastName || ''}`,
-            admissionNumber: latestReportCard.student?.admissionNumber || '',
-            rollNumber: latestReportCard.student?.rollNumber || '-',
-            className: latestReportCard.student?.class?.name || '',
-            sectionName: latestReportCard.student?.section?.name || '',
-            sessionName: latestReportCard.student?.session?.name || '',
-          }}
-          examName={latestReportCard.exam?.name || 'Examination'}
-          subjects={latestReportCard.marks || []}
-          totalMaxMarks={latestReportCard.totalMarks || 100}
-          totalObtainedMarks={latestReportCard.obtainedMarks || 0}
-          overallPercentage={latestReportCard.percentage || 0}
-        />
+      {/* ── Document Engine Report Card Modal ──────────────────── */}
+      {engineResultOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto py-8 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[850px]">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="font-semibold text-gray-900">Report Card — Document Engine</h2>
+              <button
+                onClick={() => {
+                  setEngineResultOpen(false)
+                  setEngineResultPayload(null)
+                }}
+                className="text-gray-400 hover:text-gray-700 text-2xl leading-none cursor-pointer"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[80vh]">
+              {engineResultLoading && (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Compiling Report Card…</span>
+                </div>
+              )}
+              {engineResultPayload && (
+                <ReportCardRenderer payload={engineResultPayload} showPrintButton={true} />
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

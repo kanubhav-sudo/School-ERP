@@ -46,7 +46,7 @@ export function AdminHomeworkPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-homework'] }),
   })
 
-  const displayed = homeworks.filter(h =>
+  const displayed = homeworks.filter((h) =>
     search
       ? h.title.toLowerCase().includes(search.toLowerCase()) ||
         `${h.teacher.firstName} ${h.teacher.lastName}`.toLowerCase().includes(search.toLowerCase())
@@ -54,8 +54,10 @@ export function AdminHomeworkPage() {
   )
 
   const statusBadge = (hw: AdminHomeworkItem) => {
-    if (hw.status === 'DRAFT') return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-    if (isPast(new Date(hw.dueDate))) return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+    if (hw.status === 'DRAFT')
+      return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+    if (isPast(new Date(hw.dueDate)))
+      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
     return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
   }
   const statusLabel = (hw: AdminHomeworkItem) => {
@@ -83,13 +85,13 @@ export function AdminHomeworkPage() {
         <div className="p-4 bg-card border rounded-xl">
           <p className="text-sm text-muted-foreground">Published</p>
           <p className="text-2xl font-bold mt-1 text-green-600">
-            {homeworks.filter(h => h.status === 'PUBLISHED').length}
+            {homeworks.filter((h) => h.status === 'PUBLISHED').length}
           </p>
         </div>
         <div className="p-4 bg-card border rounded-xl">
           <p className="text-sm text-muted-foreground">Drafts</p>
           <p className="text-2xl font-bold mt-1 text-amber-600">
-            {homeworks.filter(h => h.status === 'DRAFT').length}
+            {homeworks.filter((h) => h.status === 'DRAFT').length}
           </p>
         </div>
       </div>
@@ -102,14 +104,14 @@ export function AdminHomeworkPage() {
             type="text"
             placeholder="Search title or teacher..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-9 pr-4 py-2 border rounded-md text-sm bg-card shadow-sm focus:outline-none focus:ring-1 focus:ring-ring w-60"
           />
         </div>
         <select
           className="px-3 py-2 border rounded-md text-sm bg-card"
           value={filters.status || ''}
-          onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
+          onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
         >
           <option value="">All Status</option>
           <option value="PUBLISHED">Published</option>
@@ -124,7 +126,9 @@ export function AdminHomeworkPage() {
 
       {/* List */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-48 text-muted-foreground">Loading...</div>
+        <div className="flex items-center justify-center h-48 text-muted-foreground">
+          Loading...
+        </div>
       ) : displayed.length === 0 ? (
         <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl h-64 text-center p-8">
           <ClipboardList className="h-12 w-12 text-muted-foreground mb-4" />
@@ -133,12 +137,14 @@ export function AdminHomeworkPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {displayed.map(hw => (
+          {displayed.map((hw) => (
             <Card key={hw.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start gap-2">
                   <CardTitle className="text-base leading-tight">{hw.title}</CardTitle>
-                  <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge(hw)}`}>
+                  <span
+                    className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge(hw)}`}
+                  >
                     {statusLabel(hw)}
                   </span>
                 </div>
@@ -148,7 +154,10 @@ export function AdminHomeworkPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  By: <span className="font-medium">{hw.teacher.firstName} {hw.teacher.lastName}</span>
+                  By:{' '}
+                  <span className="font-medium">
+                    {hw.teacher.firstName} {hw.teacher.lastName}
+                  </span>
                 </p>
                 {hw.description && (
                   <p className="text-sm text-muted-foreground line-clamp-2">{hw.description}</p>

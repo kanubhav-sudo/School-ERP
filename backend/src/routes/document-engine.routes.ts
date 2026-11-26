@@ -37,7 +37,7 @@ router.post(
 // Live Preview & Document Generation Routes
 router.get(
   '/preview/:documentType',
-  authorize('ADMIN', 'SUPER_ADMIN', 'TEACHER'),
+  authorize('ADMIN', 'SUPER_ADMIN', 'TEACHER', 'STUDENT'),
   DocumentEngineController.getLivePreview
 )
 router.post(

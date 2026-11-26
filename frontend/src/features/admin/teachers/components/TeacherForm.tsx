@@ -178,7 +178,10 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
           <DialogTitle>{isEditing ? 'Edit Teacher' : 'Add New Teacher'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit((data) => mutation.mutate(data as TeacherFormValues))} className="space-y-4">
+        <form
+          onSubmit={handleSubmit((data) => mutation.mutate(data as TeacherFormValues))}
+          className="space-y-4"
+        >
           {/* Row 1: IDs */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -401,7 +404,9 @@ export function TeacherForm({ teacher, onClose, onSuccess }: Props) {
 
           {mutation.isError && (
             <p className="text-sm text-red-500">
-              {(mutation.error as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || (mutation.error instanceof Error ? mutation.error.message : 'An error occurred')}
+              {(mutation.error as { response?: { data?: { error?: { message?: string } } } })
+                .response?.data?.error?.message ||
+                (mutation.error instanceof Error ? mutation.error.message : 'An error occurred')}
             </p>
           )}
 

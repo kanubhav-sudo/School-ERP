@@ -111,13 +111,13 @@ export function TeacherAnnouncementsPage() {
     formData.append('title', title)
     formData.append('content', content)
     formData.append('isPinned', isPinned.toString())
-    
-    attachments.forEach(file => {
+
+    attachments.forEach((file) => {
       formData.append('attachments', file)
     })
 
     if (editingAnnouncement) {
-      retainedAttachments.forEach(att => {
+      retainedAttachments.forEach((att) => {
         formData.append('retainedAttachments', att)
       })
       updateMutation.mutate({
@@ -300,15 +300,25 @@ export function TeacherAnnouncementsPage() {
                 <div className="text-sm space-y-1 mt-2">
                   <p className="font-medium">Existing Attachments:</p>
                   {retainedAttachments.map((url) => (
-                    <div key={url} className="flex items-center justify-between bg-muted p-2 rounded">
-                      <a href={`http://localhost:3000${url}`} target="_blank" rel="noreferrer" className="text-primary hover:underline truncate">
+                    <div
+                      key={url}
+                      className="flex items-center justify-between bg-muted p-2 rounded"
+                    >
+                      <a
+                        href={`http://localhost:3000${url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline truncate"
+                      >
                         {url.split('/').pop()}
                       </a>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:text-red-700 h-6 px-2"
-                        onClick={() => setRetainedAttachments(retainedAttachments.filter(a => a !== url))}
+                        onClick={() =>
+                          setRetainedAttachments(retainedAttachments.filter((a) => a !== url))
+                        }
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -324,7 +334,13 @@ export function TeacherAnnouncementsPage() {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={!title || !content || !sectionId || createMutation.isPending || updateMutation.isPending}
+              disabled={
+                !title ||
+                !content ||
+                !sectionId ||
+                createMutation.isPending ||
+                updateMutation.isPending
+              }
             >
               {editingAnnouncement ? 'Save Changes' : 'Post Announcement'}
             </Button>

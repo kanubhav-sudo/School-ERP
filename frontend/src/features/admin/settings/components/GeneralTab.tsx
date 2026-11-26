@@ -40,7 +40,8 @@ export function GeneralTab() {
           </div>
 
           <div className="pt-2 text-xs text-muted-foreground">
-            For technical support or tenant configuration adjustments, contact your CloudEMS platform administrator.
+            For technical support or tenant configuration adjustments, contact your CloudEMS
+            platform administrator.
           </div>
         </CardContent>
       </Card>

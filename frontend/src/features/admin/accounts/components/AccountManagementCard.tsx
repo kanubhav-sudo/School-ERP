@@ -38,7 +38,10 @@ export function AccountManagementCard({ userId }: AccountManagementCardProps) {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['account', userId] })
 
   const onError = (error: unknown) => {
-    const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string }
+    const err = error as {
+      response?: { data?: { error?: { message?: string } } }
+      message?: string
+    }
     alert(err?.response?.data?.error?.message || err?.message || 'An error occurred')
   }
 

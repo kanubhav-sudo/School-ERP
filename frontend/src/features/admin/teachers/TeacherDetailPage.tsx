@@ -2,7 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   fetchTeacher,
-  addTeacherAssignment, updateTeacherAssignment,
+  addTeacherAssignment,
+  updateTeacherAssignment,
   removeTeacherAssignment,
   type TeacherAssignment,
 } from './api'
@@ -316,7 +317,6 @@ function EditAssignmentForm({
     </div>
   )
 }
-
 
 // ─── Add Assignment Form ───────────────────────────────────────
 

@@ -12,7 +12,12 @@ interface TimetableGridProps {
   onDelete?: (entry: TimetableEntry) => void
 }
 
-export function TimetableGrid({ entries, periodMasters = [], onEdit, onDelete }: TimetableGridProps) {
+export function TimetableGrid({
+  entries,
+  periodMasters = [],
+  onEdit,
+  onDelete,
+}: TimetableGridProps) {
   // Create a map: Day -> Period -> Entry
   const gridMap = new Map<DayOfWeek, Map<number, TimetableEntry>>()
   DAYS.forEach((d) => gridMap.set(d, new Map()))
@@ -31,7 +36,9 @@ export function TimetableGrid({ entries, periodMasters = [], onEdit, onDelete }:
       <table className="w-full text-sm text-left">
         <thead className="bg-muted/50 text-muted-foreground border-b border-border">
           <tr>
-            <th className="p-3 font-medium w-32 border-r border-border shrink-0 sticky left-0 z-10 bg-muted/50">Day / Period</th>
+            <th className="p-3 font-medium w-32 border-r border-border shrink-0 sticky left-0 z-10 bg-muted/50">
+              Day / Period
+            </th>
             {sortedPeriods.map((p) => (
               <th
                 key={p.periodNumber}
@@ -48,7 +55,9 @@ export function TimetableGrid({ entries, periodMasters = [], onEdit, onDelete }:
         <tbody className="divide-y divide-border">
           {DAYS.map((day) => (
             <tr key={day} className="divide-x divide-border">
-              <td className="p-3 font-medium bg-muted/20 text-muted-foreground sticky left-0 z-10">{day}</td>
+              <td className="p-3 font-medium bg-muted/20 text-muted-foreground sticky left-0 z-10">
+                {day}
+              </td>
               {sortedPeriods.map((periodMaster) => {
                 const p = periodMaster.periodNumber
                 const entry = gridMap.get(day)?.get(p)
@@ -63,9 +72,13 @@ export function TimetableGrid({ entries, periodMasters = [], onEdit, onDelete }:
                         <div className="text-xs text-muted-foreground mt-1">
                           {/*  - Handle both Admin and Teacher entry types */}
                           {entry.teacher ? (
-                            <>{entry.teacher.firstName} {entry.teacher.lastName}</>
+                            <>
+                              {entry.teacher.firstName} {entry.teacher.lastName}
+                            </>
                           ) : (
-                            <>{entry.class?.name} {entry.section?.name}</>
+                            <>
+                              {entry.class?.name} {entry.section?.name}
+                            </>
                           )}
                         </div>
                         <div className="flex items-center text-xs text-muted-foreground mt-2 space-x-2">

@@ -13,7 +13,10 @@ import { documentEngineApi } from '../../document-engine/document-engine.api'
 import { BlockBasedTemplateEditor } from '../../document-engine/components/BlockBasedTemplateEditor'
 import { AdmitCardRenderer } from '../../document-engine/components/AdmitCardRenderer'
 import { ReportCardRenderer } from '../../document-engine/components/ReportCardRenderer'
-import type { DocumentType, CompiledDocumentPayload } from '../../document-engine/document-engine.types'
+import type {
+  DocumentType,
+  CompiledDocumentPayload,
+} from '../../document-engine/document-engine.types'
 import {
   FileText,
   Settings,
@@ -76,7 +79,7 @@ export function DocumentEnginePage() {
       const errorObj = err as { response?: { data?: { message?: string } } }
       setPreviewError(
         errorObj?.response?.data?.message ||
-        'Could not load preview. Ensure at least one active student exists.'
+          'Could not load preview. Ensure at least one active student exists.'
       )
     } finally {
       setPreviewLoading(false)
@@ -108,22 +111,27 @@ export function DocumentEnginePage() {
           <div>
             <h2 className="text-lg font-bold">CloudEMS Document Generation Engine</h2>
             <p className="text-blue-100 text-sm mt-1 max-w-2xl">
-              Every official document generated includes a tamper-proof <strong>Verification ID</strong>,{' '}
-              <strong>SHA-256 checksum</strong>, and a scannable <strong>QR code</strong> for instant
-              public authenticity verification at <code className="bg-white/20 px-1 rounded text-xs">cloudems.verify</code>.
+              Every official document generated includes a tamper-proof{' '}
+              <strong>Verification ID</strong>, <strong>SHA-256 checksum</strong>, and a scannable{' '}
+              <strong>QR code</strong> for instant public authenticity verification at{' '}
+              <code className="bg-white/20 px-1 rounded text-xs">cloudems.verify</code>.
             </p>
             <div className="flex flex-wrap gap-3 mt-3">
-              {['Versioned Templates', 'CBSE / ICSE / State Board Presets', 'QR Verification', 'A4 Print-Ready', 'SHA-256 Checksum'].map(
-                (feat) => (
-                  <span
-                    key={feat}
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 text-white text-xs font-medium"
-                  >
-                    <CheckCircle className="w-3 h-3" />
-                    {feat}
-                  </span>
-                )
-              )}
+              {[
+                'Versioned Templates',
+                'CBSE / ICSE / State Board Presets',
+                'QR Verification',
+                'A4 Print-Ready',
+                'SHA-256 Checksum',
+              ].map((feat) => (
+                <span
+                  key={feat}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 text-white text-xs font-medium"
+                >
+                  <CheckCircle className="w-3 h-3" />
+                  {feat}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -139,7 +147,9 @@ export function DocumentEnginePage() {
               className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="flex items-start gap-4">
-                <div className={`flex-shrink-0 w-12 h-12 rounded-xl border flex items-center justify-center ${color}`}>
+                <div
+                  className={`flex-shrink-0 w-12 h-12 rounded-xl border flex items-center justify-center ${color}`}
+                >
                   {icon}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -174,11 +184,17 @@ export function DocumentEnginePage() {
         <div className="flex items-start gap-3">
           <Download className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
           <div>
-            <h3 className="font-semibold text-amber-900 text-sm">Bulk Generation — Architecture Ready</h3>
+            <h3 className="font-semibold text-amber-900 text-sm">
+              Bulk Generation — Architecture Ready
+            </h3>
             <p className="text-amber-700 text-sm mt-1">
-              The Bulk Generation API (<code className="bg-amber-100 px-1 rounded text-xs">POST /documents/bulk-generate/init</code>) is
-              designed and wired. Full async queue processing (class-level batch generation) will be enabled in Phase 6. 
-              To generate documents per-student, use the Admit Card / Report Card actions in the <strong>Exams</strong> module.
+              The Bulk Generation API (
+              <code className="bg-amber-100 px-1 rounded text-xs">
+                POST /documents/bulk-generate/init
+              </code>
+              ) is designed and wired. Full async queue processing (class-level batch generation)
+              will be enabled in Phase 6. To generate documents per-student, use the Admit Card /
+              Report Card actions in the <strong>Exams</strong> module.
             </p>
           </div>
         </div>
@@ -214,8 +230,13 @@ export function DocumentEnginePage() {
               color: 'bg-amber-100 text-amber-700',
             },
           ].map(({ step, title, desc, color }) => (
-            <div key={step} className="flex flex-col items-center text-center p-4 rounded-lg bg-gray-50">
-              <span className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-3 ${color}`}>
+            <div
+              key={step}
+              className="flex flex-col items-center text-center p-4 rounded-lg bg-gray-50"
+            >
+              <span
+                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm mb-3 ${color}`}
+              >
                 {step}
               </span>
               <h4 className="font-semibold text-gray-800 text-sm">{title}</h4>
@@ -248,8 +269,7 @@ export function DocumentEnginePage() {
                 </div>
                 <div>
                   <h2 className="font-semibold text-gray-900">
-                    Live Preview —{' '}
-                    {previewDocType === 'ADMIT_CARD' ? 'Admit Card' : 'Report Card'}
+                    Live Preview — {previewDocType === 'ADMIT_CARD' ? 'Admit Card' : 'Report Card'}
                   </h2>
                   <p className="text-xs text-gray-500">
                     Showing sample output using first active student in the system
@@ -257,7 +277,10 @@ export function DocumentEnginePage() {
                 </div>
               </div>
               <button
-                onClick={() => { setPreviewOpen(false); setPreviewPayload(null) }}
+                onClick={() => {
+                  setPreviewOpen(false)
+                  setPreviewPayload(null)
+                }}
                 className="text-gray-400 hover:text-gray-700 transition-colors text-2xl leading-none cursor-pointer"
               >
                 ×

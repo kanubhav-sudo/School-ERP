@@ -113,6 +113,94 @@ export function AdminDashboard() {
       {/* Daily Motivation */}
       <DailyMotivation />
 
+      {/* Mobile Quick-Access Module Grid (< 768px) */}
+      <div className="block md:hidden space-y-2">
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-0.5">
+          Quick Access Modules
+        </h3>
+        <div className="grid grid-cols-4 gap-2">
+          <Link
+            to="/admin/students"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 mb-1">
+              <GraduationCap className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Students</span>
+          </Link>
+
+          <Link
+            to="/admin/teachers"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 mb-1">
+              <Users className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Teachers</span>
+          </Link>
+
+          <Link
+            to="/admin/attendance"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-teal-500/10 text-teal-600 mb-1">
+              <CalendarCheck className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Attendance</span>
+          </Link>
+
+          <Link
+            to="/admin/timetable"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 mb-1">
+              <Calendar className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Timetable</span>
+          </Link>
+
+          <Link
+            to="/admin/finance/fee-records"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 mb-1">
+              <CreditCard className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Fees</span>
+          </Link>
+
+          <Link
+            to="/admin/notices"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 mb-1">
+              <Bell className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Notices</span>
+          </Link>
+
+          <Link
+            to="/admin/exams"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 mb-1">
+              <BookOpen className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground truncate w-full text-center">Exams</span>
+          </Link>
+
+          <Link
+            to="/admin/documents"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary mb-1">
+              <FileSpreadsheet className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground truncate w-full text-center">Docs</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Birthday Card Modal */}
       <BirthdayCardModal
         open={showBirthdayCard}

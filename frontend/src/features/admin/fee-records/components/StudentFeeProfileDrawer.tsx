@@ -184,7 +184,7 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
               )}
 
               {/* Financial Summary Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 <div className="p-3.5 bg-card rounded-xl border border-border text-center">
                   <p className="text-xs text-muted-foreground font-medium">Total Fee (Current)</p>
                   <p className="text-lg font-bold mt-1 text-foreground">
@@ -198,16 +198,22 @@ export function StudentFeeProfileDrawer({ studentId, studentName, open, onOpenCh
                   </p>
                 </div>
                 <div className="p-3.5 bg-card rounded-xl border border-border text-center">
-                  <p className="text-xs text-muted-foreground font-medium">Pending Amount</p>
+                  <p className="text-xs text-muted-foreground font-medium">Current Pending</p>
                   <p
                     className={`text-lg font-bold mt-1 ${
-                      (summary?.pendingAmount || 0) > 0 ? 'text-rose-600' : 'text-emerald-600'
+                      (summary?.pendingAmount || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'
                     }`}
                   >
                     {fmt(summary?.pendingAmount || 0)}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     {summary?.pendingFrom ? `From ${summary.pendingFrom}` : 'Cleared'}
+                  </p>
+                </div>
+                <div className="p-3.5 bg-card rounded-xl border border-border text-center">
+                  <p className="text-xs text-muted-foreground font-medium">Yearly Pending</p>
+                  <p className="text-lg font-bold mt-1 text-rose-600">
+                    {fmt(summary?.yearlyPendingAmount || 0)}
                   </p>
                 </div>
                 <div className="p-3.5 bg-card rounded-xl border border-border text-center">

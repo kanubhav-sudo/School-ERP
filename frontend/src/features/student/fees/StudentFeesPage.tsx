@@ -19,9 +19,11 @@ export function StudentFeesPage() {
   }
 
   const fmt = (paise: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(
-      (paise || 0) / 100
-    )
+    new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format((paise || 0) / 100)
 
   const summary = data?.summary
   const student = data?.student
@@ -64,7 +66,8 @@ export function StudentFeesPage() {
           {student?.feePlan && (
             <div className="p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground flex flex-wrap gap-4 items-center border border-border">
               <div>
-                Fee Plan: <span className="font-semibold text-foreground">{student.feePlan.name}</span>
+                Fee Plan:{' '}
+                <span className="font-semibold text-foreground">{student.feePlan.name}</span>
               </div>
               <div>
                 Monthly Fee:{' '}
@@ -170,9 +173,7 @@ export function StudentFeesPage() {
                       <span>{p.paymentMode?.replace('_', ' ')}</span>
                     </div>
                     {p.remarks && (
-                      <p className="text-xs text-muted-foreground italic mt-0.5">
-                        {p.remarks}
-                      </p>
+                      <p className="text-xs text-muted-foreground italic mt-0.5">{p.remarks}</p>
                     )}
                   </div>
                 </div>

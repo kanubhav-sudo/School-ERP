@@ -108,6 +108,74 @@ export function TeacherDashboard() {
       {/* Daily Motivation */}
       <DailyMotivation />
 
+      {/* Mobile Quick-Access Module Grid (< 768px) */}
+      <div className="block md:hidden space-y-2">
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-0.5">
+          Quick Access Modules
+        </h3>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <Link
+            to="/teacher/my-classes"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 mb-1">
+              <Users className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground truncate w-full text-center">My Classes</span>
+          </Link>
+
+          <Link
+            to="/teacher/attendance"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-teal-500/10 text-teal-600 mb-1">
+              <CalendarCheck className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Attendance</span>
+          </Link>
+
+          <Link
+            to="/teacher/timetable"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 mb-1">
+              <Clock className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Timetable</span>
+          </Link>
+
+          <Link
+            to="/teacher/homework"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 mb-1">
+              <BookOpen className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Homework</span>
+          </Link>
+
+          <Link
+            to="/teacher/notices"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 mb-1">
+              <BellRing className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Notices</span>
+          </Link>
+
+          <Link
+            to="/teacher/exams"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 mb-1">
+              <FileText className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground truncate w-full text-center">Exams</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Birthday Card Modal */}
       <BirthdayCardModal
         open={showBirthdayCard}

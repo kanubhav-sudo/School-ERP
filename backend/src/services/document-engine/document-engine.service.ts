@@ -79,7 +79,8 @@ export class DocumentEngineService {
    */
   public static generateVerificationId(documentType: DocumentType): string {
     const year = new Date().getFullYear()
-    const prefix = documentType === 'ADMIT_CARD' ? 'ADM' : documentType === 'REPORT_CARD' ? 'REP' : 'DOC'
+    const prefix =
+      documentType === 'ADMIT_CARD' ? 'ADM' : documentType === 'REPORT_CARD' ? 'REP' : 'DOC'
     const randomHex = crypto.randomBytes(4).toString('hex').toUpperCase()
     return `DOC-${year}-${prefix}-${randomHex}`
   }
@@ -95,20 +96,22 @@ export class DocumentEngineService {
   /**
    * Get active template for a school and document type (creates v1 default if none exists)
    */
-  static async getLatestTemplate(db: any, documentType: DocumentType) {
+  static async getLatestTemplate(db: any, documentType: DocumentType, schoolId?: string) {
     let template = await db.academicDocumentTemplate.findFirst({
       where: {
         documentType,
         isActive: true,
+        ...(schoolId ? { schoolId } : {}),
       },
       orderBy: { version: 'desc' },
     })
 
-    if (!template) {
+    if (!template && schoolId) {
       // Create initial v1 default preset
       const defaultConfig = getDefaultPresetConfig(documentType, 'CBSE')
       template = await db.academicDocumentTemplate.create({
         data: {
+          schoolId,
           documentType,
           preset: 'CBSE',
           version: 1,
@@ -159,7 +162,8 @@ export class DocumentEngineService {
           preset: data.preset || data.configuration.preset || 'CBSE',
           version: nextVersion,
           isActive: true,
-          title: data.title || data.configuration.title || `${documentType} Template v${nextVersion}`,
+          title:
+            data.title || data.configuration.title || `${documentType} Template v${nextVersion}`,
           description: data.description || `Updated template version ${nextVersion}`,
           configuration: data.configuration as any,
           createdBy: createdBy || 'Admin',
@@ -208,24 +212,25 @@ export class DocumentEngineService {
   ): Promise<CompiledDocumentPayload> {
     const { documentType, studentId, examId, templateVersion, appBaseUrl } = options
 
-    // 1. Fetch template version or active latest template
-    let templateRecord
-    if (templateVersion) {
-      templateRecord = await db.academicDocumentTemplate.findFirst({
-        where: { documentType, version: templateVersion },
-      })
-    }
-    if (!templateRecord) {
-      templateRecord = await this.getLatestTemplate(db, documentType)
-    }
-
-    const templateConfig: DocumentTemplateConfig = templateRecord.configuration as DocumentTemplateConfig
-
-    // 2. Data Provider — Raw Data Gathering
+    // 1. Data Provider — Raw Data Gathering
     const rawContext = await DataProviderService.fetchStudentDocumentContext(db, {
       studentId,
       examId,
     })
+
+    // 2. Fetch template version or active latest template
+    let templateRecord
+    if (templateVersion) {
+      templateRecord = await db.academicDocumentTemplate.findFirst({
+        where: { schoolId: rawContext.school.id, documentType, version: templateVersion },
+      })
+    }
+    if (!templateRecord) {
+      templateRecord = await this.getLatestTemplate(db, documentType, rawContext.school.id)
+    }
+
+    const templateConfig: DocumentTemplateConfig =
+      templateRecord.configuration as DocumentTemplateConfig
 
     // 3. Calculation Engine — Marks & Attendance calculations
     let marksSummary
@@ -243,7 +248,9 @@ export class DocumentEngineService {
       studentId: rawContext.student.id,
       documentType,
       issuedAt: new Date().toISOString(),
-      marksSummary: marksSummary ? { total: marksSummary.totalObtainedMarks, status: marksSummary.resultStatus } : null,
+      marksSummary: marksSummary
+        ? { total: marksSummary.totalObtainedMarks, status: marksSummary.resultStatus }
+        : null,
     }
     const checksum = this.calculateChecksum(checksumData)
 
@@ -287,6 +294,7 @@ export class DocumentEngineService {
 
     const generatedRecord = await db.generatedDocument.create({
       data: {
+        schoolId: payload.school.id,
         documentType: options.documentType,
         templateId: payload.template.id,
         templateVersion: payload.template.version,
@@ -331,10 +339,16 @@ export class DocumentEngineService {
       documentType: docRecord.documentType,
       schoolName: docRecord.school?.name || metadata.school?.name || 'School ERP Academy',
       schoolLogo: docRecord.school?.logoUrl || metadata.school?.logoUrl || null,
-      schoolLocation: docRecord.school ? `${docRecord.school.city || ''}, ${docRecord.school.state || ''}` : '',
-      studentName: metadata.student ? `${metadata.student.firstName} ${metadata.student.lastName}` : 'Verified Student',
+      schoolLocation: docRecord.school
+        ? `${docRecord.school.city || ''}, ${docRecord.school.state || ''}`
+        : '',
+      studentName: metadata.student
+        ? `${metadata.student.firstName} ${metadata.student.lastName}`
+        : 'Verified Student',
       admissionNumber: metadata.student?.admissionNumber || '',
-      className: metadata.student?.className ? `${metadata.student.className} - ${metadata.student.sectionName}` : '',
+      className: metadata.student?.className
+        ? `${metadata.student.className} - ${metadata.student.sectionName}`
+        : '',
       sessionName: metadata.student?.sessionName || '',
       examName: metadata.exam?.name || undefined,
       resultStatus: metadata.marksSummary?.resultStatus || undefined,

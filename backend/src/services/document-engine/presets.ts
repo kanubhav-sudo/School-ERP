@@ -65,20 +65,62 @@ export interface DocumentTemplateConfig {
 
 export const DEFAULT_ADMIT_CARD_BLOCKS: BlockConfig[] = [
   { id: 'header', type: 'header', name: 'School Header & Logo', enabled: true, order: 1 },
-  { id: 'studentInfo', type: 'studentInfo', name: 'Student Details & Photograph', enabled: true, order: 2 },
-  { id: 'examInfo', type: 'examInfo', name: 'Examination & Timetable Grid', enabled: true, order: 3 },
-  { id: 'instructions', type: 'instructions', name: 'Candidate Instructions', enabled: true, order: 4 },
-  { id: 'signatures', type: 'signatures', name: 'Signature & Stamp Block', enabled: true, order: 5 },
+  {
+    id: 'studentInfo',
+    type: 'studentInfo',
+    name: 'Student Details & Photograph',
+    enabled: true,
+    order: 2,
+  },
+  {
+    id: 'examInfo',
+    type: 'examInfo',
+    name: 'Examination & Timetable Grid',
+    enabled: true,
+    order: 3,
+  },
+  {
+    id: 'instructions',
+    type: 'instructions',
+    name: 'Candidate Instructions',
+    enabled: true,
+    order: 4,
+  },
+  {
+    id: 'signatures',
+    type: 'signatures',
+    name: 'Signature & Stamp Block',
+    enabled: true,
+    order: 5,
+  },
   { id: 'footer', type: 'footer', name: 'Footer & QR Verification', enabled: true, order: 6 },
 ]
 
 export const DEFAULT_REPORT_CARD_BLOCKS: BlockConfig[] = [
   { id: 'header', type: 'header', name: 'School Header & Logo', enabled: true, order: 1 },
   { id: 'studentInfo', type: 'studentInfo', name: 'Student Details', enabled: true, order: 2 },
-  { id: 'marksTable', type: 'marksTable', name: 'Scholastic Performance Table', enabled: true, order: 3 },
-  { id: 'coScholastic', type: 'coScholastic', name: 'Co-Scholastic & Attendance Summary', enabled: true, order: 4 },
+  {
+    id: 'marksTable',
+    type: 'marksTable',
+    name: 'Scholastic Performance Table',
+    enabled: true,
+    order: 3,
+  },
+  {
+    id: 'coScholastic',
+    type: 'coScholastic',
+    name: 'Co-Scholastic & Attendance Summary',
+    enabled: true,
+    order: 4,
+  },
   { id: 'remarks', type: 'remarks', name: 'Teacher & Principal Remarks', enabled: true, order: 5 },
-  { id: 'signatures', type: 'signatures', name: 'Signature & Stamp Block', enabled: true, order: 6 },
+  {
+    id: 'signatures',
+    type: 'signatures',
+    name: 'Signature & Stamp Block',
+    enabled: true,
+    order: 6,
+  },
   { id: 'footer', type: 'footer', name: 'Footer & QR Verification', enabled: true, order: 7 },
 ]
 

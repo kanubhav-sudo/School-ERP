@@ -98,7 +98,7 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
   const periodNumber = watch('periodNumber')
 
   // Filter teachers by selected session + class (only show assigned teachers when possible)
-  const { data: teachersData } = useQuery({
+  const { data: filteredTeachersData } = useQuery({
     queryKey: [
       'teachers',
       {
@@ -115,7 +115,20 @@ export function TimetableForm({ entry, sectionId, classId, onClose }: TimetableF
         sessionId: sessionId || undefined,
         classId: classId || undefined,
       }),
+    enabled: !!sessionId,
   })
+
+  // Fallback: if no assigned teachers found for this class, load ALL active teachers in the tenant
+  const needsFallback =
+    !!sessionId && (filteredTeachersData?.teachers.length ?? 0) === 0
+  const { data: allTeachersData } = useQuery({
+    queryKey: ['teachers', { isActive: true, limit: 100 }],
+    queryFn: () => fetchTeachers({ isActive: true, limit: 100 }),
+    enabled: needsFallback,
+  })
+
+  const teachersData = needsFallback ? allTeachersData : filteredTeachersData
+
 
   // Load Period Master for selected session
   const { data: periodMasters } = useQuery({

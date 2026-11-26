@@ -273,7 +273,19 @@ export async function getStudentFeeList(
     })
 
     const totalYearlyFee = records.reduce((sum: any, r: any) => sum + r.netAmount, 0)
-    const yearlyPendingAmount = Math.max(0, totalYearlyFee - paidAmount - (s.advanceBalance || 0))
+    let rawFuturePending = 0
+    records.forEach((r: any) => {
+      const acadSeq = r.month >= 4 ? r.month - 3 : r.month + 9
+      if (acadSeq > currentAcademicSeq) {
+        rawFuturePending += r.balanceAmount
+      }
+    })
+    // Apply advance balance to current pending first, then any remainder reduces yearly pending
+    const advance = s.advanceBalance || 0
+    const currentPendingAfterAdvance = Math.max(0, pendingAmount - advance)
+    const advanceAppliedToCurrent = pendingAmount - currentPendingAfterAdvance
+    const remainingAdvance = Math.max(0, advance - advanceAppliedToCurrent)
+    const yearlyPendingAmount = Math.max(0, rawFuturePending - remainingAdvance)
 
     studentRows.push({
       studentId: s.id,
@@ -286,9 +298,9 @@ export async function getStudentFeeList(
       currentTotalFee: totalFeeUpToCurrent,
       totalYearlyFee,
       paidAmount,
-      pendingAmount: Math.max(0, pendingAmount - (s.advanceBalance || 0)),
+      pendingAmount: currentPendingAfterAdvance,
       yearlyPendingAmount,
-      advanceBalance: s.advanceBalance || 0,
+      advanceBalance: advance,
       pendingFrom: firstPendingLabel || 'Cleared',
       timeline,
     })
@@ -558,6 +570,7 @@ export async function getStudentFeeProfile(db: any, studentId: string, sessionId
   let totalFeesUpToCurrent = 0
   let paidAmount = 0
   let pendingAmount = 0
+  let rawFuturePending = 0
   let firstPendingLabel: string | null = null
 
   records.forEach((r: any) => {
@@ -569,6 +582,8 @@ export async function getStudentFeeProfile(db: any, studentId: string, sessionId
       if (r.balanceAmount > 0 && !firstPendingLabel) {
         firstPendingLabel = `${ALL_ACADEMIC_MONTHS.find((m) => m.month === r.month)?.label} ${r.year}`
       }
+    } else {
+      rawFuturePending += r.balanceAmount
     }
   })
 
@@ -626,12 +641,20 @@ export async function getStudentFeeProfile(db: any, studentId: string, sessionId
     })),
     payments: allPayments,
     timeline,
-    summary: {
-      totalFees: totalFeesUpToCurrent,
-      paidAmount,
-      pendingAmount: Math.max(0, pendingAmount - (student.advanceBalance || 0)),
-      advanceBalance: student.advanceBalance || 0,
-      pendingFrom: firstPendingLabel,
-    },
+    summary: (() => {
+      // Apply advance balance to current pending first, then remainder reduces yearly pending
+      const advance = student.advanceBalance || 0
+      const currentPendingAfterAdvance = Math.max(0, pendingAmount - advance)
+      const advanceAppliedToCurrent = pendingAmount - currentPendingAfterAdvance
+      const remainingAdvance = Math.max(0, advance - advanceAppliedToCurrent)
+      return {
+        totalFees: totalFeesUpToCurrent,
+        paidAmount,
+        pendingAmount: currentPendingAfterAdvance,
+        yearlyPendingAmount: Math.max(0, rawFuturePending - remainingAdvance),
+        advanceBalance: advance,
+        pendingFrom: firstPendingLabel,
+      }
+    })(),
   }
 }

@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchExamTemplate, saveExamTemplate } from '../api'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -72,7 +78,9 @@ export function ExamTemplateModal({ type, open, onOpenChange }: Props) {
         </DialogHeader>
 
         {isLoading ? (
-          <div className="py-8 text-center text-xs text-muted-foreground">Loading template config...</div>
+          <div className="py-8 text-center text-xs text-muted-foreground">
+            Loading template config...
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
             <div className="space-y-1.5">
@@ -90,7 +98,9 @@ export function ExamTemplateModal({ type, open, onOpenChange }: Props) {
               <Input
                 value={headerText}
                 onChange={(e) => setHeaderText(e.target.value)}
-                placeholder={type === 'ADMIT_CARD' ? 'EXAMINATION ADMIT CARD' : 'ANNUAL PROGRESS REPORT'}
+                placeholder={
+                  type === 'ADMIT_CARD' ? 'EXAMINATION ADMIT CARD' : 'ANNUAL PROGRESS REPORT'
+                }
               />
             </div>
 

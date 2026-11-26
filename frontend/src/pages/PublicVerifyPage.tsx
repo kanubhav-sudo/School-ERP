@@ -12,16 +12,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { documentEngineApi } from '../features/document-engine/document-engine.api'
 import type { VerificationResultData } from '../features/document-engine/document-engine.types'
-import {
-  Shield,
-  CheckCircle,
-  XCircle,
-  FileText,
-  Calendar,
-  User,
-  School,
-  Hash,
-} from 'lucide-react'
+import { Shield, CheckCircle, XCircle, FileText, Calendar, User, School, Hash } from 'lucide-react'
 
 export function PublicVerifyPage() {
   const { verificationId } = useParams<{ verificationId: string }>()
@@ -37,7 +28,7 @@ export function PublicVerifyPage() {
       .catch((err) => {
         setError(
           err?.response?.data?.message ||
-          'Document not found. The verification ID may be incorrect or the document may have been revoked.'
+            'Document not found. The verification ID may be incorrect or the document may have been revoked.'
         )
       })
       .finally(() => setLoading(false))
@@ -53,7 +44,9 @@ export function PublicVerifyPage() {
           <Shield className="w-7 h-7 text-white" />
         </div>
         <h1 className="text-xl font-bold text-gray-900">CloudEMS Document Verification</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Official Academic Document Authenticity Check</p>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Official Academic Document Authenticity Check
+        </p>
       </div>
 
       {/* Verification ID Display */}
@@ -112,9 +105,7 @@ export function PublicVerifyPage() {
             )}
             <div>
               <h2
-                className={`text-base font-bold ${
-                  isRevoked ? 'text-red-700' : 'text-green-700'
-                }`}
+                className={`text-base font-bold ${isRevoked ? 'text-red-700' : 'text-green-700'}`}
               >
                 {isRevoked ? 'Document Revoked' : 'Document Verified ✓'}
               </h2>
@@ -161,7 +152,9 @@ export function PublicVerifyPage() {
                 <p className="text-xs text-gray-500 uppercase tracking-wider">Student</p>
                 <p className="font-semibold text-gray-900">{data.studentName}</p>
                 {data.admissionNumber && (
-                  <p className="text-xs text-gray-500 font-mono">Admission No: {data.admissionNumber}</p>
+                  <p className="text-xs text-gray-500 font-mono">
+                    Admission No: {data.admissionNumber}
+                  </p>
                 )}
                 {data.className && <p className="text-xs text-gray-500">{data.className}</p>}
                 {data.sessionName && <p className="text-xs text-gray-500">{data.sessionName}</p>}
@@ -181,8 +174,8 @@ export function PublicVerifyPage() {
                   {data.documentType === 'ADMIT_CARD'
                     ? 'Examination Admit Card'
                     : data.documentType === 'REPORT_CARD'
-                    ? 'Academic Report Card'
-                    : data.documentType.replace(/_/g, ' ')}
+                      ? 'Academic Report Card'
+                      : data.documentType.replace(/_/g, ' ')}
                 </p>
                 {data.examName && <p className="text-xs text-gray-500">Exam: {data.examName}</p>}
                 {data.resultStatus && (
@@ -191,8 +184,8 @@ export function PublicVerifyPage() {
                       data.resultStatus === 'PASS'
                         ? 'bg-green-100 text-green-700'
                         : data.resultStatus === 'COMPARTMENT'
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-red-100 text-red-700'
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-red-100 text-red-700'
                     }`}
                   >
                     Result: {data.resultStatus}{' '}
@@ -224,7 +217,9 @@ export function PublicVerifyPage() {
 
             {/* Checksum */}
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">SHA-256 Integrity Checksum</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                SHA-256 Integrity Checksum
+              </p>
               <p className="font-mono text-[10px] text-gray-600 break-all leading-relaxed">
                 {data.checksum}
               </p>
@@ -234,9 +229,8 @@ export function PublicVerifyPage() {
           {/* Footer */}
           <div className="px-6 pb-5">
             <p className="text-center text-[11px] text-gray-400">
-              Verified by{' '}
-              <span className="font-semibold text-blue-600">CloudEMS</span> Academic Document Engine.
-              For queries, contact the issuing school.
+              Verified by <span className="font-semibold text-blue-600">CloudEMS</span> Academic
+              Document Engine. For queries, contact the issuing school.
             </p>
           </div>
         </div>

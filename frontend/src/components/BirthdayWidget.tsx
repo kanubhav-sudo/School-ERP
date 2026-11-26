@@ -24,8 +24,8 @@ export interface BirthdayEntry {
 }
 
 interface BirthdayWidgetProps {
-  /** API prefix: 'admin-dashboard' or 'teacher-portal' */
-  apiPrefix: 'admin-dashboard' | 'teacher-portal'
+  /** API prefix: 'admin-dashboard', 'teacher-portal', or 'student-portal' */
+  apiPrefix: 'admin-dashboard' | 'teacher-portal' | 'student-portal'
   mode: 'today' | 'upcoming'
 }
 
@@ -70,8 +70,14 @@ export function BirthdayWidget({ apiPrefix, mode }: BirthdayWidgetProps) {
     staleTime: 5 * 60 * 1000,
   })
 
-  const title = mode === 'today' ? "Today's Birthdays" : 'Upcoming Birthdays'
+  const title =
+    apiPrefix === 'student-portal'
+      ? "Classmates' Birthdays"
+      : mode === 'today'
+      ? "Today's Birthdays"
+      : 'Upcoming Birthdays'
   const subtitle = mode === 'upcoming' ? 'Next 7 Days' : ''
+
 
   if (isLoading) {
     return (

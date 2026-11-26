@@ -47,7 +47,8 @@ export function ResultCardModal({
 }: Props) {
   const schoolName = template?.schoolName || 'School ERP Academy'
   const headerText = template?.headerText || 'ANNUAL PROGRESS REPORT / RESULT CARD'
-  const footerText = template?.footerText || 'This result document is officially verified and recorded.'
+  const footerText =
+    template?.footerText || 'This result document is officially verified and recorded.'
 
   const calculateGrade = (pct: number) => {
     if (pct >= 90) return 'A+'
@@ -82,7 +83,11 @@ export function ResultCardModal({
           <div className="flex items-center justify-between border-b pb-4">
             <div className="flex items-center gap-4">
               {template?.logoUrl ? (
-                <img src={template.logoUrl} alt="School Logo" className="h-16 w-16 object-contain" />
+                <img
+                  src={template.logoUrl}
+                  alt="School Logo"
+                  className="h-16 w-16 object-contain"
+                />
               ) : (
                 <div className="h-14 w-14 rounded-full bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-600 text-xl">
                   ERP
@@ -99,27 +104,44 @@ export function ResultCardModal({
               </div>
             </div>
             <div className="text-right font-mono text-xs text-muted-foreground">
-              <div>Class: <span className="font-semibold text-foreground">{student.className}</span></div>
-              {student.sectionName && <div>Section: <span className="font-semibold text-foreground">{student.sectionName}</span></div>}
+              <div>
+                Class: <span className="font-semibold text-foreground">{student.className}</span>
+              </div>
+              {student.sectionName && (
+                <div>
+                  Section:{' '}
+                  <span className="font-semibold text-foreground">{student.sectionName}</span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Student Info Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-muted/40 rounded-lg text-xs border border-border">
             <div>
-              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Student Name</span>
+              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
+                Student Name
+              </span>
               <span className="font-bold text-foreground">{student.name}</span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Admission No</span>
+              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
+                Admission No
+              </span>
               <span className="font-mono font-bold text-foreground">{student.admissionNumber}</span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Roll Number</span>
-              <span className="font-mono font-bold text-foreground">{student.rollNumber || '—'}</span>
+              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
+                Roll Number
+              </span>
+              <span className="font-mono font-bold text-foreground">
+                {student.rollNumber || '—'}
+              </span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Class</span>
+              <span className="text-muted-foreground block text-[10px] uppercase font-semibold">
+                Class
+              </span>
               <span className="font-bold text-foreground">{student.className}</span>
             </div>
           </div>
@@ -175,9 +197,7 @@ export function ResultCardModal({
                     <td className="px-3 py-2.5 text-center font-mono text-primary">
                       {overallPercentage}%
                     </td>
-                    <td className="px-3 py-2.5 text-center text-emerald-600">
-                      {overallGrade}
-                    </td>
+                    <td className="px-3 py-2.5 text-center text-emerald-600">{overallGrade}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -187,7 +207,9 @@ export function ResultCardModal({
           {/* Performance Summary Banner */}
           <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between text-xs dark:bg-emerald-950/30 dark:border-emerald-800">
             <div>
-              <span className="font-semibold text-emerald-800 dark:text-emerald-300">Overall Performance: </span>
+              <span className="font-semibold text-emerald-800 dark:text-emerald-300">
+                Overall Performance:{' '}
+              </span>
               <span className="font-bold text-emerald-700 dark:text-emerald-200">
                 {overallPercentage >= 40 ? 'PASSED / PROMOTED' : 'NEEDS IMPROVEMENT'}
               </span>
@@ -201,7 +223,11 @@ export function ResultCardModal({
           <div className="pt-8 flex justify-between items-end border-t text-xs">
             <div className="text-center space-y-2">
               {template?.schoolStampUrl ? (
-                <img src={template.schoolStampUrl} alt="School Stamp" className="h-12 w-12 object-contain mx-auto" />
+                <img
+                  src={template.schoolStampUrl}
+                  alt="School Stamp"
+                  className="h-12 w-12 object-contain mx-auto"
+                />
               ) : (
                 <div className="h-10 w-24 border border-dashed rounded flex items-center justify-center text-[10px] text-muted-foreground">
                   [School Stamp]
@@ -214,7 +240,11 @@ export function ResultCardModal({
 
             <div className="text-center space-y-2">
               {template?.principalSignatureUrl ? (
-                <img src={template.principalSignatureUrl} alt="Signature" className="h-10 w-28 object-contain mx-auto" />
+                <img
+                  src={template.principalSignatureUrl}
+                  alt="Signature"
+                  className="h-10 w-28 object-contain mx-auto"
+                />
               ) : (
                 <div className="h-10 w-28 border-b border-foreground flex items-center justify-center italic text-xs font-serif">
                   Principal Sign

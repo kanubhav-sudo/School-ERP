@@ -67,14 +67,20 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
               </div>
             )}
             <div>
-              <h1 className="text-2xl font-black uppercase tracking-tight" style={{ color: primaryColor }}>
+              <h1
+                className="text-2xl font-black uppercase tracking-tight"
+                style={{ color: primaryColor }}
+              >
                 {branding.schoolName || school.name}
               </h1>
               <p className="text-xs text-gray-600 font-medium">
-                {school.address ? `${school.address}, ${school.city || ''} ${school.state || ''}` : 'Affiliated to CBSE, New Delhi'}
+                {school.address
+                  ? `${school.address}, ${school.city || ''} ${school.state || ''}`
+                  : 'Affiliated to CBSE, New Delhi'}
               </p>
               <p className="text-xs text-gray-500">
-                Contact: {school.contactPhone || '+91 98765 43210'} | Website: {school.website || 'www.school.edu'}
+                Contact: {school.contactPhone || '+91 98765 43210'} | Website:{' '}
+                {school.website || 'www.school.edu'}
               </p>
             </div>
           </div>
@@ -150,7 +156,8 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
               <div>
                 <span className="text-gray-500 font-medium">Attendance:</span>{' '}
                 <span className="font-bold text-gray-900">
-                  {attendance?.presentDays || 0} / {attendance?.totalDays || 0} ({attendance?.percentage || 0}%)
+                  {attendance?.presentDays || 0} / {attendance?.totalDays || 0} (
+                  {attendance?.percentage || 0}%)
                 </span>
               </div>
             )}
@@ -167,7 +174,12 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
             ) : (
               <div className="w-20 h-24 bg-gray-100 rounded flex flex-col items-center justify-center text-gray-400">
                 <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
                 </svg>
                 <span className="text-[8px] text-gray-400">STUDENT PHOTO</span>
               </div>
@@ -177,8 +189,14 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
 
         {/* 4. Scholastic Performance Table */}
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center" style={{ color: primaryColor }}>
-            <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: accentColor }}></span>
+          <h3
+            className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center"
+            style={{ color: primaryColor }}
+          >
+            <span
+              className="w-2.5 h-2.5 rounded-full mr-2"
+              style={{ backgroundColor: accentColor }}
+            ></span>
             Part 1: Scholastic Performance
           </h3>
           <table className="w-full text-left border-collapse text-xs border border-gray-300">
@@ -197,14 +215,32 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
               {marksSummary?.subjects && marksSummary.subjects.length > 0 ? (
                 marksSummary.subjects.map((item, idx) => (
                   <tr key={item.subjectId} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="p-2 border border-gray-300 text-center font-medium">{idx + 1}</td>
-                    <td className="p-2 border border-gray-300 font-mono text-gray-700">{item.subjectCode}</td>
-                    <td className="p-2 border border-gray-300 font-bold text-gray-900">{item.subjectName}</td>
-                    <td className="p-2 border border-gray-300 text-center font-medium">{item.maxMarks}</td>
-                    <td className="p-2 border border-gray-300 text-center font-bold text-gray-900">{item.obtainedMarks}</td>
-                    <td className="p-2 border border-gray-300 text-center font-bold text-teal-800">{item.grade}</td>
                     <td className="p-2 border border-gray-300 text-center font-medium">
-                      <span className={item.status === 'PASS' ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-semibold'}>
+                      {idx + 1}
+                    </td>
+                    <td className="p-2 border border-gray-300 font-mono text-gray-700">
+                      {item.subjectCode}
+                    </td>
+                    <td className="p-2 border border-gray-300 font-bold text-gray-900">
+                      {item.subjectName}
+                    </td>
+                    <td className="p-2 border border-gray-300 text-center font-medium">
+                      {item.maxMarks}
+                    </td>
+                    <td className="p-2 border border-gray-300 text-center font-bold text-gray-900">
+                      {item.obtainedMarks}
+                    </td>
+                    <td className="p-2 border border-gray-300 text-center font-bold text-teal-800">
+                      {item.grade}
+                    </td>
+                    <td className="p-2 border border-gray-300 text-center font-medium">
+                      <span
+                        className={
+                          item.status === 'PASS'
+                            ? 'text-emerald-700 font-semibold'
+                            : 'text-rose-700 font-semibold'
+                        }
+                      >
                         {item.status}
                       </span>
                     </td>
@@ -220,10 +256,15 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
               {/* Summary Total Row */}
               {marksSummary && (
                 <tr className="bg-teal-50/80 font-bold text-gray-900 border-t-2 border-teal-600">
-                  <td colSpan={3} className="p-2.5 border border-gray-300 text-right uppercase tracking-wider text-xs">
+                  <td
+                    colSpan={3}
+                    className="p-2.5 border border-gray-300 text-right uppercase tracking-wider text-xs"
+                  >
                     Grand Total
                   </td>
-                  <td className="p-2.5 border border-gray-300 text-center">{marksSummary.totalMaxMarks}</td>
+                  <td className="p-2.5 border border-gray-300 text-center">
+                    {marksSummary.totalMaxMarks}
+                  </td>
                   <td className="p-2.5 border border-gray-300 text-center text-sm font-black text-teal-900">
                     {marksSummary.totalObtainedMarks}
                   </td>
@@ -231,7 +272,9 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
                     {marksSummary.overallGrade}
                   </td>
                   <td className="p-2.5 border border-gray-300 text-center">
-                    <span className={`inline-block px-2.5 py-0.5 text-xs font-black rounded border ${getResultBadgeStyle(marksSummary.resultStatus)}`}>
+                    <span
+                      className={`inline-block px-2.5 py-0.5 text-xs font-black rounded border ${getResultBadgeStyle(marksSummary.resultStatus)}`}
+                    >
                       {marksSummary.resultStatus}
                     </span>
                   </td>
@@ -245,16 +288,28 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
         {marksSummary && (
           <div className="grid grid-cols-3 gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200 text-center text-xs">
             <div className="p-2 bg-white rounded border border-gray-200">
-              <span className="text-gray-500 font-medium text-[10px] uppercase block">Percentage</span>
-              <span className="text-base font-black text-gray-900">{marksSummary.overallPercentage}%</span>
+              <span className="text-gray-500 font-medium text-[10px] uppercase block">
+                Percentage
+              </span>
+              <span className="text-base font-black text-gray-900">
+                {marksSummary.overallPercentage}%
+              </span>
             </div>
             <div className="p-2 bg-white rounded border border-gray-200">
-              <span className="text-gray-500 font-medium text-[10px] uppercase block">Overall Grade</span>
-              <span className="text-base font-black text-teal-700">{marksSummary.overallGrade}</span>
+              <span className="text-gray-500 font-medium text-[10px] uppercase block">
+                Overall Grade
+              </span>
+              <span className="text-base font-black text-teal-700">
+                {marksSummary.overallGrade}
+              </span>
             </div>
             <div className="p-2 bg-white rounded border border-gray-200">
-              <span className="text-gray-500 font-medium text-[10px] uppercase block">Final Result</span>
-              <span className={`text-sm font-black uppercase px-2 py-0.5 rounded ${getResultBadgeStyle(marksSummary.resultStatus)}`}>
+              <span className="text-gray-500 font-medium text-[10px] uppercase block">
+                Final Result
+              </span>
+              <span
+                className={`text-sm font-black uppercase px-2 py-0.5 rounded ${getResultBadgeStyle(marksSummary.resultStatus)}`}
+              >
                 {marksSummary.resultStatus}
               </span>
             </div>
@@ -264,16 +319,34 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
         {/* 6. CBSE Grading Scale Legend */}
         {config.displayOptions.showGradeLegend && (
           <div className="bg-gray-50 p-2.5 rounded border border-gray-200 text-[10px] text-gray-600">
-            <span className="font-bold text-gray-800 uppercase block mb-1">CBSE Grading Scale:</span>
+            <span className="font-bold text-gray-800 uppercase block mb-1">
+              CBSE Grading Scale:
+            </span>
             <div className="grid grid-cols-4 gap-1">
-              <span><strong>A1:</strong> 91-100%</span>
-              <span><strong>A2:</strong> 81-90%</span>
-              <span><strong>B1:</strong> 71-80%</span>
-              <span><strong>B2:</strong> 61-70%</span>
-              <span><strong>C1:</strong> 51-60%</span>
-              <span><strong>C2:</strong> 41-50%</span>
-              <span><strong>D:</strong> 33-40%</span>
-              <span><strong>E:</strong> Below 33%</span>
+              <span>
+                <strong>A1:</strong> 91-100%
+              </span>
+              <span>
+                <strong>A2:</strong> 81-90%
+              </span>
+              <span>
+                <strong>B1:</strong> 71-80%
+              </span>
+              <span>
+                <strong>B2:</strong> 61-70%
+              </span>
+              <span>
+                <strong>C1:</strong> 51-60%
+              </span>
+              <span>
+                <strong>C2:</strong> 41-50%
+              </span>
+              <span>
+                <strong>D:</strong> 33-40%
+              </span>
+              <span>
+                <strong>E:</strong> Below 33%
+              </span>
             </div>
           </div>
         )}
@@ -290,29 +363,43 @@ export const ReportCardRenderer: React.FC<ReportCardRendererProps> = ({
           {sigs.showExamController && (
             <div className="border-t border-gray-400 pt-2">
               {sigs.examControllerSignatureUrl ? (
-                <img src={sigs.examControllerSignatureUrl} alt="Controller Sign" className="h-10 mx-auto object-contain" />
+                <img
+                  src={sigs.examControllerSignatureUrl}
+                  alt="Controller Sign"
+                  className="h-10 mx-auto object-contain"
+                />
               ) : (
                 <div className="h-10"></div>
               )}
-              <p className="font-semibold text-gray-800">{sigs.examControllerLabel || 'Exam Controller'}</p>
+              <p className="font-semibold text-gray-800">
+                {sigs.examControllerLabel || 'Exam Controller'}
+              </p>
             </div>
           )}
 
           {sigs.showPrincipal && (
             <div className="border-t border-gray-400 pt-2">
               {sigs.principalSignatureUrl ? (
-                <img src={sigs.principalSignatureUrl} alt="Principal Sign" className="h-10 mx-auto object-contain" />
+                <img
+                  src={sigs.principalSignatureUrl}
+                  alt="Principal Sign"
+                  className="h-10 mx-auto object-contain"
+                />
               ) : (
                 <div className="h-10"></div>
               )}
-              <p className="font-semibold text-gray-800">{sigs.principalLabel || 'Principal Signature'}</p>
+              <p className="font-semibold text-gray-800">
+                {sigs.principalLabel || 'Principal Signature'}
+              </p>
             </div>
           )}
 
           {sigs.showParent && (
             <div className="border-t border-gray-400 pt-2">
               <div className="h-10"></div>
-              <p className="font-semibold text-gray-800">{sigs.parentLabel || 'Parent Signature'}</p>
+              <p className="font-semibold text-gray-800">
+                {sigs.parentLabel || 'Parent Signature'}
+              </p>
             </div>
           )}
         </div>

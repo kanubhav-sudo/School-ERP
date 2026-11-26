@@ -9,15 +9,15 @@ export function SchoolProfileTab() {
       <Card>
         <CardHeader>
           <CardTitle>School Profile</CardTitle>
-          <CardDescription>
-            Official contact, address, and institutional metadata.
-          </CardDescription>
+          <CardDescription>Official contact, address, and institutional metadata.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b pb-4">
             <div>
               <p className="text-xs text-muted-foreground">Institutional Name</p>
-              <p className="font-semibold">{schoolSlug ? `${schoolSlug.toUpperCase()} High School` : 'CloudEMS School'}</p>
+              <p className="font-semibold">
+                {schoolSlug ? `${schoolSlug.toUpperCase()} High School` : 'CloudEMS School'}
+              </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Tenant Slug / Subdomain</p>
@@ -38,9 +38,7 @@ export function SchoolProfileTab() {
 
           <div className="pt-2">
             <p className="text-xs text-muted-foreground mb-1">Address &amp; Location</p>
-            <p className="font-medium text-foreground">
-              Main Campus, City, State, India
-            </p>
+            <p className="font-medium text-foreground">Main Campus, City, State, India</p>
           </div>
         </CardContent>
       </Card>

@@ -45,9 +45,7 @@ export function TeacherTimetablePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Timetable</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Your weekly teaching schedule
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">Your weekly teaching schedule</p>
       </div>
 
       <div className="mt-6">

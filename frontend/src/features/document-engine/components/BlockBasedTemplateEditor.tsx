@@ -33,7 +33,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
   onClose,
   onSaved,
 }) => {
-  const [activeTab, setActiveTab] = useState<'presets' | 'blocks' | 'branding' | 'watermark' | 'signatures' | 'instructions'>('presets')
+  const [activeTab, setActiveTab] = useState<
+    'presets' | 'blocks' | 'branding' | 'watermark' | 'signatures' | 'instructions'
+  >('presets')
   const [loading, setLoading] = useState<boolean>(true)
   const [saving, setSaving] = useState<boolean>(false)
   const [previewPayload, setPreviewPayload] = useState<CompiledDocumentPayload | null>(null)
@@ -60,7 +62,6 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, documentType])
-
 
   // Preset switch handler
   const handlePresetSwitch = async (preset: TemplatePreset) => {
@@ -150,7 +151,12 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
         <div className="flex items-center space-x-4">
           <span className="p-2 bg-blue-600/20 text-blue-400 rounded-lg">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
             </svg>
           </span>
           <div>
@@ -189,7 +195,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
             <button
               onClick={() => setActiveTab('presets')}
               className={`px-4 py-3 border-b-2 whitespace-nowrap cursor-pointer ${
-                activeTab === 'presets' ? 'border-blue-600 text-blue-600 font-bold bg-white' : 'border-transparent hover:text-gray-900'
+                activeTab === 'presets'
+                  ? 'border-blue-600 text-blue-600 font-bold bg-white'
+                  : 'border-transparent hover:text-gray-900'
               }`}
             >
               Presets
@@ -197,7 +205,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
             <button
               onClick={() => setActiveTab('blocks')}
               className={`px-4 py-3 border-b-2 whitespace-nowrap cursor-pointer ${
-                activeTab === 'blocks' ? 'border-blue-600 text-blue-600 font-bold bg-white' : 'border-transparent hover:text-gray-900'
+                activeTab === 'blocks'
+                  ? 'border-blue-600 text-blue-600 font-bold bg-white'
+                  : 'border-transparent hover:text-gray-900'
               }`}
             >
               Blocks
@@ -205,7 +215,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
             <button
               onClick={() => setActiveTab('branding')}
               className={`px-4 py-3 border-b-2 whitespace-nowrap cursor-pointer ${
-                activeTab === 'branding' ? 'border-blue-600 text-blue-600 font-bold bg-white' : 'border-transparent hover:text-gray-900'
+                activeTab === 'branding'
+                  ? 'border-blue-600 text-blue-600 font-bold bg-white'
+                  : 'border-transparent hover:text-gray-900'
               }`}
             >
               Branding
@@ -213,7 +225,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
             <button
               onClick={() => setActiveTab('watermark')}
               className={`px-4 py-3 border-b-2 whitespace-nowrap cursor-pointer ${
-                activeTab === 'watermark' ? 'border-blue-600 text-blue-600 font-bold bg-white' : 'border-transparent hover:text-gray-900'
+                activeTab === 'watermark'
+                  ? 'border-blue-600 text-blue-600 font-bold bg-white'
+                  : 'border-transparent hover:text-gray-900'
               }`}
             >
               Watermark
@@ -221,7 +235,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
             <button
               onClick={() => setActiveTab('signatures')}
               className={`px-4 py-3 border-b-2 whitespace-nowrap cursor-pointer ${
-                activeTab === 'signatures' ? 'border-blue-600 text-blue-600 font-bold bg-white' : 'border-transparent hover:text-gray-900'
+                activeTab === 'signatures'
+                  ? 'border-blue-600 text-blue-600 font-bold bg-white'
+                  : 'border-transparent hover:text-gray-900'
               }`}
             >
               Signatures
@@ -229,7 +245,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
             <button
               onClick={() => setActiveTab('instructions')}
               className={`px-4 py-3 border-b-2 whitespace-nowrap cursor-pointer ${
-                activeTab === 'instructions' ? 'border-blue-600 text-blue-600 font-bold bg-white' : 'border-transparent hover:text-gray-900'
+                activeTab === 'instructions'
+                  ? 'border-blue-600 text-blue-600 font-bold bg-white'
+                  : 'border-transparent hover:text-gray-900'
               }`}
             >
               Instructions
@@ -249,7 +267,8 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                   <div className="space-y-4">
                     <h4 className="text-sm font-bold text-gray-900">Select Template Preset</h4>
                     <p className="text-xs text-gray-500">
-                      Choose an official board pattern preset. Resetting to a preset will apply standard formatting rules.
+                      Choose an official board pattern preset. Resetting to a preset will apply
+                      standard formatting rules.
                     </p>
                     <div className="grid grid-cols-2 gap-3">
                       {(['CBSE', 'ICSE', 'STATE_BOARD', 'CUSTOM'] as TemplatePreset[]).map((p) => (
@@ -262,8 +281,12 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                               : 'border-gray-200 hover:border-gray-300 bg-white'
                           }`}
                         >
-                          <span className="font-bold text-sm text-gray-900">{p.replace('_', ' ')}</span>
-                          <span className="text-[10px] text-gray-500 mt-1">Official Board Pattern</span>
+                          <span className="font-bold text-sm text-gray-900">
+                            {p.replace('_', ' ')}
+                          </span>
+                          <span className="text-[10px] text-gray-500 mt-1">
+                            Official Board Pattern
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -274,7 +297,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                 {activeTab === 'blocks' && (
                   <div className="space-y-4">
                     <h4 className="text-sm font-bold text-gray-900">Configure Document Blocks</h4>
-                    <p className="text-xs text-gray-500">Enable/disable or reorder sections included in the document.</p>
+                    <p className="text-xs text-gray-500">
+                      Enable/disable or reorder sections included in the document.
+                    </p>
                     <div className="space-y-2">
                       {config.blocks.map((block, idx) => (
                         <div
@@ -289,12 +314,16 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                                 const checked = e.target.checked
                                 updateConfig((prev) => ({
                                   ...prev,
-                                  blocks: prev.blocks.map((b) => (b.id === block.id ? { ...b, enabled: checked } : b)),
+                                  blocks: prev.blocks.map((b) =>
+                                    b.id === block.id ? { ...b, enabled: checked } : b
+                                  ),
                                 }))
                               }}
                               className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                             />
-                            <span className="text-xs font-semibold text-gray-800">{block.name}</span>
+                            <span className="text-xs font-semibold text-gray-800">
+                              {block.name}
+                            </span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <button
@@ -323,17 +352,23 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                   <div className="space-y-4">
                     <h4 className="text-sm font-bold text-gray-900">Branding & Color Theme</h4>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Document Title</label>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Document Title
+                      </label>
                       <input
                         type="text"
                         value={config.title}
-                        onChange={(e) => updateConfig((prev) => ({ ...prev, title: e.target.value }))}
+                        onChange={(e) =>
+                          updateConfig((prev) => ({ ...prev, title: e.target.value }))
+                        }
                         className="w-full px-3 py-2 text-xs border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Primary Color</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Primary Color
+                        </label>
                         <input
                           type="color"
                           value={config.branding.primaryColor}
@@ -347,7 +382,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Accent Color</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Accent Color
+                        </label>
                         <input
                           type="color"
                           value={config.branding.accentColor}
@@ -362,7 +399,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Font Family</label>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Font Family
+                      </label>
                       <select
                         value={config.branding.fontFamily}
                         onChange={(e) =>
@@ -370,7 +409,8 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                             ...prev,
                             branding: {
                               ...prev.branding,
-                              fontFamily: e.target.value as DocumentTemplateConfig['branding']['fontFamily'],
+                              fontFamily: e.target
+                                .value as DocumentTemplateConfig['branding']['fontFamily'],
                             },
                           }))
                         }
@@ -401,12 +441,16 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                         }
                         className="w-4 h-4 text-blue-600 rounded cursor-pointer"
                       />
-                      <span className="text-xs font-semibold text-gray-800">Enable Background Watermark</span>
+                      <span className="text-xs font-semibold text-gray-800">
+                        Enable Background Watermark
+                      </span>
                     </div>
                     {config.watermark.enabled && (
                       <>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Watermark Text</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Watermark Text
+                          </label>
                           <input
                             type="text"
                             value={config.watermark.text}
@@ -432,7 +476,10 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                             onChange={(e) =>
                               updateConfig((prev) => ({
                                 ...prev,
-                                watermark: { ...prev.watermark, opacity: parseFloat(e.target.value) },
+                                watermark: {
+                                  ...prev.watermark,
+                                  opacity: parseFloat(e.target.value),
+                                },
                               }))
                             }
                             className="w-full cursor-pointer"
@@ -456,7 +503,10 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                           onChange={(e) =>
                             updateConfig((prev) => ({
                               ...prev,
-                              signatureBlocks: { ...prev.signatureBlocks, showPrincipal: e.target.checked },
+                              signatureBlocks: {
+                                ...prev.signatureBlocks,
+                                showPrincipal: e.target.checked,
+                              },
                             }))
                           }
                           className="w-4 h-4 text-blue-600 rounded cursor-pointer"
@@ -470,7 +520,10 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                           onChange={(e) =>
                             updateConfig((prev) => ({
                               ...prev,
-                              signatureBlocks: { ...prev.signatureBlocks, showExamController: e.target.checked },
+                              signatureBlocks: {
+                                ...prev.signatureBlocks,
+                                showExamController: e.target.checked,
+                              },
                             }))
                           }
                           className="w-4 h-4 text-blue-600 rounded cursor-pointer"
@@ -484,7 +537,10 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                           onChange={(e) =>
                             updateConfig((prev) => ({
                               ...prev,
-                              signatureBlocks: { ...prev.signatureBlocks, showTeacher: e.target.checked },
+                              signatureBlocks: {
+                                ...prev.signatureBlocks,
+                                showTeacher: e.target.checked,
+                              },
                             }))
                           }
                           className="w-4 h-4 text-blue-600 rounded cursor-pointer"
@@ -498,7 +554,10 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                           onChange={(e) =>
                             updateConfig((prev) => ({
                               ...prev,
-                              signatureBlocks: { ...prev.signatureBlocks, showCandidate: e.target.checked },
+                              signatureBlocks: {
+                                ...prev.signatureBlocks,
+                                showCandidate: e.target.checked,
+                              },
                             }))
                           }
                           className="w-4 h-4 text-blue-600 rounded cursor-pointer"
@@ -511,7 +570,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                 {/* 6. Instructions Tab */}
                 {activeTab === 'instructions' && (
                   <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-gray-900">Candidate Rules & Instructions</h4>
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Candidate Rules & Instructions
+                    </h4>
                     <div className="space-y-2">
                       {config.instructions.map((inst, i) => (
                         <div key={i} className="flex items-center space-x-2">
@@ -540,7 +601,10 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
                         onClick={() =>
                           updateConfig((prev) => ({
                             ...prev,
-                            instructions: [...prev.instructions, 'New rule or candidate instruction.'],
+                            instructions: [
+                              ...prev.instructions,
+                              'New rule or candidate instruction.',
+                            ],
                           }))
                         }
                         className="mt-2 text-xs text-blue-600 font-semibold hover:underline cursor-pointer"
@@ -558,7 +622,9 @@ export const BlockBasedTemplateEditor: React.FC<BlockBasedTemplateEditorProps> =
         {/* Right Side: LIVE PREVIEW Pane (7 cols) */}
         <div className="col-span-7 p-6 overflow-y-auto flex flex-col items-center justify-start bg-gray-200">
           <div className="w-full max-w-[210mm] mb-2 flex items-center justify-between text-xs text-gray-600">
-            <span className="font-bold uppercase tracking-wider text-gray-700">Real-Time Live Preview</span>
+            <span className="font-bold uppercase tracking-wider text-gray-700">
+              Real-Time Live Preview
+            </span>
             <span>A4 Document Canvas</span>
           </div>
 

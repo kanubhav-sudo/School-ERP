@@ -98,7 +98,19 @@ export class DocumentEngineController {
   static async getLivePreview(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { documentType } = req.params
-      const { studentId, examId } = req.query as { studentId?: string; examId?: string }
+      const { examId } = req.query as { examId?: string }
+      let studentId = req.query.studentId as string | undefined
+
+      if (req.user?.role === 'STUDENT') {
+        const student = await req.db.student.findUnique({
+          where: { userId: req.user.sub },
+          select: { id: true },
+        })
+        if (!student) {
+          throw new ValidationError('Student profile not found')
+        }
+        studentId = student.id
+      }
 
       if (!studentId) {
         // If no studentId provided, grab first active student for live preview
@@ -111,18 +123,12 @@ export class DocumentEngineController {
           throw new ValidationError('No active student found for live preview')
         }
 
-        const payload = await DocumentEngineService.compileDocumentPayload(req.db, {
-          documentType: documentType as DocumentType,
-          studentId: firstStudent.id,
-          examId,
-        })
-        res.json({ success: true, data: payload })
-        return
+        studentId = firstStudent.id
       }
 
       const payload = await DocumentEngineService.compileDocumentPayload(req.db, {
         documentType: documentType as DocumentType,
-        studentId,
+        studentId: studentId as string,
         examId,
       })
 
@@ -165,13 +171,20 @@ export class DocumentEngineController {
    * GET /api/v1/documents/public/verify/:verificationId
    * PUBLIC QR Verification Endpoint — Privacy preserved!
    */
-  static async verifyPublicDocument(req: Request, res: Response, next: NextFunction): Promise<void> {
+  static async verifyPublicDocument(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const verificationIdStr = Array.isArray(req.params.verificationId)
         ? req.params.verificationId[0]
         : req.params.verificationId
 
-      const verificationData = await DocumentEngineService.verifyDocumentPublic(req.db, verificationIdStr)
+      const verificationData = await DocumentEngineService.verifyDocumentPublic(
+        req.db,
+        verificationIdStr
+      )
 
       res.json({
         success: true,

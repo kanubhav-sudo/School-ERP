@@ -92,7 +92,7 @@ export function MyClassesPage() {
                 <Users className="h-4 w-4" />
                 Manage Students
               </span>
-              <button 
+              <button
                 onClick={() => navigate('/teacher/attendance')}
                 className="text-sm font-medium text-primary hover:underline"
               >

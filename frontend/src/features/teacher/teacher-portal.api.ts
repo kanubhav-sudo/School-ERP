@@ -172,10 +172,7 @@ export async function createAnnouncement(payload: FormData): Promise<Announcemen
   return data.data
 }
 
-export async function updateAnnouncement(
-  id: string,
-  payload: FormData
-): Promise<AnnouncementDto> {
+export async function updateAnnouncement(id: string, payload: FormData): Promise<AnnouncementDto> {
   const { data } = await api.put(`/teacher-portal/announcements/${id}`, payload, {
     headers: {
       'Content-Type': 'multipart/form-data',
@@ -319,4 +316,3 @@ export async function updateHomework(id: string, payload: FormData): Promise<Hom
 export async function deleteHomework(id: string): Promise<void> {
   await api.delete(`/teacher-portal/homework/${id}`)
 }
-

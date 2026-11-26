@@ -7,7 +7,9 @@ import { useTenant } from '@/context/TenantContext'
 import { GreetingBanner } from '@/components/GreetingBanner'
 import { DailyMotivation } from '@/components/DailyMotivation'
 import { BirthdayCardModal } from '@/components/BirthdayCardModal'
+import { BirthdayWidget } from '@/components/BirthdayWidget'
 import { UpcomingEventsWidget } from '@/components/UpcomingEventsWidget'
+
 import {
   Calendar,
   FileText,
@@ -20,6 +22,8 @@ import {
   CheckCircle2,
   CreditCard,
   CalendarDays,
+  Gift,
+  Award,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -120,6 +124,104 @@ export function StudentDashboard() {
 
       {/* Daily Motivation */}
       <DailyMotivation />
+
+      {/* Mobile Quick-Access Module Grid (< 768px) */}
+      <div className="block md:hidden space-y-2">
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-0.5">
+          Quick Access Modules
+        </h3>
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+          <Link
+            to="/student/attendance"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-teal-500/10 text-teal-600 mb-1">
+              <Activity className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Attendance</span>
+          </Link>
+
+          <Link
+            to="/student/timetable"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 mb-1">
+              <Clock className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Timetable</span>
+          </Link>
+
+          <Link
+            to="/student/fees"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 mb-1">
+              <CreditCard className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Fees</span>
+          </Link>
+
+          <Link
+            to="/student/homework"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 mb-1">
+              <BookOpen className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground truncate w-full text-center">Homework</span>
+          </Link>
+
+          <Link
+            to="/student/notices"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 mb-1">
+              <Bell className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground">Notices</span>
+          </Link>
+
+          <Link
+            to="/student/exams"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 mb-1">
+              <FileText className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground truncate w-full text-center">Exams</span>
+          </Link>
+
+          <Link
+            to="/student/exams"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 mb-1">
+              <CheckCircle2 className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground truncate w-full text-center">Admit Card</span>
+          </Link>
+
+          <Link
+            to="/student/exams"
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-yellow-500/10 text-yellow-600 mb-1">
+              <Award className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground truncate w-full text-center">Report Card</span>
+          </Link>
+
+          <button
+            onClick={() => setShowBirthdayCard(true)}
+            className="flex flex-col items-center justify-center p-2 bg-card border rounded-xl hover:bg-accent text-center transition-colors min-h-[70px]"
+          >
+            <div className="p-1.5 rounded-lg bg-pink-500/10 text-pink-600 mb-1">
+              <Gift className="h-4 w-4" />
+            </div>
+            <span className="text-[11px] font-semibold leading-tight text-foreground truncate w-full text-center">Birthdays</span>
+          </button>
+        </div>
+      </div>
 
       {/* Birthday Card Modal */}
       <BirthdayCardModal
@@ -314,11 +416,13 @@ export function StudentDashboard() {
         </div>
       </div>
 
-      {/* Upcoming Events + Quick Nav */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Classmate Birthdays, Upcoming Events + Quick Nav */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <BirthdayWidget apiPrefix="student-portal" mode="today" />
         <UpcomingEventsWidget portal="student" />
 
         {/* Quick Navigation Cards */}
+
         <div className="p-5 bg-card rounded-xl border shadow-xs space-y-3">
           <h3 className="text-sm font-bold text-foreground">Quick Navigation</h3>
           <div className="grid grid-cols-2 gap-3">

@@ -130,3 +130,18 @@ export async function submitHomework(
     next(err)
   }
 }
+
+export async function getBirthdays(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.sub
+    const data = await StudentPortalService.getTodaysBirthdays(req.db, userId)
+    ApiResponse.success(res, data)
+  } catch (err) {
+    next(err)
+  }
+}
+

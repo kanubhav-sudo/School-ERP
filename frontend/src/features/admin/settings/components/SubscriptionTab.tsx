@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchSubscription, submitUpgradeRequest } from '../subscription.api'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -30,7 +37,9 @@ export function SubscriptionTab() {
     mutationFn: () => submitUpgradeRequest('PREMIUM', upgradeNotes),
     onSuccess: () => {
       setIsUpgradeModalOpen(false)
-      setSuccessMessage('Upgrade request submitted! You will receive a callback from the CloudEMS team shortly.')
+      setSuccessMessage(
+        'Upgrade request submitted! You will receive a callback from the CloudEMS team shortly.'
+      )
       queryClient.invalidateQueries({ queryKey: ['subscription'] })
     },
   })
@@ -194,7 +203,10 @@ export function SubscriptionTab() {
                   <CardTitle className="text-2xl font-bold">Premium Plan</CardTitle>
                   <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
                 </div>
-                <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300">
+                <Badge
+                  variant="secondary"
+                  className="bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300"
+                >
                   Recommended
                 </Badge>
               </div>
@@ -241,7 +253,10 @@ export function SubscriptionTab() {
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-foreground">{feature.name}</span>
                           {feature.isPlaceholder && (
-                            <Badge variant="outline" className="text-[10px] py-0 h-4 border-purple-200 text-purple-600">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] py-0 h-4 border-purple-200 text-purple-600"
+                            >
                               Upcoming
                             </Badge>
                           )}
@@ -263,7 +278,11 @@ export function SubscriptionTab() {
                   Current Active Plan
                 </Button>
               ) : hasPendingUpgradeRequest ? (
-                <Button variant="outline" className="w-full border-amber-400 text-amber-600" disabled>
+                <Button
+                  variant="outline"
+                  className="w-full border-amber-400 text-amber-600"
+                  disabled
+                >
                   <Clock className="w-4 h-4 mr-2" />
                   Upgrade Request Pending
                 </Button>
@@ -292,7 +311,8 @@ export function SubscriptionTab() {
               <DialogTitle className="text-xl">Upgrade to Premium?</DialogTitle>
             </div>
             <DialogDescription className="pt-2 text-sm text-muted-foreground">
-              You will receive a callback from the CloudEMS team shortly to complete your subscription upgrade and enable premium features.
+              You will receive a callback from the CloudEMS team shortly to complete your
+              subscription upgrade and enable premium features.
             </DialogDescription>
           </DialogHeader>
 

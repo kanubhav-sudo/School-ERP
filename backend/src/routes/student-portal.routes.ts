@@ -22,5 +22,7 @@ router.get('/notices', StudentPortalController.getNotices)
 router.get('/announcements', StudentPortalController.getAnnouncements)
 router.get('/exams', StudentPortalController.getExams)
 router.get('/homework', StudentPortalController.getHomework)
+router.get('/birthdays/today', StudentPortalController.getBirthdays)
 
 export default router
+
